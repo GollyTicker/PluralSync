@@ -14,9 +14,7 @@
       <button @click="register" type="button" class="register-button">Register</button>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
-    <p style="margin: 1em">
-      ℹ️ PluralSync was formerly named SP2Any. ℹ️
-    </p>
+    <p style="margin: 1em">ℹ️ PluralSync was formerly named SP2Any. ℹ️</p>
   </div>
 </template>
 

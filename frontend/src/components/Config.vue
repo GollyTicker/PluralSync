@@ -683,7 +683,7 @@ watch(
 
 .warning {
   font-weight: bold;
-  color: orange;
+  color: #810000ff;
 }
 
 button {
