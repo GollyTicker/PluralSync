@@ -313,8 +313,7 @@ fn try_hide_window(app: &tauri::AppHandle) {
         let _ = window
             .hide()
             .inspect_err(|e| log::warn!("window.hide failed: {e}"));
-    }
-    else {
+    } else {
         log::warn!("try_hide_window: main window not found!");
     }
 }
@@ -331,8 +330,7 @@ fn try_show_window(app: &tauri::AppHandle) {
         let _ = window
             .set_focus()
             .inspect_err(|e| log::warn!("window.set_focus failed: {e}"));
-    }
-    else {
+    } else {
         log::warn!("try_show_window: main window not found!");
     }
 }
