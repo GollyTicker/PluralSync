@@ -26,7 +26,7 @@
       "csp": null
     },
     "trayIcon": {
-      "iconPath": "icons/icon.png",
+      "iconPath": "icons/icon.ico",
       "iconAsTemplate": true
     }
   },
