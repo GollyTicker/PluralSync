@@ -71,6 +71,7 @@ tokio-tungstenite = { version = "*", default-features = false, features = [
 ] }
 futures = "*"
 tokio-cron-scheduler = "*"
+uuid = { version = "*", features = ["serde"] }
 
 [build-dependencies]
 dotenvy = "*"

@@ -5,7 +5,7 @@ use crate::users;
 use serde::{Deserialize, Serialize};
 use specta;
 use strum_macros;
-use vrchatapi::models::current_user::RequiresTwoFactorAuth;
+use vrchatapi::models::{RequiresTwoFactorAuth, TwoFactorAuthType};
 
 #[derive(Clone, Deserialize, Serialize, Debug)]
 pub struct VRChatUserId {
@@ -92,7 +92,7 @@ impl TwoFactorAuthMethod {
     pub fn from(requires_2fa_auth: &RequiresTwoFactorAuth) -> Self {
         let is_email_2fa = requires_2fa_auth
             .requires_two_factor_auth
-            .contains(&String::from("emailOtp"));
+            .contains(&TwoFactorAuthType::EmailOtp);
 
         if is_email_2fa {
             Self::TwoFactorAuthMethodEmail
