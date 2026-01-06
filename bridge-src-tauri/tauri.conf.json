@@ -17,11 +17,17 @@
         "height": 550,
         "resizable": true,
         "fullscreen": false,
-        "theme": "Light"
+        "theme": "Light",
+        "visible": false,
+        "skipTaskbar": true
       }
     ],
     "security": {
       "csp": null
+    },
+    "trayIcon": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
     }
   },
   "bundle": {
@@ -33,11 +39,7 @@
       "nsis"
     ],
     "icon": [
-      "icons/32x32.png",
-      "icons/128x128.png",
-      "icons/128x128@2x.png",
-      "icons/icon.icns",
-      "icons/icon.ico"
+      "../frontend/public/favicon.png"
     ]
   }
 }

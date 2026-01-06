@@ -17,7 +17,7 @@ serde_json = "*"
 serde = { version = "*", default-features = false, features = ["derive"] }
 log = "*"
 tokio = { version = "*", default-features = false }
-tauri = { version = "*", default-features = true, features = [] }
+tauri = { version = "*", default-features = true, features = ["tray-icon"] }
 tauri-plugin-log = "*"
 reqwest = { version = "*", default-features = false, features = [
     "json",

@@ -12,9 +12,12 @@ use pluralsync_base::for_discord_bridge::{
 use pluralsync_base::meta;
 use std::env;
 use std::sync::Arc;
-use tauri::Emitter;
-use tauri::Manager;
-use tauri::async_runtime::{JoinHandle, Mutex};
+use tauri::{
+    Emitter, Manager,
+    async_runtime::{JoinHandle, Mutex},
+    menu::{Menu, MenuItem},
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
+};
 use tokio_tungstenite::{connect_async, tungstenite::client::IntoClientRequest};
 
 const MEGABYTES: u128 = 10 ^ 6;
@@ -205,7 +208,7 @@ pub fn run() -> Result<()> {
         .max_file_size(10 * MEGABYTES)
         .build();
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(autostart_plugin)
         .invoke_handler(tauri::generate_handler![
             login,
@@ -221,6 +224,11 @@ pub fn run() -> Result<()> {
         .manage(updater_status_channel.clone())
         .setup(|app| {
             app.handle().plugin(logging_plugin)?;
+
+            move_to_system_tray(app)?;
+
+            try_hide_window(app.app_handle());
+
             initiate_discord_rpc_loop(
                 app.handle().clone(),
                 rich_presence_channel,
@@ -228,6 +236,103 @@ pub fn run() -> Result<()> {
             );
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .map_err(|e| anyhow!(e))
+        .build(tauri::generate_context!())
+        .map_err(|e| anyhow!(e))?;
+
+    app.run(handle_run_event);
+
+    Ok(())
+}
+
+fn handle_run_event(app_handle: &tauri::AppHandle, event: tauri::RunEvent) {
+    match event {
+        tauri::RunEvent::WindowEvent {
+            label,
+            event: tauri::WindowEvent::CloseRequested { api, .. },
+            ..
+        } if label == "main" => {
+            api.prevent_close();
+            try_hide_window(app_handle);
+        }
+        _ => (),
+    }
+}
+
+fn move_to_system_tray(app: &tauri::App) -> Result<(), tauri::Error> {
+    // hide from taskbar
+    let main_window = app
+        .get_webview_window("main")
+        .ok_or_else(|| anyhow!("get_webview_window failed"))?;
+    main_window.set_skip_taskbar(true)?;
+
+    // build system tray
+    let show_item = MenuItem::with_id(app, "show", "Show", true, None::<&str>)?;
+    let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
+    let menu = Menu::with_items(app, &[&show_item, &quit_item])?;
+
+    TrayIconBuilder::new()
+        .menu(&menu)
+        .on_menu_event(handle_menu_event)
+        .on_tray_icon_event(handle_tray_icon_event)
+        .build(app)?;
+
+    Ok(())
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn handle_menu_event(app: &tauri::AppHandle, event: tauri::menu::MenuEvent) {
+    match event.id.as_ref() {
+        "quit" => {
+            app.exit(0);
+        }
+        "show" => {
+            try_show_window(app);
+        }
+        _ => {}
+    }
+}
+
+#[allow(clippy::needless_pass_by_value)]
+fn handle_tray_icon_event(tray: &tauri::tray::TrayIcon, event: tauri::tray::TrayIconEvent) {
+    if let TrayIconEvent::Click {
+        button: MouseButton::Left,
+        button_state: MouseButtonState::Up,
+        ..
+    } = event
+    {
+        try_show_window(tray.app_handle());
+    }
+}
+
+// ignores failures
+fn try_hide_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window
+            .minimize()
+            .inspect_err(|e| log::warn!("window.minimize failed: {e}"));
+        let _ = window
+            .hide()
+            .inspect_err(|e| log::warn!("window.hide failed: {e}"));
+    }
+    else {
+        log::warn!("try_hide_window: main window not found!");
+    }
+}
+
+// ignores failures
+fn try_show_window(app: &tauri::AppHandle) {
+    if let Some(window) = app.get_webview_window("main") {
+        let _ = window
+            .unminimize()
+            .inspect_err(|e| log::warn!("window.unminimize failed: {e}"));
+        let _ = window
+            .show()
+            .inspect_err(|e| log::warn!("window.show failed: {e}"));
+        let _ = window
+            .set_focus()
+            .inspect_err(|e| log::warn!("window.set_focus failed: {e}"));
+    }
+    else {
+        log::warn!("try_show_window: main window not found!");
+    }
 }
