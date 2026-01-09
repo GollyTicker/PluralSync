@@ -319,6 +319,8 @@
               <br />
               Note, that the PluralSync bridge doesn't automatically update at the moment. If it
               doesn't work then download and install the latest version and try again!
+              If you want to minimize the bridge, you can do so via the program <a href="https://rbtray.sourceforge.net/">RBTray</a> on Windows.
+              (SystemTray is buggy on Windows which is why qwe suggest this program instead.)
             </p>
           </div>
         </div>
