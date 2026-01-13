@@ -96,6 +96,7 @@ This way we can get even more early testers so that we can then move to the app 
 
 * allow back-directional sync of fronters from pluralkit
   * allow automatic import/export of system info between pluralkit and simplyplural
+* sync fronting/proxying with plu/ral bot
 * long-term: synchronize fronters without requiring users to also use simplyplural. make core independent from simply plural
 * checkout inspirations channel in simply plural to see how users use SP and which use cases suit make sense there
 * registration logs in by default as well automatically
