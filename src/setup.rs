@@ -17,7 +17,7 @@ const REQUEST_TIMEOUT: u64 = 10;
 
 pub fn logging_init() {
     env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("info,pluralsync=debug,pluralsync_base=debug"),
+        env_logger::Env::default().default_filter_or("info,pluralsync=info,pluralsync_base=debug"),
     )
     .format_timestamp_millis()
     .init();
