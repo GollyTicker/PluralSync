@@ -263,7 +263,7 @@ pub fn create_config_with_strong_constraints<Constraints>(
 where
     Constraints: database::ConstraintsType,
 {
-    log::info!("# | create_config_with_strong_constraints | {user_id}");
+    log::debug!("# | create_config_with_strong_constraints | {user_id}");
     CONFIG_CREATE_WITH_STRONG_CONSTRAINTS_TOTAL_COUNT
         .with_label_values(&[&user_id.to_string()])
         .inc();
@@ -334,7 +334,7 @@ where
             vrchat_password
         )?,
         vrchat_cookie: config_value!(local_config_with_defaults, vrchat_cookie)
-            .inspect(|_| log::info!("create_config_with_strong_constraints | {user_id} | vrchat cookie found and will be used."))
+            .inspect(|_| log::debug!("create_config_with_strong_constraints | {user_id} | vrchat cookie found and will be used."))
             .unwrap_or_default(),
         pluralkit_token: config_value_if!(
             enable_to_pluralkit,
@@ -352,14 +352,14 @@ where
         ));
     }
 
-    log::info!("# | create_config_with_strong_constraints | {user_id} | created");
+    log::debug!("# | create_config_with_strong_constraints | {user_id} | created");
 
     let valid_config =
         database::only_use_this_function_to_mark_validation_after_you_have_actually_validated_it(
             &db_config,
         );
 
-    log::info!("# | create_config_with_strong_constraints | {user_id} | created | validated");
+    log::debug!("# | create_config_with_strong_constraints | {user_id} | created | validated");
     CONFIG_CREATE_WITH_STRONG_CONSTRAINTS_SUCCESS_COUNT
         .with_label_values(&[&user_id.to_string()])
         .inc();

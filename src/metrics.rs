@@ -115,7 +115,7 @@ pub async fn collect_user_metrics(
     _: updater::UpdaterManager,
     _: database::ApplicationUserSecrets,
 ) -> Result<()> {
-    log::info!("# | run_user_metrics_job");
+    log::debug!("# | run_user_metrics_job");
 
     let user_ids = database::get_all_users(&db_pool).await?;
 
@@ -132,7 +132,7 @@ pub async fn collect_user_metrics(
             .set(count);
     }
 
-    log::info!("# | run_user_metrics_job | done");
+    log::debug!("# | run_user_metrics_job | done");
 
     Ok(())
 }

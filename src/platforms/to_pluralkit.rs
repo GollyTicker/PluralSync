@@ -94,7 +94,7 @@ async fn update_to_pluralkit(
         .cloned()
         .unwrap_or_else(std::vec::Vec::new);
 
-    log::info!(
+    log::debug!(
         "update_to_pluralkit | {} | existing_members={:?} | new_members={:?}",
         config.user_id,
         existing_fronting_members,
@@ -107,7 +107,7 @@ async fn update_to_pluralkit(
     );
 
     if same_members(&new_switch_members, &existing_fronting_members) {
-        log::info!(
+        log::debug!(
             "update_to_pluralkit | {} | No change will be propagated to PluralKit due to lists containing the same members (pk-order preservation).",
             config.user_id
         );
@@ -134,7 +134,7 @@ async fn update_to_pluralkit(
 
     response.error_for_status()?;
 
-    log::info!(
+    log::debug!(
         "update_to_pluralkit | {} | Updated PluralKit to {:?}",
         config.user_id,
         new_switch_members

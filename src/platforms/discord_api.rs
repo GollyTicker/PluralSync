@@ -88,7 +88,7 @@ fn create_bidirection_websocket_stream_to_bridge(
 
         #[allow(clippy::needless_continue)]
         loop {
-            log::info!("# | fronters_chan <-> WS | {user_id} | Waiting...");
+            log::debug!("# | fronters_chan <-> WS | {user_id} | Waiting...");
             let notify = notify.clone();
             tokio::select! {
                 message = ws.next() => {
@@ -108,7 +108,7 @@ fn create_bidirection_websocket_stream_to_bridge(
                 // The websocket connection can be unstable at times and getting the TCP keepalive configured correctly wasn't easy.
                 // So we just send a ping intentionally every minute and re-send the last fronters message.
                 () = tokio::time::sleep(ping_interval) => {
-                    log::info!("# | fronters_chan <-> WS | {user_id} | ping re-sending last fronters.");
+                    log::debug!("# | fronters_chan <-> WS | {user_id} | ping re-sending last fronters.");
                     match process_message_from_fronting_channel(last_received_fronters_msg.clone(), &user_id, &config, notify) {
                         Break => break,
                         Continue => continue,
@@ -186,7 +186,7 @@ fn process_message_from_fronting_channel(
                         return Break;
                     }
                 };
-                log::info!(
+                log::debug!(
                     "# | fronters_chan <-> WS | {user_id} | fronters received | sending_via_websocket"
                 );
                 Yield(rocket_ws::Message::Text(payload))
@@ -220,7 +220,7 @@ fn process_message_from_bridge(
     user_id: &UserId,
     mut notify: impl FnMut(UpdaterStatus) -> usize,
 ) -> LoopStreamControl<never::Never> {
-    log::info!("# | fronters_chan <-> WS | {user_id} | WS received {message:?}");
+    log::debug!("# | fronters_chan <-> WS | {user_id} | WS received {message:?}");
     match message {
         Some(close) if is_closed(&close) => {
             log::info!(
@@ -236,7 +236,7 @@ fn process_message_from_bridge(
             let message: communication::BridgeToServerSseMessage = match serde_json::from_str(&str)
             {
                 Ok(s) => {
-                    log::info!(
+                    log::debug!(
                         "# | fronters_chan <-> WS | {user_id} | WS received | deserialised to {s:?}"
                     );
                     s
@@ -258,7 +258,7 @@ fn process_message_from_bridge(
             Continue
         }
         Some(Ok(unknown_message)) => {
-            log::info!(
+            log::warn!(
                 "# | fronters_chan <-> WS | {user_id} | WS received | unknown_msg_type {unknown_message:?}"
             );
             SHOULDNT_HAPPEN_BUT_IT_DID
@@ -267,7 +267,7 @@ fn process_message_from_bridge(
             Continue // unknown message ignored
         }
         Some(Err(_)) | None => {
-            log::info!(
+            log::warn!(
                 "# | fronters_chan <-> WS | {user_id} | WS received | ending_due_to_error {message:?}"
             );
             notify(UpdaterStatus::Error(format!(

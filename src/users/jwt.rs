@@ -64,10 +64,10 @@ impl<'r> FromRequest<'r> for Jwt {
                     .trim()
                     .to_owned(),
             };
-            log::info!("# | jwt verification | {token}");
+            log::debug!("# | jwt verification | {token}");
             match verify_jwt(&token, jwt_secret) {
                 Ok((claims, user_id)) => {
-                    log::info!("# | jwt verification | {token} | verified | {user_id}");
+                    log::debug!("# | jwt verification | {token} | verified | {user_id}");
                     Outcome::Success(Jwt { claims })
                 }
                 Err(err) => {

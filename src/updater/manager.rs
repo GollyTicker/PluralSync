@@ -149,7 +149,7 @@ impl UpdaterManager {
         })?;
 
         for (p, new_status) in updater_state {
-            log::info!("# | notify_updater_statuses | {user_id} | {p} is {new_status}");
+            log::debug!("# | notify_updater_statuses | {user_id} | {p} is {new_status}");
 
             record_status_in_metrics(user_id, p, &new_status);
             statuses.insert(p, new_status);
@@ -337,8 +337,8 @@ impl UpdaterManager {
                 )
             };
             match update_fronters_from_simply_plural().await {
-                Ok(()) => log::info!("Initial SP update after restart OK."),
-                Err(e) => log::info!("Initial SP update after restart Err: {e}"),
+                Ok(()) => log::debug!("Initial SP update after restart OK."),
+                Err(e) => log::warn!("Initial SP update after restart Err: {e}"),
             }
             plurality::auto_reconnecting_websocket_client_to_simply_plural(
                 &user_id.to_string(),
@@ -348,7 +348,7 @@ impl UpdaterManager {
                         plurality::relevantly_changed_based_on_simply_plural_websocket_event(
                             &message,
                         )?;
-                    log::info!("SP WS payload '{user_id}': +{changed}");
+                    log::debug!("SP WS payload '{user_id}': +{changed}");
                     UPDATER_MANAGER_SIMPLY_PLURAL_WEBSOCKET_RELEVANT_CHANGE_MESSAGE_COUNT
                         .with_label_values(&[&user_id.to_string()])
                         .inc();
@@ -370,7 +370,7 @@ impl UpdaterManager {
         db_pool: &sqlx::Pool<sqlx::Postgres>,
         application_user_secrets: &database::ApplicationUserSecrets,
     ) -> Result<(), anyhow::Error> {
-        log::info!("# | fetch_and_update_fronters | {user_id}");
+        log::debug!("# | fetch_and_update_fronters | {user_id}");
 
         let config = database::get_user_config_with_secrets(
             db_pool,
@@ -383,7 +383,7 @@ impl UpdaterManager {
         let fronters = plurality::fetch_fronts(&config).await?;
         let fronters_count = fronters.len();
 
-        log::info!("# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched");
+        log::debug!("# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched");
 
         self.fronter_channel
             .lock()
@@ -394,7 +394,7 @@ impl UpdaterManager {
             })?
             .send(fronters);
 
-        log::info!(
+        log::debug!(
             "# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched | sent to channel."
         );
 
@@ -440,7 +440,7 @@ pub async fn restart_first_long_living_updater(
     shared_updaters: UpdaterManager,
     application_user_secrets: database::ApplicationUserSecrets,
 ) -> Result<()> {
-    log::info!("restart_first_long_living_updater");
+    log::debug!("restart_first_long_living_updater");
 
     let users = database::get_all_users(&db_pool).await?;
 
@@ -450,7 +450,7 @@ pub async fn restart_first_long_living_updater(
                 "restart_first_long_living_updater: Could not get active_since for {user_id}: {e}"
             ),
             Ok(active_since) if is_long_lived(active_since) => {
-                log::info!(
+                log::debug!(
                     "restart_first_long_living_updater | restarting {user_id} ({active_since})"
                 );
                 let config = database::get_user_config_with_secrets(

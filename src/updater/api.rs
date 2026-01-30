@@ -16,13 +16,13 @@ pub fn get_api_updaters_status(
 ) -> HttpResult<Json<change_processor::UserUpdatersStatuses>> {
     let user_id = jwt.user_id().map_err(expose_internal_error)?;
 
-    log::info!("# | GET /api/updaters/status | {user_id}");
+    log::debug!("# | GET /api/updaters/status | {user_id}");
 
     let updaters_state: change_processor::UserUpdatersStatuses = shared_updaters
         .get_updaters_statuses(&user_id)
         .map_err(expose_internal_error)?;
 
-    log::info!("# | GET /api/updaters/status | {user_id} | retrieved");
+    log::debug!("# | GET /api/updaters/status | {user_id} | retrieved");
 
     Ok(Json(updaters_state))
 }
@@ -66,7 +66,7 @@ pub async fn restart_updater_for_user(
     client: &reqwest::Client,
     shared_updaters: &manager::UpdaterManager,
 ) -> Result<()> {
-    log::info!("# | restart_updater_for_user | {user_id}");
+    log::debug!("# | restart_updater_for_user | {user_id}");
 
     let config =
         database::get_user_config_with_secrets(db_pool, user_id, client, application_user_secrets)
@@ -79,7 +79,7 @@ pub async fn restart_updater_for_user(
         application_user_secrets,
     )?;
 
-    log::info!("# | restart_updater_for_user | {user_id} | ok");
+    log::debug!("# | restart_updater_for_user | {user_id} | ok");
 
     Ok(())
 }

@@ -24,7 +24,7 @@ pub async fn run_listener_for_changes(
     fronter_receiver: LatestReceiver<Vec<plurality::Fronter>>,
 ) -> () {
     let user_id = &config.user_id;
-    log::info!("# | updater run_loop | {user_id}");
+    log::debug!("# | updater run_loop | {user_id}");
 
     let mut fronter_receiver = fronter_receiver;
 
@@ -51,7 +51,7 @@ pub async fn run_listener_for_changes(
     );
 
     while let Some(fronters) = fronter_receiver.recv().await {
-        log::info!(
+        log::debug!(
             "# | updater processing change | {} | ======================= UTC {}",
             config.user_id,
             clock::now().format("%Y-%m-%d %H:%M:%S")
@@ -72,7 +72,7 @@ pub async fn run_listener_for_changes(
             &config,
         );
 
-        log::info!(
+        log::debug!(
             "# | updater processing change | {user_id} | Waiting for next update trigger...",
         );
         UPDATER_PROCESS_SUCCESS_TOTAL
@@ -80,7 +80,7 @@ pub async fn run_listener_for_changes(
             .inc();
     }
 
-    log::info!("# | updater | {user_id} | end of fronter channel");
+    log::debug!("# | updater | {user_id} | end of fronter channel");
     // this only happens, when the updater is being restarted and the channel was asynchronously closed.
 }
 

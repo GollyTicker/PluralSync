@@ -259,7 +259,7 @@ impl<T: Clone + 'static + Send> FireAndForgetChannel<T, RateLimitedMostRecentSen
             let duration_to_wait = duration_to_wait
                 .to_std()
                 .unwrap_or_else(|_| time::Duration::from_secs(1)); // this error shouldn't happen
-            log::info!(
+            log::debug!(
                 "{log_name}: FireAndForgetChannel with RateLimitedMostRecentSend: Waiting to push send after '{duration_to_wait:?}' (count = {count})"
             );
             tokio::time::sleep(duration_to_wait).await;
@@ -270,7 +270,7 @@ impl<T: Clone + 'static + Send> FireAndForgetChannel<T, RateLimitedMostRecentSen
                         x.most_recent_sent_value = Some(value_to_be_pushed.clone());
                         x.scheduled_sender.take();
                         let _ = self2.inner.send(value_to_be_pushed).unwrap_or_default();
-                        log::info!(
+                        log::debug!(
                             "{log_name}: FireAndForgetChannel with RateLimitedMostRecentSend: New value sent."
                         );
                     }

@@ -86,7 +86,7 @@ pub fn render_fronts_to_discord_rich_presence(
         button_url: None,   // future: link to fronting web url
     };
 
-    log::info!(
+    log::debug!(
         "# | render_fronts_to_discord_rich_presence | {} | {:?} | {:?} | {:?}",
         config.user_id,
         &rich_presence.details,

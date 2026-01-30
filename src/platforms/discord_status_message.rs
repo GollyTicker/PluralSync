@@ -66,7 +66,7 @@ async fn set_discord_status(
     config: &users::UserConfigForUpdater,
     status_string: String,
 ) -> Result<()> {
-    log::info!(
+    log::debug!(
         "# | set_discord_status | {} | {status_string}",
         config.user_id
     );
@@ -103,7 +103,7 @@ async fn set_discord_status(
         );
     })?;
 
-    log::info!(
+    log::debug!(
         "# | set_discord_status | {} | {status_string} | result {result_user:?}",
         config.user_id
     );

@@ -47,7 +47,7 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fr
     let fronters = filter_frontables_by_front_entries(front_entries, frontables);
 
     for f in &fronters {
-        log::info!("# | fetch_fronts | {user_id} | fronter[*] {f:?}");
+        log::debug!("# | fetch_fronts | {user_id} | fronter[*] {f:?}");
     }
 
     SIMPLY_PLURAL_FETCH_FRONTS_FRONTERS_COUNT
@@ -183,7 +183,7 @@ fn filter_frontables_by_front_entries(
 async fn simply_plural_http_request_get_fronters(
     config: &users::UserConfigForUpdater,
 ) -> Result<Vec<FrontEntry>> {
-    log::info!(
+    log::debug!(
         "# | simply_plural_http_request_get_fronters | {}",
         config.user_id
     );
@@ -215,7 +215,7 @@ async fn get_vrchat_status_name_field_id(
     config: &users::UserConfigForUpdater,
     system_id: &String,
 ) -> Result<Option<String>> {
-    log::info!("# | get_vrchat_status_name_field_id | {}", config.user_id);
+    log::debug!("# | get_vrchat_status_name_field_id | {}", config.user_id);
     let custom_fields_url = format!(
         "{}/customFields/{}",
         &config.simply_plural_base_url, system_id
@@ -245,7 +245,7 @@ async fn get_vrchat_status_name_field_id(
 
     let field_id = vrchat_status_name_field.map(|field| &field.id);
 
-    log::info!(
+    log::debug!(
         "# | get_vrchat_status_name_field_id | {} | field_id {:?}",
         config.user_id,
         field_id
@@ -258,7 +258,7 @@ async fn simply_plural_http_get_members(
     config: &users::UserConfigForUpdater,
     system_id: &str,
 ) -> Result<Vec<Member>> {
-    log::info!("# | simply_plural_http_get_members | {}", config.user_id);
+    log::debug!("# | simply_plural_http_get_members | {}", config.user_id);
     let fronts_url = format!("{}/members/{}", &config.simply_plural_base_url, system_id);
     let result = config
         .client
@@ -284,7 +284,7 @@ async fn simply_plural_http_get_custom_fronts(
     config: &users::UserConfigForUpdater,
     system_id: &str,
 ) -> Result<Vec<CustomFront>> {
-    log::info!(
+    log::debug!(
         "# | simply_plural_http_get_custom_fronts | {}",
         config.user_id
     );
@@ -318,7 +318,7 @@ async fn simply_plural_http_request_get_pluralsync_assigned_buckets(
     config: &users::UserConfigForUpdater,
     system_id: &str,
 ) -> Result<HashSet<String>> {
-    log::info!(
+    log::debug!(
         "# | simply_plural_http_request_get_pluralsync_assigned_buckets | {}",
         config.user_id
     );

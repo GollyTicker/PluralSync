@@ -101,7 +101,7 @@ async fn set_vrchat_status(
     user_id: &UserId,
     status_string: &str,
 ) -> Result<()> {
-    log::info!("# | set_vrchat_status | {user_id}");
+    log::debug!("# | set_vrchat_status | {user_id}");
 
     let mut update_request = vrc::UpdateUserRequest::new();
     update_request.status_description = Some(status_string.to_string());
@@ -115,7 +115,7 @@ async fn set_vrchat_status(
     )
     .await
     .inspect(|_| {
-        log::info!("# set_vrchat_status | {user_id} | vrchat_status_updated_to '{status_string}'");
+        log::debug!("# set_vrchat_status | {user_id} | vrchat_status_updated_to '{status_string}'");
     })?;
 
     save_new_cookies_from_vrchat(cookies, user_id, db_pool, application_user_secrets).await?;
@@ -136,7 +136,7 @@ async fn save_new_cookies_from_vrchat(
     })
     .await?;
 
-    log::info!("# save_new_cookies_from_vrchat | {user_id} | saved");
+    log::debug!("# save_new_cookies_from_vrchat | {user_id} | saved");
 
     Ok(())
 }

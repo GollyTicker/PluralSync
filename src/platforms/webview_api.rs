@@ -25,14 +25,14 @@ pub async fn get_api_fronting_status(
 ) -> HttpResult<Json<GenericFrontingStatus>> {
     let user_id = jwt.user_id().map_err(expose_internal_error)?;
 
-    log::info!("# | GET /api/fronting-status/{user_id}");
+    log::debug!("# | GET /api/fronting-status/{user_id}");
 
     let config =
         database::get_user_config_with_secrets(db_pool, &user_id, client, application_user_secrets)
             .await
             .map_err(expose_internal_error)?;
 
-    log::info!("# | GET /api/fronting-status/{user_id} | got_config");
+    log::debug!("# | GET /api/fronting-status/{user_id} | got_config");
 
     let fronters = shared_updaters
         .fronter_channel_get_most_recent_sent_value(&user_id)
@@ -40,7 +40,7 @@ pub async fn get_api_fronting_status(
         .ok_or_else(|| anyhow!("No data from Simply Plural found (2)?"))
         .map_err(expose_internal_error)?;
 
-    log::info!(
+    log::debug!(
         "# | GET /api/fronting-status/{user_id} | got_config | {} fronts",
         fronters.len()
     );
@@ -57,7 +57,7 @@ pub async fn get_api_fronting_status(
 
     let result = GenericFrontingStatus { inner: as_status };
 
-    log::info!(
+    log::debug!(
         "# | GET /api/fronting-status/{user_id} | got_config | {} fronts | rendered to status string",
         fronters.len()
     );
@@ -73,21 +73,21 @@ pub async fn get_api_fronting_by_user_id(
     shared_updaters: &State<updater::UpdaterManager>,
     client: &State<reqwest::Client>,
 ) -> HttpResult<RawHtml<String>> {
-    log::info!("# | GET /fronting/{website_url_name}");
+    log::debug!("# | GET /fronting/{website_url_name}");
 
     let user_info = database::find_user_by_website_url_name(db_pool, website_url_name)
         .await
         .map_err(expose_internal_error)?;
     let user_id = user_info.id;
 
-    log::info!("# | GET /fronting/{website_url_name} | {user_id}");
+    log::debug!("# | GET /fronting/{website_url_name} | {user_id}");
 
     let config =
         database::get_user_config_with_secrets(db_pool, &user_id, client, application_user_secrets)
             .await
             .map_err(expose_internal_error)?;
 
-    log::info!("# | GET /fronting/{website_url_name} | {user_id} | got_config");
+    log::debug!("# | GET /fronting/{website_url_name} | {user_id} | got_config");
 
     let fronts = shared_updaters
         .fronter_channel_get_most_recent_sent_value(&user_id)
@@ -95,14 +95,14 @@ pub async fn get_api_fronting_by_user_id(
         .ok_or_else(|| anyhow!("No data from Simply Plural found?"))
         .map_err(expose_internal_error)?;
 
-    log::info!(
+    log::debug!(
         "# | GET /fronting/{website_url_name} | {user_id} | got_config | {} fronts",
         fronts.len()
     );
 
     let html = generate_html(&config.website_system_name, &fronts);
 
-    log::info!(
+    log::debug!(
         "# | GET /fronting/{website_url_name} | {user_id} | got_config | {} fronts | HTML generated",
         fronts.len()
     );

@@ -49,7 +49,7 @@ where
     F2: Future<Output = Result<()>>,
 {
     loop {
-        log::info!("WS {log_prefix} client starting ...");
+        log::debug!("WS {log_prefix} client starting ...");
         SIMPLY_PLURAL_WEBSOCKET_CONNECTION_ATTEMPTS_TOTAL
             .with_label_values(&[log_prefix])
             .inc();
@@ -77,7 +77,7 @@ where
             RETRY_WAIT_SECONDS
         };
 
-        log::info!("WS {log_prefix} Retrying in {wait_seconds} seconds...");
+        log::debug!("WS {log_prefix} Retrying in {wait_seconds} seconds...");
         tokio::time::sleep(Duration::from_secs(wait_seconds)).await;
     }
 }
@@ -105,7 +105,7 @@ where
             Some(msg) = read.next() => {
                 SIMPLY_PLURAL_WEBSOCKET_MESSAGES_RECEIVED_TOTAL.with_label_values(&[log_prefix]).inc();
                 match msg? {
-                    Message::Text(pong) if pong == "pong" => log::info!("WS Ok Pong."),
+                    Message::Text(pong) if pong == "pong" => log::debug!("WS Ok Pong."),
                     Message::Text(empty_json) if empty_json == "{}" => (),
                     Message::Text(auth_success) if auth_success.contains("Successfully authenticated") => {
                         log::info!("WS {log_prefix} Authenticated.");
@@ -115,7 +115,7 @@ where
                     Message::Text(auth_failure) if auth_failure.contains("Authentication violation") => return Err(anyhow!(SIMPLY_PLURAL_AUTH_FAILURE)),
                     Message::Text(json_string) => {
                         let json_string_truncated = json_string.chars().take(100).collect::<String>();
-                        log::info!("WS {log_prefix} Received payload: '{json_string_truncated}'");
+                        log::debug!("WS {log_prefix} Received payload: '{json_string_truncated}'");
                         if !authenticated {
                             log::warn!("WS {log_prefix} Received message before authentication response: '{json_string}'");
                             SHOULDNT_HAPPEN_BUT_IT_DID
@@ -139,7 +139,7 @@ where
             }
             _ = keep_alive_interval.tick() => {
                 write.send(Message::Text("ping".into())).await?;
-                log::info!("WS {log_prefix} Ping sent.");
+                log::debug!("WS {log_prefix} Ping sent.");
             }
         }
     }
@@ -159,7 +159,7 @@ async fn authenticate(log_prefix: &str, token: &str, write: &mut WriteStream) ->
 }
 
 async fn create_connection(log_prefix: &str, url: &str) -> Result<(WriteStream, ReadStream)> {
-    log::info!("WS {log_prefix} client connecting to WebSocket: {url}");
+    log::debug!("WS {log_prefix} client connecting to WebSocket: {url}");
     let (ws_stream, _) = tokio_tungstenite::connect_async(url).await?;
     let (write, read) = ws_stream.split();
     Ok((write, read))
