@@ -16,11 +16,15 @@ pub const EVERY_5_MINUTES: &str = "*/5 * * * * *";
 const REQUEST_TIMEOUT: u64 = 10;
 
 pub fn logging_init() {
-    env_logger::Builder::from_env(
-        env_logger::Env::default().default_filter_or("info,pluralsync=info,pluralsync_base=debug"),
-    )
-    .format_timestamp_millis()
-    .init();
+    let pluralsync_log_level = env::var("PLURALSYNC_LOG_LEVEL").unwrap_or_else(|_| "info".to_owned());
+    let log_levels = format!(
+        "info,pluralsync={},pluralsync_base=debug",
+        pluralsync_log_level
+    );
+    println!("Using log levels: {}", log_levels);
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_levels))
+        .format_timestamp_millis()
+        .init();
 }
 
 pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<ApplicationSetup> {

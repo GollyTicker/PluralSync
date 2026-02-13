@@ -1,6 +1,6 @@
 Thank you for using PluralSync ❤️
 This is free software under the copyleft GNU Affero General Public License.
-PluralSync © 2025 by Ayake / GollyTicker
+PluralSync © 2025-2026 by Ayake / GollyTicker
 License: https://github.com/GollyTicker/PluralSync/blob/main/COPYING
 Please support us at https://ko-fi.com/ayake_ayake
 Feedback, discussions, bugs, etc on Discord: https://discord.gg/nHmNKxbv8v
