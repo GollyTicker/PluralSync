@@ -8,6 +8,10 @@
       <br />
       At any point, you can remove your login information from here by disabling the corresponding
       updater, emptying the field and saving the changes.
+      <br />
+      Stuck with something and still not working despite having re-read the info again and looked exactly? Join the discord server and feel free to ask the community for help. (Link in the footer of this website)
+      <br />
+      Due to the early nature of this service, we don't have password reset and account deletion implemented yet. To reset your password, join the discord server and simply ask and we'll do that shortly.
     </p>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
       <button type="submit">Save and Restart</button>
@@ -201,6 +205,11 @@
               Let PluralSync display your fronting status (avatars included) as a webpage. Others
               can simply open the link and see the current fronters without needing to be logged in
               in any of the other platforms.
+              <br />
+              Note: Not all images are created equally. Some platforms hosting images don't allow you to embed the image onto all websites, but
+              only to specific websites or their own. Most notably, if you uploaded an image to SimplyPlural and use that, then PluralSync
+              can't use that. You would need to upload the avatar image or a classic hosting website such as imgur or imgbb and then set that image URL
+              as the avatar URL in SimplyPlural. PluralSync will then use that URL as well and it should work.
             </p>
             <input id="enable_website" type="checkbox" v-model="config.enable_website" />
           </div>
