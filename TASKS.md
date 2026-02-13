@@ -1,5 +1,7 @@
 ## Steps to first public release version
 
+* email verification, account deletion, email changing
+
 * DONE: accounce and get second phase test users by posting about it in more channels
   * DONE: pk server
   * DONE: sp server
