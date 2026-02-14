@@ -16,13 +16,23 @@ This document outlines the steps to implement the password reset functionality.
 *   **File:** `Cargo.toml` (backend)
 *   **Action:** Add `lettre` for SMTP support and `rand` for token generation.
     ```toml
-    lettre = { version = "*", features = ["tokio1", "tokio1-rustls", "rustls-platform-verifier", "sendmail", "dkim"] }
-    rand = "*"
-    ```
+    lettre = { version = "*", default-features = false, features = [
+        "builder",
+        "hostname",
+        "pool",
+        "smtp-transport",
+        "tokio1",
+        "tokio1-rustls",
+        "ring",
+        "rustls-platform-verifier",
+        "smtp-transport",
+        "serde",
+        "dkim",
+    ] }    ```
 
 ### 2. Database Modification (DONE)
 
-*   **File:** `docker/migrations/013_create_password_reset_requests.sql` (Already created)
+*   **File:** `docker/migrations/012_add_password_resets.sql` (Already created)
 *   **Action:** Table `password_reset_requests` to store reset tokens is already created.
 
 ### 3. Backend Changes (Rust)
@@ -43,9 +53,9 @@ This document outlines the steps to implement the password reset functionality.
     *   **Action:** Add a query to update a user's password: `update_user_password(...)`. (DONE)
 
 *   **File:** `src/users/email.rs` (DONE - Function `send_reset_email` is implemented here, not `src/utils/email.rs` as originally noted)
-*   **File:** `src/users/user_api.rs` (Partial - Request structs are added, endpoints are pending)
+*   **File:** `src/users/user_api.rs` (Partial - Request structs are added, endpoints are implemented)
 *   **Action:** Add two new endpoints.
-    *   `post_api_auth_forgot_password` (`POST /api/auth/forgot-password`): (PENDING)
+    *   `post_api_auth_forgot_password` (`POST /api/auth/forgot-password`): (DONE)
         *   **Arguments:** `db: &State<PgPool>`, `smtp_config: &State<SmtpConfig>`, `Json<ForgotPasswordRequest>`
         *   Body: `{ "email": "..." }`
         *   Logic:
@@ -53,7 +63,7 @@ This document outlines the steps to implement the password reset functionality.
             2.  Attempt to get `user_id` by email using `database::get_user_id`.
             3.  If `user_id` is found, hash the token, store the token hash and expiration in `password_reset_requests` table, and asynchronously send the reset email with the unhashed token.
             4.  Always return `200 OK` to prevent email enumeration, regardless of whether the email exists or the email sending was successful.
-    *   `post_api_auth_reset_password` (`POST /api/auth/reset-password`): (PENDING)
+    *   `post_api_auth_reset_password` (`POST /api/auth/reset-password`): (DONE)
         *   **Arguments:** `db: &State<PgPool>`, `Json<ResetPasswordRequest>`
         *   Body: `{ "token": "...", "new_password": "..." }`
         *   Logic:
@@ -64,25 +74,41 @@ This document outlines the steps to implement the password reset functionality.
             5.  Delete the used token from the `password_reset_requests` table using `database::delete_password_reset_request`.
             6.  Return `200 OK`.
 
-*   **File:** `src/main.rs` (PENDING - Requires endpoints to be implemented in `src/users/user_api.rs` before registering routes and managing state)
+*   **File:** `src/main.rs` (DONE)
 *   **Action:** In `run_webserver`, add the `SmtpConfig` to Rocket's managed state: `.manage(setup.smtp_config)`.
 *   **Action:** In `run_webserver`, register the new routes in the `routes!` macro:
-    *   `users::auth_api::post_api_auth_forgot_password`
-    *   `users::auth_api::post_api_auth_reset_password`
+    *   `users::user_api::post_api_auth_forgot_password`
+    *   `users::user_api::post_api_auth_reset_password`
 
 ### 4. Frontend Changes (Vue.js) (PENDING)
 
+This section outlines the steps to implement the password reset functionality in the Vue.js frontend.
+
 *   **File:** `frontend/src/pluralsync_api.ts`
-*   **Action:** Add API functions `forgotPassword(email)` and `resetPassword(token, newPassword)`.
+    *   **Action:** Add a function `forgotPassword(email: string): Promise<void>` that sends a POST request to `/api/auth/forgot-password` with the user's email.
+    *   **Action:** Add a function `resetPassword(token: string, newPassword: string): Promise<void>` that sends a POST request to `/api/auth/reset-password` with the reset token and new password.
 
-*   **File:** `frontend/src/views/ForgotPassword.vue` (Create this file)
-*   **Action:** Create a simple form asking for the user's email address.
+*   **File:** `frontend/src/components/ForgotPassword.vue` (Create this component)
+    *   **Action:** Design a user interface with an input field for the user's email address.
+    *   **Action:** Implement form submission logic to call the `pluralsync_api.forgotPassword` function.
+    *   **Action:** Display appropriate feedback to the user (e.g., success message, error message).
+    *   **Action:** Redirect the user to a confirmation page or login page after successful submission.
 
-*   **File:** `frontend/src/views/ResetPassword.vue` (Create this file)
-*   **Action:** Create a form asking for the new password. The `token` should be extracted from the URL query parameters.
+*   **File:** `frontend/src/components/ResetPassword.vue` (Create this component)
+    *   **Action:** Design a user interface with input fields for the new password and password confirmation.
+    *   **Action:** Extract the `token` from the URL query parameters (`$route.query.token`).
+    *   **Action:** Implement form submission logic to call the `pluralsync_api.resetPassword` function, passing the extracted token and new password.
+    *   **Action:** Handle potential errors, suchs as invalid or expired tokens.
+    *   **Action:** Display appropriate feedback to the user (e.g., success message, error message).
+    *   **Action:** Redirect the user to the login page after successful password reset.
 
-*   **File:** `frontend/src/router.ts`
-*   **Action:** Register the new routes `/forgot-password` and `/reset-password`.
+*   **File:** `frontend/src/router.ts` (Update the main router configuration)
+    *   **Action:** Add a new route for `/forgot-password` that maps to the `ForgotPassword` component.
+    *   **Action:** Add a new route for `/reset-password` with a dynamic parameter (e.g., `:token` or handled via query params) that maps to the `ResetPassword` component.
+    *   **Action:** Ensure proper navigation guards if necessary (e.g., redirecting authenticated users from these pages).
+
+*   **File:** `frontend/src/components/Login.vue` (If applicable, add link to Login component)
+    *   **Action:** Add a "Forgot Password?" link that navigates to the `/forgot-password` route.
 
 ## Email Provider Strategy
 
