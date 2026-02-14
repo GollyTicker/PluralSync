@@ -1,4 +1,5 @@
 use crate::database;
+use crate::metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL};
 use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
 use crate::setup::SmtpConfig;
@@ -174,9 +175,15 @@ pub async fn post_api_auth_reset_password(
     let new_password_hash =
         auth::create_secret_hash(&request.new_password.inner).map_err(expose_internal_error)?;
 
-    database::update_user_password(db_pool, &user_id, &new_password_hash)
-        .await
-        .map_err(expose_internal_error)?;
+    let update_result = database::update_user_password(db_pool, &user_id, &new_password_hash).await;
+
+    if update_result.is_ok() {
+        PASSWORD_RESET_SUCCESS_TOTAL.with_label_values(&["post_api_auth_reset_password"]).inc();
+    } else {
+        PASSWORD_RESET_FAILURE_TOTAL.with_label_values(&["post_api_auth_reset_password"]).inc();
+    }
+
+    update_result.map_err(expose_internal_error)?;
 
     database::delete_password_reset_request(db_pool, &user_id)
         .await

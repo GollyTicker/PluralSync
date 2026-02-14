@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     database::{Decrypted, ValidConstraints, constraints, secrets},
+    metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_REQUESTS_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL},
     setup,
     users::{self, SecretHashString, UserConfigDbEntries, UserId},
 };
@@ -34,6 +35,7 @@ pub async fn create_password_reset_request(
     expires_at: &chrono::DateTime<chrono::Utc>,
 ) -> Result<()> {
     log::debug!("# | db::create_password_reset_request | {user_id}");
+    PASSWORD_RESET_REQUESTS_TOTAL.with_label_values(&["create_password_reset_request"]).inc();
     sqlx::query!(
         "INSERT INTO
         password_reset_requests (user_id, token_hash, expires_at)

@@ -80,7 +80,7 @@ This document outlines the steps to implement the password reset functionality.
     *   `users::user_api::post_api_auth_forgot_password`
     *   `users::user_api::post_api_auth_reset_password`
 
-### 4. Frontend Changes (Vue.js) (PENDING)
+### 4. Frontend Changes (Vue.js) (DONE)
 
 This section outlines the steps to implement the password reset functionality in the Vue.js frontend.
 

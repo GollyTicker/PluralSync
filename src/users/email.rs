@@ -12,7 +12,7 @@ pub async fn send_reset_email(
     token: &PasswordResetToken,
 ) -> Result<()> {
     let reset_link = format!(
-        "{}/api/auth/reset-password?token={}",
+        "{}/reset-password?token={}",
         smtp_config.frontend_base_url, token.inner.inner
     );
     let email_body = format!(

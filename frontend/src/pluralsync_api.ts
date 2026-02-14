@@ -100,4 +100,10 @@ export const pluralsync_api = {
     const response = await http.get<PluralSyncVariantInfo>('/api/meta/pluralsync-variant-info')
     return response.data
   },
+  forgotPassword: async function (email: string): Promise<void> {
+    await http.post('/api/auth/forgot-password', { email })
+  },
+  resetPassword: async function (token: string, newPassword: string): Promise<void> {
+    await http.post('/api/auth/reset-password', { token, new_password: newPassword })
+  },
 }

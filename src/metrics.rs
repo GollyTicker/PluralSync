@@ -63,6 +63,27 @@ metric!(
     &["feature", "status"]
 );
 
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    PASSWORD_RESET_REQUESTS_TOTAL,
+    "password_reset_requests_total",
+    &["type"]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    PASSWORD_RESET_SUCCESS_TOTAL,
+    "password_reset_success_total",
+    &["type"]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    PASSWORD_RESET_FAILURE_TOTAL,
+    "password_reset_failure_total",
+    &["type"]
+);
+
 pub static PROM_METRICS: sync::LazyLock<rocket_prometheus::PrometheusMetrics> =
     sync::LazyLock::new(|| {
         let promtheus_metrics = rocket_prometheus::PrometheusMetrics::new();
@@ -90,7 +111,10 @@ pub static PROM_METRICS: sync::LazyLock<rocket_prometheus::PrometheusMetrics> =
             platforms::PLURALKIT_API_REQUESTS_TOTAL,
             platforms::PLURALKIT_API_RATELIMIT_REMAINING,
             PLURALSYNC_USER_CONFIG_FEATURE,
-            SHOULDNT_HAPPEN_BUT_IT_DID
+            SHOULDNT_HAPPEN_BUT_IT_DID,
+            PASSWORD_RESET_REQUESTS_TOTAL,
+            PASSWORD_RESET_SUCCESS_TOTAL,
+            PASSWORD_RESET_FAILURE_TOTAL
         );
 
         promtheus_metrics
