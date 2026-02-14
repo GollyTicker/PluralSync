@@ -383,7 +383,9 @@ impl UpdaterManager {
         let fronters = plurality::fetch_fronts(&config).await?;
         let fronters_count = fronters.len();
 
-        log::debug!("# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched");
+        log::debug!(
+            "# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched"
+        );
 
         self.fronter_channel
             .lock()
