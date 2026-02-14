@@ -29,12 +29,22 @@ pub struct UserLoginCredentials {
 impl UserLoginCredentials {
     #[must_use]
     pub const fn is_empty_and_thus_invalid(&self) -> bool {
-        self.email.inner.is_empty() || self.password.inner.is_empty()
+        self.email.inner.is_empty() || self.password.inner.inner.is_empty()
     }
 }
 
 #[derive(Serialize, Deserialize, Clone, specta::Type)]
 pub struct UserProvidedPassword {
+    pub inner: Secret,
+}
+
+#[derive(Serialize, Deserialize, Clone, specta::Type)]
+pub struct PasswordResetToken {
+    pub inner: Secret,
+}
+
+#[derive(Serialize, Deserialize, Clone, specta::Type)]
+pub struct Secret {
     pub inner: String,
 }
 

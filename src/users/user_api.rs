@@ -9,7 +9,7 @@ use pluralsync_base::users::Email;
 use pluralsync_base::users::JwtString;
 use pluralsync_base::users::UserLoginCredentials;
 use rocket::http;
-use rocket::{State, serde::json::Json};
+use rocket::{State, get, post, serde::json::Json};
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::PgPool;
@@ -25,7 +25,7 @@ pub async fn post_api_user_register(
         return Err(anyhow!("Email/Passsword cannot be empty.")).map_err(expose_internal_error)?;
     }
 
-    let pwh = auth::create_password_hash(&credentials.password).map_err(expose_internal_error)?;
+    let pwh = auth::create_secret_hash(&credentials.password).map_err(expose_internal_error)?;
 
     let () = database::create_user(db_pool, credentials.email.clone(), pwh)
         .await

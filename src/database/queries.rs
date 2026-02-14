@@ -7,13 +7,13 @@ use uuid::Uuid;
 use crate::{
     database::{Decrypted, ValidConstraints, constraints, secrets},
     setup,
-    users::{self, PasswordHashString, UserConfigDbEntries, UserId},
+    users::{self, SecretHashString, UserConfigDbEntries, UserId},
 };
 
 pub async fn create_user(
     db_pool: &PgPool,
     email: Email,
-    password_hash: users::PasswordHashString,
+    password_hash: users::SecretHashString,
 ) -> Result<()> {
     log::debug!("# | db::create_user | {email}");
     sqlx::query!(
@@ -30,7 +30,7 @@ pub async fn create_user(
 pub async fn create_password_reset_request(
     db_pool: &PgPool,
     user_id: &UserId,
-    token_hash: &PasswordHashString,
+    token_hash: &SecretHashString,
     expires_at: chrono::DateTime<chrono::Utc>,
 ) -> Result<()> {
     log::debug!("# | db::create_password_reset_request | {user_id}");
@@ -51,11 +51,12 @@ pub async fn create_password_reset_request(
 pub async fn verify_password_reset_request_matches(
     db_pool: &PgPool,
     user_id: &UserId,
-    token_hash: &PasswordHashString,
-) -> Result<Option<()>> {
+    token_hash: &SecretHashString,
+) -> Result<UserId> {
     log::debug!("# | db::verify_reset_token | {user_id}");
-    let record = sqlx::query!(
-        "SELECT user_id
+    sqlx::query_as!(
+        UserId,
+        "SELECT user_id as inner
         FROM password_reset_requests
         WHERE user_id = $1
             AND token_hash = $2
@@ -63,12 +64,9 @@ pub async fn verify_password_reset_request_matches(
         user_id.inner,
         token_hash.inner
     )
-    .fetch_optional(db_pool)
-    .await
-    .map(|opt| opt.map(|_| ()))
-    .map_err(|e| anyhow!(e))?;
-
-    Ok(record)
+        .fetch_one(db_pool)
+        .await
+        .map_err(|e| anyhow!(e))
 }
 
 pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
@@ -87,7 +85,7 @@ pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -
 pub async fn update_user_password(
     db_pool: &PgPool,
     user_id: Uuid,
-    password_hash: users::PasswordHashString,
+    password_hash: users::SecretHashString,
 ) -> Result<()> {
     log::debug!("# | db::update_user_password | {user_id}");
     sqlx::query!(
@@ -384,6 +382,6 @@ fn compute_user_secrets_key(
 pub struct UserInfo {
     pub id: UserId,
     pub email: Email,
-    pub password_hash: users::PasswordHashString,
+    pub password_hash: users::SecretHashString,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }

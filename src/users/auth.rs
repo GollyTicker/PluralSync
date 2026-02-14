@@ -4,31 +4,41 @@ use argon2::{
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
 
-use pluralsync_base::users::{JwtString, UserProvidedPassword};
+use pluralsync_base::users::{JwtString, Secret, UserProvidedPassword};
+use rand::{Rng, distr, prelude::ThreadRng};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
 use crate::{database, users::jwt};
 
 #[derive(Debug, Serialize, Deserialize, FromRow, sqlx::Type)]
-pub struct PasswordHashString {
+pub struct SecretHashString {
     pub inner: String,
 }
-impl From<String> for PasswordHashString {
+impl From<String> for SecretHashString {
     fn from(val: String) -> Self {
         Self { inner: val }
     }
 }
 
-pub fn create_password_hash(password: &UserProvidedPassword) -> Result<PasswordHashString> {
+pub fn generate_secret() -> Secret {
+    let secret = ThreadRng::default()
+        .sample_iter(distr::Alphanumeric)
+        .take(32)
+        .map(char::from)
+        .collect();
+    Secret { inner: secret }
+}
+
+pub fn create_secret_hash(secret: &UserProvidedPassword) -> Result<SecretHashString> {
     // don't allow external user to infer what exactly failed
     let salt = SaltString::generate(&mut OsRng);
 
     let pwh = Argon2::default()
-        .hash_password(password.inner.as_bytes(), &salt)
+        .hash_password(secret.inner.inner.as_bytes(), &salt)
         .map_err(|_| anyhow!("Registration failed"))?;
 
-    Ok(PasswordHashString {
+    Ok(SecretHashString {
         inner: pwh.to_string(),
     })
 }
@@ -44,7 +54,7 @@ pub fn verify_password_and_create_token(
         .map_err(|_| anyhow!("Invalid email/password"))?;
 
     Argon2::default()
-        .verify_password(password.inner.as_bytes(), &pwh)
+        .verify_password(password.inner.inner.as_bytes(), &pwh)
         .map_err(|_| anyhow!("Invalid email/password"))?;
 
     let token = jwt::create_token(&user_info.id, jwt_secret)

@@ -1,0 +1,23 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT user_id as inner\n        FROM password_reset_requests\n        WHERE user_id = $1\n            AND token_hash = $2\n            AND expires_at > NOW()",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "inner",
+        "type_info": "Uuid"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "bac909cd6d1c428f7f673f98028c6b9dd8bf850f6b1dfd8dcd1faaa8f41a475b"
+}
