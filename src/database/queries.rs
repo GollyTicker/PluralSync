@@ -13,7 +13,7 @@ use crate::{
 pub async fn create_user(
     db_pool: &PgPool,
     email: Email,
-    password_hash: users::SecretHashString,
+    password_hash: SecretHashString,
 ) -> Result<()> {
     log::debug!("# | db::create_user | {email}");
     sqlx::query!(
@@ -31,7 +31,7 @@ pub async fn create_password_reset_request(
     db_pool: &PgPool,
     user_id: &UserId,
     token_hash: &SecretHashString,
-    expires_at: chrono::DateTime<chrono::Utc>,
+    expires_at: &chrono::DateTime<chrono::Utc>,
 ) -> Result<()> {
     log::debug!("# | db::create_password_reset_request | {user_id}");
     sqlx::query!(
@@ -50,23 +50,20 @@ pub async fn create_password_reset_request(
 
 pub async fn verify_password_reset_request_matches(
     db_pool: &PgPool,
-    user_id: &UserId,
     token_hash: &SecretHashString,
 ) -> Result<UserId> {
-    log::debug!("# | db::verify_reset_token | {user_id}");
+    log::debug!("# | db::verify_reset_token | {token_hash}");
     sqlx::query_as!(
         UserId,
         "SELECT user_id as inner
         FROM password_reset_requests
-        WHERE user_id = $1
-            AND token_hash = $2
+        WHERE token_hash = $1
             AND expires_at > NOW()",
-        user_id.inner,
         token_hash.inner
     )
-        .fetch_one(db_pool)
-        .await
-        .map_err(|e| anyhow!(e))
+    .fetch_one(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))
 }
 
 pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
@@ -84,14 +81,14 @@ pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -
 
 pub async fn update_user_password(
     db_pool: &PgPool,
-    user_id: Uuid,
-    password_hash: users::SecretHashString,
+    user_id: &UserId,
+    password_hash: &SecretHashString,
 ) -> Result<()> {
     log::debug!("# | db::update_user_password | {user_id}");
     sqlx::query!(
         "UPDATE users SET password_hash = $1 WHERE id = $2",
         password_hash.inner,
-        user_id
+        user_id.inner
     )
     .execute(db_pool)
     .await
@@ -382,6 +379,6 @@ fn compute_user_secrets_key(
 pub struct UserInfo {
     pub id: UserId,
     pub email: Email,
-    pub password_hash: users::SecretHashString,
+    pub password_hash: SecretHashString,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }

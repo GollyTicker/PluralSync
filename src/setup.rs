@@ -97,6 +97,7 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         username: cli_args.smtp_username.clone(),
         password: cli_args.smtp_password.clone(),
         from_email: cli_args.smtp_from_email.clone(),
+        frontend_base_url: cli_args.frontend_base_url.clone(),
     };
 
     Ok(ApplicationSetup {
@@ -127,6 +128,7 @@ pub struct SmtpConfig {
     pub username: String,
     pub password: String,
     pub from_email: String,
+    pub frontend_base_url: String,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -144,6 +146,7 @@ pub struct ApplicationConfig {
     pub smtp_username: String,
     pub smtp_password: String,
     pub smtp_from_email: String,
+    pub frontend_base_url: String,
 }
 
 impl ApplicationConfig {
@@ -170,6 +173,7 @@ impl ApplicationConfig {
             smtp_username: env::var("SMTP_USERNAME")?,
             smtp_password: env::var("SMTP_PASSWORD")?,
             smtp_from_email: env::var("SMTP_FROM_EMAIL")?,
+            frontend_base_url: env::var("FRONTEND_BASE_URL")?,
         })
     }
 }

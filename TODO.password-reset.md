@@ -22,16 +22,8 @@ This document outlines the steps to implement the password reset functionality.
 
 ### 2. Database Modification (DONE)
 
-*   **File:** `docker/migrations/013_create_password_resets.sql` (Create this file)
-*   **Action:** Create a table to store reset tokens.
-*   **SQL:**
-    ```sql
-    CREATE TABLE password_resets (
-        token TEXT PRIMARY KEY,
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        expires_at TIMESTAMPTZ NOT NULL
-    );
-    ```
+*   **File:** `docker/migrations/013_create_password_reset_requests.sql` (Already created)
+*   **Action:** Table `password_reset_requests` to store reset tokens is already created.
 
 ### 3. Backend Changes (Rust)
 
@@ -41,34 +33,36 @@ This document outlines the steps to implement the password reset functionality.
     *   **Action:** Add `pub smtp_config: SmtpConfig` to the `ApplicationSetup` struct.
     *   **Action:** In `application_setup`, create an instance of `SmtpConfig` from `ApplicationConfig` and include it in the returned `ApplicationSetup`.
 
-*   **File:** `src/database/queries.rs` (DONE - `get_user_id` will be used directly, and its `Result` will be handled in `post_api_auth_forgot_password` where an `Err` will be treated as "user not found" for email enumeration prevention.)
+*   **File:** `src/database/queries.rs` (DONE)
     *   **Action:** Add a query to find a user by their email address: `get_user_by_email(...) -> Result<Option<User>>`.
-        *   **STATUS:** Existing `database::get_user_id` returns `Result<UserId>` and errors if not found, which conflicts with the requirement for `post_api_auth_forgot_password` to always return `200 OK` (to prevent email enumeration). This needs to be resolved before proceeding with `post_api_auth_forgot_password`.
+        *   **STATUS:** The `database::get_user_id` function is currently used. It returns `Result<UserId>` and errors if not found. For `post_api_auth_forgot_password`, this error is caught and handled internally to always return `200 OK` (to prevent email enumeration), thus achieving the desired outcome without a `get_user_by_email` returning `Option<User>`.
     *   **Action:** Add queries to manage password reset tokens: (DONE)
-        *   `create_reset_token(...)`: Insert a new token with an expiration time (e.g., 1 hour).
-        *   `verify_reset_token(...) -> Result<Option<Uuid>>`: Find a valid, non-expired token and return the `user_id`.
-        *   `delete_reset_token(...)`: Remove a token after use.
+        *   `create_reset_token(...)`: Implemented as `create_password_reset_request(...)`. Inserts a new token hash with an expiration time.
+        *   `verify_reset_token(...) -> Result<Option<Uuid>>`: Implemented as `verify_password_reset_request_matches(...)`. Finds a valid, non-expired token hash and returns the `user_id`.
+        *   `delete_reset_token(...)`: Implemented as `delete_password_reset_request(...)`. Removes a token after use.
     *   **Action:** Add a query to update a user's password: `update_user_password(...)`. (DONE)
 
 *   **File:** `src/users/email.rs` (DONE - Function `send_reset_email` is implemented here, not `src/utils/email.rs` as originally noted)
-*   **File:** `src/users/user_api.rs` (Partial - Imports and request structs are added, endpoints are pending)
+*   **File:** `src/users/user_api.rs` (Partial - Request structs are added, endpoints are pending)
 *   **Action:** Add two new endpoints.
     *   `post_api_auth_forgot_password` (`POST /api/auth/forgot-password`): (PENDING)
-        *   **Arguments:** `db: &State<PgPool>`, `smtp_config: &State<SmtpConfig>`, `Json<...>`
+        *   **Arguments:** `db: &State<PgPool>`, `smtp_config: &State<SmtpConfig>`, `Json<ForgotPasswordRequest>`
         *   Body: `{ "email": "..." }`
         *   Logic:
-            1.  Generate a secure random token using `rand`.
-            2.  Look up user by email using `database::get_user_id`. If `Ok(user_id)` is returned, create and store the token in the DB and asynchronously send the reset email. If `Err(...)` is returned, treat it as user not found and proceed as if an email was sent.
-            3.  Always return `200 OK` to prevent email enumeration.
-    *   `post_api_auth_reset_password` (`POST /api/auth/reset-password`): (PENDING - Requires `get_user_by_email` resolution for token verification)
-        *   **Arguments:** `db: &State<PgPool>`, `Json<...>`
+            1.  Generate a secure random token.
+            2.  Attempt to get `user_id` by email using `database::get_user_id`.
+            3.  If `user_id` is found, hash the token, store the token hash and expiration in `password_reset_requests` table, and asynchronously send the reset email with the unhashed token.
+            4.  Always return `200 OK` to prevent email enumeration, regardless of whether the email exists or the email sending was successful.
+    *   `post_api_auth_reset_password` (`POST /api/auth/reset-password`): (PENDING)
+        *   **Arguments:** `db: &State<PgPool>`, `Json<ResetPasswordRequest>`
         *   Body: `{ "token": "...", "new_password": "..." }`
         *   Logic:
-            1.  Verify token is valid and not expired. Return `400 Bad Request` if not.
-            2.  Hash the new password using the existing password utility.
-            3.  Update the user's password in the `users` table.
-            4.  Delete the used token from the `password_resets` table.
-            5.  Return `200 OK`.
+            1.  Hash the provided token.
+            2.  Verify the hashed token against `password_reset_requests` table using `database::verify_password_reset_request_matches`. If invalid or expired, return `400 Bad Request`.
+            3.  Hash the `new_password`.
+            4.  Update the user's password in the `users` table using `database::update_user_password`.
+            5.  Delete the used token from the `password_reset_requests` table using `database::delete_password_reset_request`.
+            6.  Return `200 OK`.
 
 *   **File:** `src/main.rs` (PENDING - Requires endpoints to be implemented in `src/users/user_api.rs` before registering routes and managing state)
 *   **Action:** In `run_webserver`, add the `SmtpConfig` to Rocket's managed state: `.manage(setup.smtp_config)`.

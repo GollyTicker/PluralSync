@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use anyhow::{Result, anyhow};
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
@@ -21,6 +23,13 @@ impl From<String> for SecretHashString {
     }
 }
 
+impl Display for SecretHashString {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s: String = self.inner.chars().take(3).collect();
+        write!(f, "SecretHashString({s}...)")
+    }
+}
+
 pub fn generate_secret() -> Secret {
     let secret = ThreadRng::default()
         .sample_iter(distr::Alphanumeric)
@@ -30,12 +39,12 @@ pub fn generate_secret() -> Secret {
     Secret { inner: secret }
 }
 
-pub fn create_secret_hash(secret: &UserProvidedPassword) -> Result<SecretHashString> {
+pub fn create_secret_hash(secret: &Secret) -> Result<SecretHashString> {
     // don't allow external user to infer what exactly failed
     let salt = SaltString::generate(&mut OsRng);
 
     let pwh = Argon2::default()
-        .hash_password(secret.inner.inner.as_bytes(), &salt)
+        .hash_password(secret.inner.as_bytes(), &salt)
         .map_err(|_| anyhow!("Registration failed"))?;
 
     Ok(SecretHashString {

@@ -1,16 +1,20 @@
 use crate::setup;
+use anyhow::Result;
 use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
     transport::smtp::authentication::Credentials,
 };
+use pluralsync_base::users::{Email, PasswordResetToken};
 
 pub async fn send_reset_email(
     smtp_config: &setup::SmtpConfig,
-    frontend_url: &str,
-    to: &str,
-    token: &str,
-) -> Result<(), anyhow::Error> {
-    let reset_link = format!("{frontend_url}/reset-password?token={token}");
+    to: &Email,
+    token: &PasswordResetToken,
+) -> Result<()> {
+    let reset_link = format!(
+        "{}/api/auth/reset-password?token={}",
+        smtp_config.frontend_base_url, token.inner.inner
+    );
     let email_body = format!(
         "Hello,\n\n\
         You have requested to reset your password. Please click the link below to reset it:\n\n\
@@ -21,7 +25,7 @@ pub async fn send_reset_email(
 
     let email = Message::builder()
         .from(smtp_config.from_email.parse()?)
-        .to(to.parse()?)
+        .to(to.inner.parse()?)
         .subject("Password Reset Request")
         .header(ContentType::TEXT_PLAIN)
         .body(email_body)?;
