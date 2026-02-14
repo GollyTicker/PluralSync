@@ -2,6 +2,7 @@ mod auth;
 mod config;
 pub mod config_api;
 mod config_macro;
+mod email;
 mod jwt;
 mod model;
 pub mod user_api;

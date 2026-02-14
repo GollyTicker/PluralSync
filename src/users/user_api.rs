@@ -117,3 +117,14 @@ impl From<database::UserInfo> for UserInfoUI {
         }
     }
 }
+
+#[derive(Debug, Deserialize)]
+pub struct ForgotPasswordRequest {
+    pub email: Email,
+}
+
+#[derive(Deserialize)]
+pub struct ResetPasswordRequest {
+    pub token: String,
+    pub new_password: pluralsync_base::users::UserProvidedPassword,
+}

@@ -16,12 +16,10 @@ pub const EVERY_5_MINUTES: &str = "*/5 * * * * *";
 const REQUEST_TIMEOUT: u64 = 10;
 
 pub fn logging_init() {
-    let pluralsync_log_level = env::var("PLURALSYNC_LOG_LEVEL").unwrap_or_else(|_| "info".to_owned());
-    let log_levels = format!(
-        "info,pluralsync={},pluralsync_base=debug",
-        pluralsync_log_level
-    );
-    println!("Using log levels: {}", log_levels);
+    let pluralsync_log_level =
+        env::var("PLURALSYNC_LOG_LEVEL").unwrap_or_else(|_| "info".to_owned());
+    let log_levels = format!("info,pluralsync={pluralsync_log_level},pluralsync_base=debug");
+    println!("Using log levels: {log_levels}");
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or(log_levels))
         .format_timestamp_millis()
         .init();
@@ -93,6 +91,14 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         "# | application_setup | client_created | basic_info_and_secrets | cors_configured | db_connection_created | db_migrated"
     );
 
+    let smtp_config = SmtpConfig {
+        host: cli_args.smtp_host.clone(),
+        port: cli_args.smtp_port,
+        username: cli_args.smtp_username.clone(),
+        password: cli_args.smtp_password.clone(),
+        from_email: cli_args.smtp_from_email.clone(),
+    };
+
     Ok(ApplicationSetup {
         db_pool,
         client,
@@ -101,6 +107,7 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         application_user_secrets,
         shared_updaters,
         cors_policy,
+        smtp_config,
     })
 }
 
@@ -113,6 +120,15 @@ pub fn make_client() -> Result<reqwest::Client> {
     Ok(client)
 }
 
+#[derive(Debug, Clone)]
+pub struct SmtpConfig {
+    pub host: String,
+    pub port: u16,
+    pub username: String,
+    pub password: String,
+    pub from_email: String,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct ApplicationConfig {
     pub database_url: String,
@@ -123,6 +139,11 @@ pub struct ApplicationConfig {
     pub jwt_application_secret: String,
     pub application_user_secrets: String,
     pub discord_status_message_updater_available: bool,
+    pub smtp_host: String,
+    pub smtp_port: u16,
+    pub smtp_username: String,
+    pub smtp_password: String,
+    pub smtp_from_email: String,
 }
 
 impl ApplicationConfig {
@@ -144,6 +165,11 @@ impl ApplicationConfig {
             )
             .unwrap_or_else(|_| "false".to_string())
             .parse()?,
+            smtp_host: env::var("SMTP_HOST")?,
+            smtp_port: env::var("SMTP_PORT")?.parse()?,
+            smtp_username: env::var("SMTP_USERNAME")?,
+            smtp_password: env::var("SMTP_PASSWORD")?,
+            smtp_from_email: env::var("SMTP_FROM_EMAIL")?,
         })
     }
 }
@@ -157,6 +183,7 @@ pub struct ApplicationSetup {
     pub application_user_secrets: database::ApplicationUserSecrets,
     pub shared_updaters: updater::UpdaterManager,
     pub cors_policy: rocket_cors::Cors,
+    pub smtp_config: SmtpConfig,
 }
 
 /* Yes, this signature is daunting, but essentially it's just taking a task: Fn(PgPool) -> Future<Result<()>>.

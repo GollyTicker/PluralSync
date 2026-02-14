@@ -73,6 +73,7 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
         .manage(setup.client)
         .manage(setup.shared_updaters)
         .manage(setup.pluralsync_variant_info)
+        .manage(setup.smtp_config)
         .attach(metrics::PROM_METRICS.clone())
         .attach(setup.cors_policy)
         .mount(

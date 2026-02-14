@@ -2,11 +2,12 @@ use anyhow::{Result, anyhow};
 use pluralsync_base::users::Email;
 use sha2::{Digest, Sha256};
 use sqlx::{FromRow, PgPool};
+use uuid::Uuid;
 
 use crate::{
     database::{Decrypted, ValidConstraints, constraints, secrets},
     setup,
-    users::{self, UserConfigDbEntries, UserId},
+    users::{self, PasswordHashString, UserConfigDbEntries, UserId},
 };
 
 pub async fn create_user(
@@ -19,6 +20,80 @@ pub async fn create_user(
         "INSERT INTO users (email, password_hash) VALUES ($1, $2)",
         email.inner,
         password_hash.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+pub async fn create_password_reset_request(
+    db_pool: &PgPool,
+    user_id: &UserId,
+    token_hash: &PasswordHashString,
+    expires_at: chrono::DateTime<chrono::Utc>,
+) -> Result<()> {
+    log::debug!("# | db::create_password_reset_request | {user_id}");
+    sqlx::query!(
+        "INSERT INTO
+        password_reset_requests (user_id, token_hash, expires_at)
+        VALUES ($1, $2, $3)",
+        user_id.inner,
+        token_hash.inner,
+        expires_at
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+pub async fn verify_password_reset_request_matches(
+    db_pool: &PgPool,
+    user_id: &UserId,
+    token_hash: &PasswordHashString,
+) -> Result<Option<()>> {
+    log::debug!("# | db::verify_reset_token | {user_id}");
+    let record = sqlx::query!(
+        "SELECT user_id
+        FROM password_reset_requests
+        WHERE user_id = $1
+            AND token_hash = $2
+            AND expires_at > NOW()",
+        user_id.inner,
+        token_hash.inner
+    )
+    .fetch_optional(db_pool)
+    .await
+    .map(|opt| opt.map(|_| ()))
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(record)
+}
+
+pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
+    log::debug!("# | db::delete_password_reset_request | {user_id}");
+    sqlx::query!(
+        "DELETE FROM password_reset_requests
+        WHERE user_id = $1",
+        user_id.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+pub async fn update_user_password(
+    db_pool: &PgPool,
+    user_id: Uuid,
+    password_hash: users::PasswordHashString,
+) -> Result<()> {
+    log::debug!("# | db::update_user_password | {user_id}");
+    sqlx::query!(
+        "UPDATE users SET password_hash = $1 WHERE id = $2",
+        password_hash.inner,
+        user_id
     )
     .execute(db_pool)
     .await
