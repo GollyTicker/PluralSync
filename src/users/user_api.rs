@@ -1,7 +1,7 @@
 use crate::database;
-use crate::metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL};
 use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
+use crate::metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL};
 use crate::setup::SmtpConfig;
 use crate::users::auth;
 use crate::users::email;
@@ -167,10 +167,7 @@ pub async fn post_api_auth_reset_password(
             )
         })?;
 
-    log::debug!(
-        "# | POST /api/auth/reset-password | Verified password reset request {}",
-        user_id
-    );
+    log::debug!("# | POST /api/auth/reset-password | Verified password reset request {user_id}");
 
     let new_password_hash =
         auth::create_secret_hash(&request.new_password.inner).map_err(expose_internal_error)?;
@@ -178,9 +175,13 @@ pub async fn post_api_auth_reset_password(
     let update_result = database::update_user_password(db_pool, &user_id, &new_password_hash).await;
 
     if update_result.is_ok() {
-        PASSWORD_RESET_SUCCESS_TOTAL.with_label_values(&["post_api_auth_reset_password"]).inc();
+        PASSWORD_RESET_SUCCESS_TOTAL
+            .with_label_values(&["post_api_auth_reset_password"])
+            .inc();
     } else {
-        PASSWORD_RESET_FAILURE_TOTAL.with_label_values(&["post_api_auth_reset_password"]).inc();
+        PASSWORD_RESET_FAILURE_TOTAL
+            .with_label_values(&["post_api_auth_reset_password"])
+            .inc();
     }
 
     update_result.map_err(expose_internal_error)?;
@@ -190,8 +191,7 @@ pub async fn post_api_auth_reset_password(
         .map_err(expose_internal_error)?;
 
     log::info!(
-        "# | POST /api/auth/reset-password | Verified password reset request {} | Password reset success",
-        user_id,
+        "# | POST /api/auth/reset-password | Verified password reset request {user_id} | Password reset success",
     );
 
     Ok(())

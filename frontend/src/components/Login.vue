@@ -11,7 +11,9 @@
         <input type="password" id="password" v-model="password" autocomplete="password" />
       </div>
       <p class="forgot-password-link-container">
-        <router-link to="/forgot-password" class="forgot-password-link">Forgot Password?</router-link>
+        <router-link to="/forgot-password" class="forgot-password-link"
+          >Forgot Password?</router-link
+        >
       </p>
       <button type="submit">Login</button>
       <button @click="register" type="button" class="register-button">Register</button>

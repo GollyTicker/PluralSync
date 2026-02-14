@@ -1,6 +1,8 @@
 ## Steps to first public release version
 
 * email verification, account deletion, email changing
+  * implementation done
+  * test locally with frontend and also on dev-online, then publish
 
 * DONE: accounce and get second phase test users by posting about it in more channels
   * DONE: pk server

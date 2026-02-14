@@ -1,11 +1,10 @@
 <template>
   <div class="forgot-password-container">
     <h1>Forgot Password</h1>
-    <p v-if="!submitted">
-      Enter your email address and to receive a link to reset your password.
-    </p>
+    <p v-if="!submitted">Enter your email address and to receive a link to reset your password.</p>
     <p v-if="submitted" class="status-message success-message">
-      If an account with that email exists, a password reset link has been sent and will arrive within minutes.
+      If an account with that email exists, a password reset link has been sent and will arrive
+      within minutes.
       <br />Please check your inbox and also check the spam/junk folder.
     </p>
     <form @submit.prevent="handleSubmit" v-if="!submitted" class="forgot-password-form">
@@ -19,7 +18,7 @@
       <p v-if="error" class="status-message error-message">{{ error }}</p>
     </form>
     <p class="back-to-login">
-    <router-link to="/login">Back to login</router-link>
+      <router-link to="/login">Back to login</router-link>
     </p>
   </div>
 </template>
@@ -89,7 +88,7 @@ label {
   color: var(--color-text);
 }
 
-input[type="email"] {
+input[type='email'] {
   width: 100%;
   padding: 0.8rem;
   border: 1px solid var(--color-border);

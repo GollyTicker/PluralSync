@@ -1,5 +1,5 @@
 export type Email = { inner: string };
-export type UserProvidedPassword = { inner: string };
+export type UserProvidedPassword = { inner: Secret };
 export type UserLoginCredentials = { email: Email; password: UserProvidedPassword };
 export type Decrypted = { secret: string };
 export type PluralSyncVariantInfo = { version: string; variant: string; description: string | null; show_in_ui: boolean };
