@@ -17,6 +17,19 @@ name = "pluralsync-global-manager"
 path = "src/bin/pluralsync-global-manager.rs"
 
 [dependencies]
+lettre = { version = "*", default-features = false, features = [
+    "builder",
+    "hostname",
+    "pool",
+    "smtp-transport",
+    "tokio1",
+    "tokio1-rustls",
+    "ring",
+    "rustls-platform-verifier",
+    "smtp-transport",
+    "serde",
+    "dkim",
+] }
 pluralsync-base = { path = "base-src" }
 chrono = { version = "*", features = ["serde"] }
 either = "*"
