@@ -32,7 +32,7 @@ pub async fn send_reset_email(
 
     let creds = Credentials::new(smtp_config.username.clone(), smtp_config.password.clone());
 
-    let mailer = AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_config.host)?
+    let mailer = AsyncSmtpTransport::<Tokio1Executor>::starttls_relay(&smtp_config.host)?
         .credentials(creds)
         .port(smtp_config.port)
         .build();
