@@ -42,7 +42,7 @@ const login = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: { inner: password.value } }
+    password: { inner: { inner: password.value } },
   } as UserLoginCredentials
 
   try {
@@ -63,7 +63,7 @@ const register = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: { inner: password.value } }
+    password: { inner: { inner: password.value } },
   } as UserLoginCredentials
 
   try {
@@ -78,7 +78,7 @@ const register = async () => {
 </script>
 
 <style scoped>
-@import url("../assets/message.css");
+@import url('../assets/message.css');
 
 .login-container {
   display: flex;

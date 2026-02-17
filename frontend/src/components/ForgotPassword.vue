@@ -47,7 +47,7 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-@import url("../assets/message.css");
+@import url('../assets/message.css');
 
 .forgot-password-container {
   display: flex;

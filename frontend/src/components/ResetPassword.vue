@@ -62,7 +62,7 @@ const handleSubmit = async () => {
   try {
     await pluralsync_api.resetPassword({
       token: { inner: { inner: token.value } },
-      new_password: { inner: { inner: newPassword.value } }
+      new_password: { inner: { inner: newPassword.value } },
     })
     submitted.value = true
   } catch (err: any) {
@@ -74,7 +74,7 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
-@import url("../assets/message.css");
+@import url('../assets/message.css');
 
 .reset-password-container {
   display: flex;
