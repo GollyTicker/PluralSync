@@ -9,6 +9,8 @@
       At any point, you can remove your login information from here by disabling the corresponding
       updater, emptying the field and saving the changes.
       <br />
+      You can change your password by clicking on "Forgot Password?" on the login page.
+      <br />
       Stuck with something and still not working despite having re-read the info again and looked
       exactly? Join the discord server and feel free to ask the community for help. (Link in the
       footer of this website)
