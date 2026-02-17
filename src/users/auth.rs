@@ -57,7 +57,7 @@ pub fn create_secret_hash(secret: &Secret, options: SecretHashOptions) -> Result
 
             SaltString::from_b64(encoded_salt.as_str())
                 .inspect_err(|e| log::warn!("base64 encoded salt is not valid or has invalid length: {e}"))
-                .map_err(|e| anyhow!("Failed to create SaltString from encoded salt: {e}"))
+                .map_err(|e| anyhow!("Failed to create SaltString from encoded salt."))
         })
         .transpose()?
         .unwrap_or_else(|| SaltString::generate(&mut OsRng));

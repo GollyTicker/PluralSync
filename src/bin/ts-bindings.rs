@@ -7,11 +7,20 @@ use pluralsync::{
         webview_api::GenericFrontingStatus,
     },
     updater::Platform,
-    users::{PrivacyFineGrained, user_api::{ForgotPasswordRequest, ResetPasswordAttempt}},
+    users::{
+        PrivacyFineGrained,
+        user_api::{ChangeEmailRequest, ForgotPasswordRequest, ResetPasswordAttempt},
+    },
 };
 use pluralsync_base::{
-    meta::{CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL, PluralSyncVariantInfo},
-    users::{Email, JwtString, PasswordResetToken, Secret, UserLoginCredentials, UserProvidedPassword},
+    meta::{
+        CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL,
+        PluralSyncVariantInfo,
+    },
+    users::{
+        Email, EmailVerificationToken, JwtString, PasswordResetToken, Secret, UserLoginCredentials,
+        UserProvidedPassword,
+    },
 };
 use specta::ts::{ExportConfiguration, export};
 use std::fs;
@@ -70,6 +79,8 @@ fn main() -> Result<()> {
         export::<ResetPasswordAttempt>(conf)?,
         export::<ForgotPasswordRequest>(conf)?,
         export::<PasswordResetToken>(conf)?,
+        export::<EmailVerificationToken>(conf)?,
+        export::<ChangeEmailRequest>(conf)?,
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");

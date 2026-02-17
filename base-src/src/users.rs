@@ -3,7 +3,9 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use specta;
 
-#[derive(Debug, Serialize, Deserialize, Clone, sqlx::FromRow, sqlx::Type, specta::Type)]
+#[derive(
+    Debug, Serialize, Deserialize, Clone, sqlx::FromRow, sqlx::Type, specta::Type, PartialEq, Eq,
+)]
 pub struct Email {
     pub inner: String,
 }
@@ -40,6 +42,11 @@ pub struct UserProvidedPassword {
 
 #[derive(Serialize, Deserialize, Clone, specta::Type)]
 pub struct PasswordResetToken {
+    pub inner: Secret,
+}
+
+#[derive(Serialize, Deserialize, Clone, specta::Type)]
+pub struct EmailVerificationToken {
     pub inner: Secret,
 }
 

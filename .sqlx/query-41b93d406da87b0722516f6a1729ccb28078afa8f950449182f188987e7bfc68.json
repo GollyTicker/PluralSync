@@ -1,0 +1,52 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n            id,\n            email,\n            password_hash,\n            email_verification_token_hash,\n            email_verification_token_expires_at,\n            created_at\n        FROM temporary_users\n        WHERE email_verification_token_hash = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "password_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "email_verification_token_hash",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "email_verification_token_expires_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 5,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "41b93d406da87b0722516f6a1729ccb28078afa8f950449182f188987e7bfc68"
+}

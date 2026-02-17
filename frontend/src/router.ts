@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Start from './components/Start.vue'
 import Status from './components/Status.vue'
-import Config from './components/Config.vue'
+import Config from './components/Config.vue' // Will be renamed to Settings.vue
 import Login from './components/Login.vue'
 import Logout from './components/Logout.vue'
 import ForgotPassword from './components/ForgotPassword.vue'

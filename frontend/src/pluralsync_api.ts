@@ -12,6 +12,8 @@ import type {
   GenericFrontingStatus,
   ResetPasswordAttempt,
   ForgotPasswordRequest,
+  EmailVerificationToken,
+  ChangeEmailRequest,
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
@@ -46,6 +48,19 @@ export const pluralsync_api = {
   },
   register: async function (creds: UserLoginCredentials): Promise<void> {
     await http.post('/api/user/register', creds)
+  },
+  verifyEmail: async function (token: EmailVerificationToken): Promise<void> {
+    await http.post(`/api/users/email/verify/${token.inner}`)
+  },
+  requestEmailChange: async function (newEmailRequest: ChangeEmailRequest): Promise<void> {
+    const jwtString = await getJwt()
+    await http.post(
+      '/api/users/email/change',
+      newEmailRequest,
+      {
+        headers: { Authorization: `Bearer ${jwtString.inner}` },
+      },
+    )
   },
   get_updater_status: async function (): Promise<UserUpdatersStatuses> {
     const jwtString = await getJwt()
