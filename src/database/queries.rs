@@ -37,6 +37,16 @@ pub async fn create_password_reset_request(
     PASSWORD_RESET_REQUESTS_TOTAL
         .with_label_values(&["create_password_reset_request"])
         .inc();
+    // remove any previous password reset attempts
+    sqlx::query!(
+        "DELETE FROM password_reset_requests
+        WHERE user_id = $1",
+        user_id.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))?;
     sqlx::query!(
         "INSERT INTO
         password_reset_requests (user_id, token_hash, expires_at)
