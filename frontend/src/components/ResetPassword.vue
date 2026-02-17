@@ -60,7 +60,10 @@ const handleSubmit = async () => {
   loading.value = true
   error.value = undefined
   try {
-    await pluralsync_api.resetPassword(token.value, newPassword.value)
+    await pluralsync_api.resetPassword({
+      token: { inner: { inner: token.value } },
+      new_password: { inner: { inner: newPassword.value } }
+    })
     submitted.value = true
   } catch (err: any) {
     error.value = detailed_error_string(err)
@@ -71,6 +74,8 @@ const handleSubmit = async () => {
 </script>
 
 <style scoped>
+@import url("../assets/message.css");
+
 .reset-password-container {
   display: flex;
   flex-direction: column;
@@ -126,7 +131,7 @@ button {
   width: 100%;
   padding: 0.8rem;
   background-color: var(--color-primary);
-  color: var(--vt-c-white);
+  color: var(--background-white);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -140,22 +145,7 @@ button:disabled {
   cursor: not-allowed;
 }
 
-button:hover:not(:disabled) {
+button:hover {
   background-color: var(--color-secondary);
-}
-
-.status-message {
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.success-message {
-  color: green;
-  font-weight: bold;
-}
-
-.error-message {
-  color: red;
-  margin-top: 15px;
 }
 </style>

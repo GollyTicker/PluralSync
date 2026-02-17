@@ -12,10 +12,6 @@
       Stuck with something and still not working despite having re-read the info again and looked
       exactly? Join the discord server and feel free to ask the community for help. (Link in the
       footer of this website)
-      <br />
-      Due to the early nature of this service, we don't have password reset and account deletion
-      implemented yet. To reset your password, join the discord server and simply ask and we'll do
-      that shortly.
     </p>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
       <button type="submit">Save and Restart</button>

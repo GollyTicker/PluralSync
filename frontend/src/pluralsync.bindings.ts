@@ -1,5 +1,6 @@
 export type Email = { inner: string };
 export type UserProvidedPassword = { inner: Secret };
+export type Secret = { inner: string };
 export type UserLoginCredentials = { email: Email; password: UserProvidedPassword };
 export type Decrypted = { secret: string };
 export type PluralSyncVariantInfo = { version: string; variant: string; description: string | null; show_in_ui: boolean };
@@ -42,3 +43,6 @@ export type TwoFactorCodeRequiredResponse = { method: TwoFactorAuthMethod; tmp_c
 export type TwoFactorAuthCode = { inner: string };
 export type VRChatCredentialsWithTwoFactorAuth = { creds: VRChatCredentials; method: TwoFactorAuthMethod; code: TwoFactorAuthCode; tmp_cookie: string };
 export type VRChatAuthResponse = { Left: VRChatCredentialsWithCookie } | { Right: TwoFactorCodeRequiredResponse };
+export type ResetPasswordAttempt = { token: PasswordResetToken; new_password: UserProvidedPassword };
+export type ForgotPasswordRequest = { email: Email };
+export type PasswordResetToken = { inner: Secret };

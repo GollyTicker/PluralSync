@@ -88,24 +88,24 @@ pub async fn post_api_user_login(
     Ok(Json(jwt_string))
 }
 
-#[post("/api/auth/forgot-password", data = "<request>")]
+#[post("/api/user/forgot-password", data = "<request>")]
 pub async fn post_api_auth_forgot_password(
     db_pool: &State<PgPool>,
     smtp_config: &State<SmtpConfig>,
     request: Json<ForgotPasswordRequest>,
 ) -> HttpResult<()> {
-    log::info!("# | POST /api/auth/forgot-password | {}", request.email);
+    log::info!("# | POST /api/user/forgot-password | {}", request.email);
 
     match create_password_reset_request_and_send_email(db_pool, smtp_config, &request).await {
         Ok(()) => {
             log::info!(
-                "# | POST /api/auth/forgot-password | {} | reset email initiated.",
+                "# | POST /api/user/forgot-password | {} | reset email initiated.",
                 request.email
             );
         }
         Err(e) => {
             log::warn!(
-                "# | POST /api/auth/forgot-password | {} | failed or user not found: {:?}",
+                "# | POST /api/user/forgot-password | {} | failed or user not found: {:?}",
                 request.email,
                 e
             );
@@ -144,12 +144,12 @@ async fn create_password_reset_request_and_send_email(
     Ok(())
 }
 
-#[post("/api/auth/reset-password", data = "<request>")]
+#[post("/api/user/reset-password", data = "<request>")]
 pub async fn post_api_auth_reset_password(
     db_pool: &State<PgPool>,
     request: Json<ResetPasswordAttempt>,
 ) -> HttpResult<()> {
-    log::info!("# | POST /api/auth/reset-password");
+    log::info!("# | POST /api/user/reset-password");
 
     let token_hash = auth::create_secret_hash(&request.token.inner).map_err(|_| {
         (
@@ -167,7 +167,7 @@ pub async fn post_api_auth_reset_password(
             )
         })?;
 
-    log::debug!("# | POST /api/auth/reset-password | Verified password reset request {user_id}");
+    log::debug!("# | POST /api/user/reset-password | Verified password reset request {user_id}");
 
     let new_password_hash =
         auth::create_secret_hash(&request.new_password.inner).map_err(expose_internal_error)?;
@@ -191,7 +191,7 @@ pub async fn post_api_auth_reset_password(
         .map_err(expose_internal_error)?;
 
     log::info!(
-        "# | POST /api/auth/reset-password | Verified password reset request {user_id} | Password reset success",
+        "# | POST /api/user/reset-password | Verified password reset request {user_id} | Password reset success",
     );
 
     Ok(())
@@ -234,12 +234,12 @@ impl From<database::UserInfo> for UserInfoUI {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, specta::Type)]
 pub struct ForgotPasswordRequest {
     pub email: Email,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, specta::Type)]
 pub struct ResetPasswordAttempt {
     pub token: PasswordResetToken,
     pub new_password: UserProvidedPassword,

@@ -42,7 +42,7 @@ export async function renderLoginPage() {
       try {
         let creds: UserLoginCredentials = {
           email: { inner: email },
-          password: { inner: password },
+          password: { inner: { inner: password } },
         }
         await invoke('store_credentials', { creds, baseUrl })
         await invoke('login_with_stored_credentials')

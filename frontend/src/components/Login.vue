@@ -10,13 +10,13 @@
         <label for="password">Password</label>
         <input type="password" id="password" v-model="password" autocomplete="password" />
       </div>
-      <p class="forgot-password-link-container">
-        <router-link to="/forgot-password" class="forgot-password-link"
-          >Forgot Password?</router-link
-        >
-      </p>
       <button type="submit">Login</button>
       <button @click="register" type="button" class="register-button">Register</button>
+      <p class="forgot-password-link-container">
+        <router-link to="/forgot-password" class="forgot-password-link">
+          Forgot Password?
+        </router-link>
+      </p>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
     <p style="margin: 1em">ℹ️ PluralSync was formerly named SP2Any. ℹ️</p>
@@ -42,7 +42,7 @@ const login = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: password.value },
+    password: { inner: { inner: password.value } }
   } as UserLoginCredentials
 
   try {
@@ -63,7 +63,7 @@ const register = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: password.value },
+    password: { inner: { inner: password.value } }
   } as UserLoginCredentials
 
   try {
@@ -78,6 +78,8 @@ const register = async () => {
 </script>
 
 <style scoped>
+@import url("../assets/message.css");
+
 .login-container {
   display: flex;
   flex-direction: column;
@@ -144,14 +146,9 @@ button:hover {
   background-color: var(--color-background-mute);
 }
 
-.status-message {
+.forgot-password-link-container {
   text-align: center;
   margin-top: 1rem;
-}
-
-.forgot-password-link-container {
-  text-align: right;
-  margin-bottom: 1rem;
 }
 
 .forgot-password-link {

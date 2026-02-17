@@ -10,6 +10,8 @@ import type {
   VRChatCredentialsWithTwoFactorAuth,
   VRChatAuthResponse,
   GenericFrontingStatus,
+  ResetPasswordAttempt,
+  ForgotPasswordRequest,
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
@@ -100,10 +102,10 @@ export const pluralsync_api = {
     const response = await http.get<PluralSyncVariantInfo>('/api/meta/pluralsync-variant-info')
     return response.data
   },
-  forgotPassword: async function (email: string): Promise<void> {
-    await http.post('/api/auth/forgot-password', { email })
+  forgotPassword: async function (forgotPasswordRequest: ForgotPasswordRequest): Promise<void> {
+    await http.post<ForgotPasswordRequest>('/api/user/forgot-password', forgotPasswordRequest)
   },
-  resetPassword: async function (token: string, newPassword: string): Promise<void> {
-    await http.post('/api/auth/reset-password', { token, new_password: newPassword })
+  resetPassword: async function (resetPasswordAttempt: ResetPasswordAttempt): Promise<void> {
+    await http.post<ResetPasswordAttempt>('/api/user/reset-password', resetPasswordAttempt)
   },
 }

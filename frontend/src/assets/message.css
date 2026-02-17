@@ -1,0 +1,14 @@
+.status-message {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.success-message {
+  color: darkgreen;
+  margin-top: 1rem;
+}
+
+.error-message {
+  color: darkred;
+  margin-top: 1rem;
+}

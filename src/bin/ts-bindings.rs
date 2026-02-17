@@ -7,11 +7,11 @@ use pluralsync::{
         webview_api::GenericFrontingStatus,
     },
     updater::Platform,
-    users::PrivacyFineGrained,
+    users::{PrivacyFineGrained, user_api::{ForgotPasswordRequest, ResetPasswordAttempt}},
 };
 use pluralsync_base::{
     meta::{CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL, PluralSyncVariantInfo},
-    users::{Email, JwtString, UserLoginCredentials, UserProvidedPassword},
+    users::{Email, JwtString, PasswordResetToken, Secret, UserLoginCredentials, UserProvidedPassword},
 };
 use specta::ts::{ExportConfiguration, export};
 use std::fs;
@@ -24,6 +24,7 @@ fn main() -> Result<()> {
     let defs = [
         export::<Email>(conf)?,
         export::<UserProvidedPassword>(conf)?,
+        export::<Secret>(conf)?,
         export::<UserLoginCredentials>(conf)?,
         export::<Decrypted>(conf)?,
         export::<PluralSyncVariantInfo>(conf)?,
@@ -66,6 +67,9 @@ fn main() -> Result<()> {
         export::<TwoFactorAuthCode>(conf)?,
         export::<VRChatCredentialsWithTwoFactorAuth>(conf)?,
         "export type VRChatAuthResponse = { Left: VRChatCredentialsWithCookie } | { Right: TwoFactorCodeRequiredResponse }".to_owned(),
+        export::<ResetPasswordAttempt>(conf)?,
+        export::<ForgotPasswordRequest>(conf)?,
+        export::<PasswordResetToken>(conf)?,
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");
