@@ -16,18 +16,19 @@ pub async fn send_reset_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
     let email_body = format!(
-        "Hello,\n\n\
-        You have requested to reset your password. Please click the link below to reset it:\n\n\
-        {reset_link}\n\n\
-        If you did not request this, please ignore this email.\n\n\
-        This link will expire in 1 hour."
+        "<p>Dear PluralSync User,<br/>\n\n\
+        You have requested to reset your password. Please click the link below to reset it:</p>\n\n\
+        <a href=\"{reset_link}\">{reset_link}</a>\n\n\
+        <p>If you did not request this, please ignore this email.\n\n\
+        This link will expire in 1 hour.<br/>
+        Kinds, PluralSync</p>"
     );
 
     let email = Message::builder()
         .from(smtp_config.from_email.parse()?)
         .to(to.inner.parse()?)
-        .subject("Password Reset Request")
-        .header(ContentType::TEXT_PLAIN)
+        .subject("PluralSync Password Reset")
+        .header(ContentType::TEXT_HTML)
         .body(email_body)?;
 
     let creds = Credentials::new(smtp_config.username.clone(), smtp_config.password.clone());

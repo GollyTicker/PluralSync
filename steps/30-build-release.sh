@@ -64,7 +64,7 @@ build_binaries() {
     echo "🛠️ pluralsync-frontend $LINUX_TARGET"
     ./steps/17-frontend-npm-build.sh
     tar -czvf "$OUT_DIR/pluralsync-frontend.tar.gz" -C frontend/dist .
-    echo "✅ pluralsync-brontend $target"
+    echo "✅ pluralsync-frontend $target"
 }
 
 

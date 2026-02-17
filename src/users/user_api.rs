@@ -3,6 +3,7 @@ use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
 use crate::metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL};
 use crate::setup::SmtpConfig;
+use crate::users::SecretHashOptions;
 use crate::users::auth;
 use crate::users::email;
 use crate::users::jwt;
@@ -31,8 +32,13 @@ pub async fn post_api_user_register(
         return Err(anyhow!("Email/Passsword cannot be empty.")).map_err(expose_internal_error)?;
     }
 
-    let pwh =
-        auth::create_secret_hash(&credentials.password.inner).map_err(expose_internal_error)?;
+    let pwh = auth::create_secret_hash(
+        &credentials.password.inner,
+        SecretHashOptions {
+            use_specific_salt: None,
+        },
+    )
+    .map_err(expose_internal_error)?;
 
     let () = database::create_user(db_pool, credentials.email.clone(), pwh)
         .await
@@ -92,11 +98,19 @@ pub async fn post_api_user_login(
 pub async fn post_api_auth_forgot_password(
     db_pool: &State<PgPool>,
     smtp_config: &State<SmtpConfig>,
+    app_user_secrets: &State<database::ApplicationUserSecrets>,
     request: Json<ForgotPasswordRequest>,
 ) -> HttpResult<()> {
     log::info!("# | POST /api/user/forgot-password | {}", request.email);
 
-    match create_password_reset_request_and_send_email(db_pool, smtp_config, &request).await {
+    match create_password_reset_request_and_send_email(
+        db_pool,
+        smtp_config,
+        app_user_secrets,
+        &request,
+    )
+    .await
+    {
         Ok(()) => {
             log::info!(
                 "# | POST /api/user/forgot-password | {} | reset email initiated.",
@@ -119,12 +133,18 @@ pub async fn post_api_auth_forgot_password(
 async fn create_password_reset_request_and_send_email(
     db_pool: &State<PgPool>,
     smtp_config: &State<SmtpConfig>,
+    app_user_secrets: &database::ApplicationUserSecrets,
     request: &Json<ForgotPasswordRequest>,
 ) -> anyhow::Result<()> {
     let token_secret = PasswordResetToken {
         inner: auth::generate_secret(),
     };
-    let token_hash = auth::create_secret_hash(&token_secret.inner)?;
+    let token_hash = auth::create_secret_hash(
+        &token_secret.inner,
+        SecretHashOptions {
+            use_specific_salt: Some(app_user_secrets.inner.clone()),
+        },
+    )?;
 
     let user_id = database::get_user_id(db_pool, request.email.clone()).await?;
 
@@ -147,11 +167,18 @@ async fn create_password_reset_request_and_send_email(
 #[post("/api/user/reset-password", data = "<request>")]
 pub async fn post_api_auth_reset_password(
     db_pool: &State<PgPool>,
+    app_user_secrets: &State<database::ApplicationUserSecrets>,
     request: Json<ResetPasswordAttempt>,
 ) -> HttpResult<()> {
     log::info!("# | POST /api/user/reset-password");
 
-    let token_hash = auth::create_secret_hash(&request.token.inner).map_err(|_| {
+    let token_hash = auth::create_secret_hash(
+        &request.token.inner,
+        SecretHashOptions {
+            use_specific_salt: Some(app_user_secrets.inner.clone()),
+        },
+    )
+    .map_err(|_| {
         (
             http::Status::BadRequest,
             "Invalid or expired token".to_string(),
@@ -160,7 +187,8 @@ pub async fn post_api_auth_reset_password(
 
     let user_id = database::verify_password_reset_request_matches(db_pool, &token_hash)
         .await
-        .map_err(|_| {
+        .map_err(|e| {
+            log::warn!("# | POST /api/user/reset-password | Failed to verify: {e}");
             (
                 http::Status::BadRequest,
                 "Invalid or expired token".to_string(),
@@ -169,8 +197,13 @@ pub async fn post_api_auth_reset_password(
 
     log::debug!("# | POST /api/user/reset-password | Verified password reset request {user_id}");
 
-    let new_password_hash =
-        auth::create_secret_hash(&request.new_password.inner).map_err(expose_internal_error)?;
+    let new_password_hash = auth::create_secret_hash(
+        &request.new_password.inner,
+        SecretHashOptions {
+            use_specific_salt: None,
+        },
+    )
+    .map_err(expose_internal_error)?;
 
     let update_result = database::update_user_password(db_pool, &user_id, &new_password_hash).await;
 

@@ -3,9 +3,9 @@
     <h1>Forgot Password</h1>
     <p v-if="!submitted">Enter your email address and to receive a link to reset your password.</p>
     <p v-if="submitted" class="status-message success-message">
-      If an account with that email exists, a password reset link has been sent and will arrive
-      within minutes.
-      <br />Please check your inbox and also check the spam/junk folder.
+      If an account with the email {{ email }} exists, a password reset link has been sent and will
+      arrive within minutes. <br />Please check your inbox and also check the spam/junk folder.
+      <br />If you made multiple password reset requests, then only the last one will be valid.
     </p>
     <form @submit.prevent="handleSubmit" v-if="!submitted" class="forgot-password-form">
       <div class="form-group">
