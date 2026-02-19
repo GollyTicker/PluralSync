@@ -405,9 +405,37 @@ pub async fn get_all_users(db_pool: &PgPool) -> Result<Vec<UserId>> {
     Ok(users)
 }
 
+#[derive(FromRow)]
+struct UserInfoRaw {
+    id: sqlx::types::Uuid,
+    email: String,
+    password_hash: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+    new_email: Option<String>,
+    email_verification_token_hash: Option<String>,
+    email_verification_token_expires_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+impl UserInfoRaw {
+    fn into_user_info(self) -> UserInfo {
+        UserInfo {
+            id: UserId::from(self.id),
+            email: Email::from(self.email),
+            password_hash: SecretHashString {
+                inner: self.password_hash,
+            },
+            created_at: self.created_at,
+            new_email: self.new_email.map(Email::from),
+            email_verification_token_hash: self.email_verification_token_hash,
+            email_verification_token_expires_at: self.email_verification_token_expires_at,
+        }
+    }
+}
+
 pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo> {
     log::debug!("# | db::get_user_info | {user_id}");
-    sqlx::query_as(
+    
+    let row = sqlx::query_as::<_, UserInfoRaw>(
         "SELECT
             id,
             email,
@@ -421,7 +449,9 @@ pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo
     .bind(user_id.inner)
     .fetch_one(db_pool)
     .await
-    .map_err(|e| anyhow!(e))
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(row.into_user_info())
 }
 
 pub async fn set_new_verified_email(
@@ -446,7 +476,7 @@ pub async fn find_user_by_website_url_name(
     website_url_name: &str,
 ) -> Result<UserInfo> {
     log::debug!("# | db::find_user_by_website_url_name | {website_url_name}");
-    sqlx::query_as(
+    let row = sqlx::query_as::<_, UserInfoRaw>(
         "SELECT
             id,
             email,
@@ -460,7 +490,9 @@ pub async fn find_user_by_website_url_name(
     .bind(website_url_name)
     .fetch_one(db_pool)
     .await
-    .map_err(|e| anyhow!(e))
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(row.into_user_info())
 }
 
 pub async fn update_user_email_change_fields(

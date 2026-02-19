@@ -91,6 +91,10 @@ setup_test_user() {
         -d "$JSON" \
         "$BASE_URL/api/user/register"
 
+    echo "Verifying email..."
+    extract_verification_token_from_logs "pluralsync-api"
+    verify_email_with_token
+
     echo "Logging in ..."
     JWT_JSON="$(
         curl -s --fail-with-body \
@@ -138,3 +142,29 @@ get_updater_statuses() {
         "$BASE_URL/api/updaters/status"
 }
 export -f get_updater_statuses
+
+extract_verification_token_from_logs() {
+    container_name="$1"
+    
+    echo "Extracting verification token from logs..."
+    LOGS="$(docker logs "$container_name" 2>&1 || true)"
+    TOKEN="$(echo "$LOGS" | grep -oP "verify-email\?token=\K[a-zA-Z0-9_-]+" | tail -1)"
+    
+    if [[ "$TOKEN" != "" ]]; then
+        echo "Found token: $TOKEN"
+    else
+        echo "ERROR: Could not extract verification token from logs"
+        return 1
+    fi
+}
+export -f extract_verification_token_from_logs
+
+verify_email_with_token() {
+    echo "Verifying email with token: $TOKEN"
+    curl -X POST -s --fail-with-body \
+        -H "Content-Type: application/json" \
+        "$BASE_URL/api/users/email/verify/$TOKEN"
+    
+    echo "Email verified successfully."
+}
+export -f verify_email_with_token
