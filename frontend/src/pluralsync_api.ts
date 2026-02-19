@@ -15,6 +15,7 @@ import type {
   EmailVerificationToken,
   EmailVerificationResponse,
   ChangeEmailRequest,
+  DeleteAccountRequest,
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
@@ -28,11 +29,13 @@ export function detailed_error_string(error: any): string {
   return error.toString() + '. ' + axiosErrorString
 }
 
+// whenever the user opens directly into a page with an outdated jwt, redirect to the login page.
 http.interceptors.response.use(
   (response) => response,
   (error) => {
     const isLoginAttempt = router.currentRoute.value.path === '/login'
-    if (error.response && [401, 403].includes(error.response.status) && !isLoginAttempt) {
+    const isAccountDeletionAttempt = router.currentRoute.value.path === '/settings/delete-account'
+    if (error.response && [401, 403].includes(error.response.status) && !isLoginAttempt && !isAccountDeletionAttempt) {
       console.warn('Auth failed with 401/403 on request. Now redirecting to login. Error:', error)
       logoutAndBackToStart()
     }
@@ -129,5 +132,12 @@ export const pluralsync_api = {
   },
   resetPassword: async function (resetPasswordAttempt: ResetPasswordAttempt): Promise<void> {
     await http.post<ResetPasswordAttempt>('/api/user/reset-password', resetPasswordAttempt)
+  },
+  delete_user: async function (deleteAccountRequest: DeleteAccountRequest): Promise<void> {
+    const jwtString = await getJwt()
+    await http.delete('/api/user', {
+      data: deleteAccountRequest,
+      headers: { Authorization: `Bearer ${jwtString.inner}` },
+    })
   },
 }

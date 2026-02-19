@@ -18,41 +18,6 @@
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
       <p id="config-update-status">{{ status }}</p>
       <div class="config-section">
-        <h2>Account Settings</h2>
-        <div class="config-grid">
-          <div class="config-item">
-            <label for="current-email">Current Email</label>
-            <p class="config-description">
-              Your current email address associated with your PluralSync account.
-            </p>
-            <input id="current-email" type="email" :value="currentEmail" disabled />
-          </div>
-          <div class="config-item">
-            <label for="new-email">Change Email Address</label>
-            <p class="config-description">
-              Enter your new email address. You will receive a confirmation link at the new email
-              address to complete the change.
-            </p>
-            <input
-              id="new-email"
-              type="email"
-              v-model="newEmail"
-              placeholder="Enter new email address"
-              autocomplete="off"
-            />
-            <button
-              @click.prevent="requestEmailChange"
-              type="button"
-              id="email-change-button"
-              :disabled="emailChangeLoading"
-            >
-              {{ emailChangeLoading ? 'Sending...' : 'Change' }}
-            </button>
-            <p id="email-change-status">{{ emailChangeStatus }}</p>
-          </div>
-        </div>
-      </div>
-      <div class="config-section">
         <h2>PluralSync Setings</h2>
       </div>
       <button type="submit">Save and Restart</button>
@@ -488,12 +453,65 @@
       </div>
       <button type="submit">Save and Restart</button>
       <p id="config-update-status-2">{{ status }}</p>
+      <div class="config-section">
+        <h2 style="color: #d32f2f">Account Settings</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label for="current-email">Current Email</label>
+            <p class="config-description">
+              Your current email address associated with your PluralSync account.
+            </p>
+            <input id="current-email" type="email" :value="currentEmail" disabled />
+          </div>
+          <div class="config-item">
+            <label for="new-email">Change Email Address</label>
+            <p class="config-description">
+              Enter your new email address. You will receive a confirmation link at the new email
+              address to complete the change.
+            </p>
+            <input
+              id="new-email"
+              type="email"
+              v-model="newEmail"
+              placeholder="Enter new email address"
+              autocomplete="off"
+            />
+            <button
+              @click.prevent="requestEmailChange"
+              type="button"
+              id="email-change-button"
+              :disabled="emailChangeLoading"
+            >
+              {{ emailChangeLoading ? 'Sending...' : 'Change' }}
+            </button>
+            <p id="email-change-status">{{ emailChangeStatus }}</p>
+          </div>
+          <div
+            class="config-item"
+            style="border-top: 2px solid #d32f2f; padding-top: 1rem; margin-top: 1rem"
+          >
+            <label for="delete-account-button" style="color: #d32f2f">Delete Account</label>
+            <p class="config-description">
+              Permanently delete your PluralSync account and all associated data.
+            </p>
+            <button
+              @click="navigateToDeleteAccount"
+              type="button"
+              id="delete-account-button"
+              class="danger-button"
+            >
+              Delete Account
+            </button>
+          </div>
+        </div>
+      </div>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, type Ref, watch } from 'vue'
+import router from '@/router'
 import {
   type Decrypted,
   type UserConfigDbEntries,
@@ -712,6 +730,10 @@ watch(
     await refreshPrivacyBuckets()
   },
 )
+
+function navigateToDeleteAccount() {
+  router.push('/settings/delete-account')
+}
 </script>
 
 <style scoped>
@@ -795,6 +817,14 @@ button {
 
 button:hover {
   background-color: #0056b3;
+}
+
+.danger-button {
+  background-color: #d32f2f;
+}
+
+.danger-button:hover {
+  background-color: #b71c1c;
 }
 
 .config-item img {

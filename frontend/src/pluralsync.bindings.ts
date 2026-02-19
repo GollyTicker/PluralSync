@@ -49,3 +49,4 @@ export type PasswordResetToken = { inner: Secret };
 export type EmailVerificationToken = { inner: Secret };
 export type ChangeEmailRequest = { new_email: Email };
 export type EmailVerificationResponse = { message: string };
+export type DeleteAccountRequest = { password: UserProvidedPassword; confirmation: string };

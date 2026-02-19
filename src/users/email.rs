@@ -111,7 +111,6 @@ pub async fn send_account_deletion_notification(
     Ok(())
 }
 
-
 async fn send_email(
     smtp_config: &setup::SmtpConfig,
     to: &Email,
