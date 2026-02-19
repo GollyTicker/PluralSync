@@ -8,7 +8,7 @@
   * pridevr plural channel
     * ticket asking for approval created
   * reddit?
-* improve metrics:
+* DONE: improve metrics:
   * measure all the places which "shouldn't happen" in production
     * DONE also do that for important places where errors shouldnt happen.
     * or alternatively, simply setup to regularly look at WARN and ERROR logs?
@@ -17,9 +17,9 @@
   * DONE: measure length's of suggested fronting statuses
   * measure usage of many specific features
 * DONE: Add + test: FireAndForgetChannel with only changes being propagates and another variant with integrated rate-limits
-* complete features from first test users
-  * primarily vrchat rate limit fix
-  * possibly also system sync with pluralkit
+* RESOLVED: complete features from first test users
+  * POSTPONED: primarily vrchat rate limit fix
+  * REJECTED: possibly also system sync with pluralkit
 * add a small log of the latest updates and their timestamps. this log is useful for the users to understand if and when the last update happened
 * DONE: extract user agent and make them non-public deployment/build vars
 * easily give quick feedback in website - whcih will be saved in db and then I can response to it
