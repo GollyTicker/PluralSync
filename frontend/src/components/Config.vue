@@ -44,7 +44,7 @@
               id="email-change-button"
               :disabled="emailChangeLoading"
             >
-              {{ emailChangeLoading ? 'Sending...' : 'Change Email Address' }}
+              {{ emailChangeLoading ? 'Sending...' : 'Change' }}
             </button>
             <p id="email-change-status">{{ emailChangeStatus }}</p>
           </div>
