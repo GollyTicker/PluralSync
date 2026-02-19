@@ -158,24 +158,51 @@ impl UpdaterManager {
         Ok(())
     }
 
+    pub fn stop_updater(&self, user_id: &UserId) -> Result<()> {
+        {
+            let mut locked_task = self.tasks.lock().map_err(|e| anyhow!(e.to_string()))?;
+
+            log::info!("# | stop_updater | {user_id} | aborting updaters");
+            if let Some(task) = locked_task.get_mut(user_id) {
+                communication::blocking_abort_and_clear_tasks(task, |x| x);
+            }
+            locked_task.remove(user_id);
+        }
+
+        self.fronter_channel
+            .lock()
+            .map_err(|e| anyhow!(e.to_string()))?
+            .remove(user_id);
+
+        self.foreign_managed_status_channel
+            .lock()
+            .map_err(|e| anyhow!(e.to_string()))?
+            .remove(user_id);
+
+        self.statuses
+            .lock()
+            .map_err(|e| anyhow!(e.to_string()))?
+            .remove(user_id);
+
+        self.updater_start_time
+            .lock()
+            .map_err(|e| anyhow!(e.to_string()))?
+            .remove(user_id);
+
+        log::info!("# | stop_updater | {user_id} | updaters stopped");
+
+        Ok(())
+    }
+
     #[allow(clippy::significant_drop_tightening)]
-    pub fn restart_updater(
+    pub fn start_updater(
         &self,
         user_id: &UserId,
         config: users::UserConfigForUpdater,
         db_pool: sqlx::PgPool,
         application_user_secrets: &database::ApplicationUserSecrets,
     ) -> Result<()> {
-        UPDATER_MANAGER_RESTART_TOTAL_COUNT
-            .with_label_values(&[&user_id.to_string()])
-            .inc();
-
         let mut locked_task = self.tasks.lock().map_err(|e| anyhow!(e.to_string()))?;
-
-        log::info!("# | restart_updater | {user_id} | aborting updaters");
-        if let Some(task) = locked_task.get_mut(user_id) {
-            communication::blocking_abort_and_clear_tasks(task, |x| x);
-        }
 
         let () = self.recreate_fronter_channel(user_id)?;
         let foreign_status_updater_task = self.recreate_foreign_status_channel(user_id)?;
@@ -215,10 +242,30 @@ impl UpdaterManager {
             .map_err(|e| anyhow!(e.to_string()))?
             .insert(user_id.clone(), clock::now());
 
-        log::info!("# | restart_updater | {user_id} | aborting updaters | restarted");
+        log::info!("# | start_updater | {user_id} | updaters started");
         UPDATER_MANAGER_RESTART_SUCCESS_COUNT
             .with_label_values(&[&user_id.to_string()])
             .inc();
+
+        Ok(())
+    }
+
+    #[allow(clippy::significant_drop_tightening)]
+    pub fn restart_updater(
+        &self,
+        user_id: &UserId,
+        config: users::UserConfigForUpdater,
+        db_pool: sqlx::PgPool,
+        application_user_secrets: &database::ApplicationUserSecrets,
+    ) -> Result<()> {
+        UPDATER_MANAGER_RESTART_TOTAL_COUNT
+            .with_label_values(&[&user_id.to_string()])
+            .inc();
+
+        self.stop_updater(user_id)?;
+        self.start_updater(user_id, config, db_pool, application_user_secrets)?;
+
+        log::info!("# | restart_updater | {user_id} | restarted");
 
         Ok(())
     }

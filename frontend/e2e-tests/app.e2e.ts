@@ -9,6 +9,8 @@ const TEST_PASSWORD = "m?3yp%&wdS+";
 
 const account_test_email = `test-${Date.now()}@example.com`;
 const REGISTRATION_PASSWORD = 'a-secure-password';
+const newEmailAddress = `test-${Date.now()}-changed@example.com`;
+const passwordAfterReset = 'new-secure-password-123!@#';
 
 async function notLoggedIn() {
     await expect($('button[type="submit"]')).toHaveText("Login")
@@ -240,8 +242,6 @@ describe('PluralSync password reset logic', () => {
 });
 
 describe('PluralSync email change logic', () => {
-    const newEmailAddress = `test-${Date.now()}-changed@example.com`;
-    const passwordAfterReset = 'new-secure-password-123!@#';
 
     it('should allow user to request email change', async () => {
         await browser.url(env.PLURALSYNC_BASE_URL!);
@@ -272,6 +272,68 @@ describe('PluralSync email change logic', () => {
         await notLoggedIn();
     });
 });
+
+describe('PluralSync account deletion logic', () => {
+
+    it('should log in with the email-changed account for deletion testing', async () => {
+        await loginWithEmail(newEmailAddress, passwordAfterReset);
+        await loggedInAndOnStatusPage();
+    });
+
+    it('should allow navigation to delete account page', async () => {
+        await navigateToConfig();
+        await loggedInAndOnConfigPage();
+
+        const deleteButton = await $('#delete-account-button');
+        await deleteButton.click();
+
+        await expect($('.delete-account-container h1')).toHaveText('Delete Account');
+    });
+
+    it('should reject deletion with wrong password', async () => {
+        await $('#password').setValue('wrong-password');
+        await $('#confirmation').setValue('delete');
+        
+        await $('button.danger-button').click();
+        
+        const errorMessage = await $('.error-message');
+        await expect(errorMessage).toExist();
+    });
+
+    it('should reject deletion with incomplete confirmation', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL! + "/settings/delete-account");
+        
+        await $('#password').setValue(passwordAfterReset);
+        await $('#confirmation').setValue('delete-me');
+        
+        await $('button.danger-button').click();
+        
+        const errorMessage = await $('.error-message');
+        await expect(errorMessage).toExist();
+    });
+
+    it('should successfully delete account with correct password and confirmation', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL! + "/settings/delete-account");
+        
+        await $('#password').setValue(passwordAfterReset);
+        await $('#confirmation').setValue('delete');
+        
+        await $('button.danger-button').click();
+        
+        const successMessage = await $('.success-message');
+        await expect(successMessage).toExist();
+
+        // Wait for redirect to home page
+        await browser.waitUntil(() => browser.getUrl().then(url => url.includes('/')), { timeout: 5000 });
+    });
+
+    it('should not allow login with deleted account', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(newEmailAddress, passwordAfterReset);
+        await notLoggedIn();
+    });
+});
+
 
 describe('PluralSync login logic', () => {
     it('should be intially not logged in', async () => {

@@ -560,3 +560,16 @@ pub struct TemporaryUser {
     pub email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
+
+pub async fn delete_user(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
+    log::debug!("# | db::delete_user | {user_id}");
+    sqlx::query!(
+        "DELETE FROM users
+        WHERE id = $1",
+        user_id.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}

@@ -3,6 +3,7 @@ use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
 use crate::metrics::{PASSWORD_RESET_FAILURE_TOTAL, PASSWORD_RESET_SUCCESS_TOTAL};
 use crate::setup::SmtpConfig;
+use crate::updater;
 use crate::users::SecretHashOptions;
 use crate::users::auth;
 use crate::users::email;
@@ -19,7 +20,7 @@ use pluralsync_base::users::UserLoginCredentials;
 use pluralsync_base::users::UserProvidedPassword;
 use rocket::http;
 use rocket::http::Status;
-use rocket::{State, get, post, serde::json::Json};
+use rocket::{State, delete, get, post, serde::json::Json};
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::PgPool;
@@ -468,4 +469,58 @@ pub struct ForgotPasswordRequest {
 pub struct ResetPasswordAttempt {
     pub token: PasswordResetToken,
     pub new_password: UserProvidedPassword,
+}
+
+#[derive(Deserialize, specta::Type)]
+pub struct DeleteAccountRequest {
+    pub password: UserProvidedPassword,
+    pub confirmation: String,
+}
+
+#[delete("/api/user", data = "<request>")]
+pub async fn delete_api_user(
+    db_pool: &State<PgPool>,
+    smtp_config: &State<SmtpConfig>,
+    jwt_app_secret: &State<jwt::ApplicationJwtSecret>,
+    shared_updaters: &State<updater::UpdaterManager>,
+    jwt: jwt::Jwt,
+    request: Json<DeleteAccountRequest>,
+) -> HttpResult<()> {
+    let user_id = jwt.user_id().map_err(expose_internal_error)?;
+    log::info!("# | DELETE /api/user | {user_id}");
+
+    if request.confirmation != "delete" {
+        return Err((
+            Status::BadRequest,
+            "Confirmation string must be exactly 'delete'".to_string(),
+        ));
+    }
+
+    let user_info = database::get_user_info(db_pool, user_id.clone())
+        .await
+        .map_err(expose_internal_error)?;
+
+    let _token =
+        auth::verify_password_and_create_token(&request.password, &user_info, jwt_app_secret)
+            .map_err(|_| (Status::Unauthorized, "Invalid password".to_string()))?;
+
+    // Stop updater tasks (log errors but don't fail if it doesn't work)
+    if let Err(e) = shared_updaters.stop_updater(&user_id) {
+        log::warn!("# | DELETE /api/user | {user_id} | Failed to stop updater: {e}");
+    }
+
+    // cascading deletion from database
+    database::delete_user(db_pool, &user_id)
+        .await
+        .map_err(expose_internal_error)?;
+
+    if let Err(e) = email::send_account_deletion_notification(smtp_config, &user_info.email).await {
+        log::warn!(
+            "# | DELETE /api/user | {user_id} | Failed to send deletion notification email: {e}"
+        );
+    }
+
+    log::info!("# | DELETE /api/user | {user_id} | Account deleted successfully");
+
+    Ok(())
 }
