@@ -1,11 +1,11 @@
 use crate::setup;
 use anyhow::Result;
+use chrono::Utc;
 use lettre::{
     AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor, message::header::ContentType,
     transport::smtp::authentication::Credentials,
 };
-use pluralsync_base::users::EmailVerificationToken;
-use pluralsync_base::users::{Email, PasswordResetToken};
+use pluralsync_base::users::{Email, EmailVerificationToken, PasswordResetToken};
 
 pub async fn send_reset_email(
     smtp_config: &setup::SmtpConfig,
@@ -17,7 +17,7 @@ pub async fn send_reset_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(smtp_config, to, "PluralSync Password Reset", format!(
+    send_email(smtp_config, to, "PluralSync 🔄 Password Reset", format!(
         "Dear PluralSync User,\n\n\
         You have requested to reset your password. Please copy and paste the link below into your browser to reset it:\n\n\
         {reset_link}\n\n\
@@ -39,7 +39,7 @@ pub async fn send_verification_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(smtp_config, to, "PluralSync Email Verification", format!(
+    send_email(smtp_config, to, "Welcome to PluralSync 🔄 ❤️ - Verify Your Email", format!(
         "Dear PluralSync User,\n\n\
         Thank you for registering with PluralSync. Please click on the link below to verify your email address:\n\n\
         {verification_link}\n\n\
@@ -60,7 +60,7 @@ pub async fn send_email_change_confirmation_link_to_new_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(smtp_config, to, "PluralSync Email Change Confirmation", format!(
+    send_email(smtp_config, to, "Confirm Your New PluralSync 🔄 Email", format!(
         "Dear PluralSync User,\n\n\
         You have requested to change your email address to {}. Please click on the link below to confirm this change:\n\n\
         {confirmation_link}\n\n\
@@ -78,7 +78,7 @@ pub async fn send_email_change_notification_to_old_email(
     to: &Email,
     new_email: &Email,
 ) -> Result<()> {
-    send_email(smtp_config, to, "PluralSync Email Change Notification", format!(
+    send_email(smtp_config, to, "Your PluralSync 🔄 Email Was Requested To Be Changed", format!(
         "Dear PluralSync User,\n\n\
         This is a notification that your PluralSync account email address has been requested to change from {} to {}.\n\n\
         Kinds, PluralSync",
@@ -87,6 +87,30 @@ pub async fn send_email_change_notification_to_old_email(
 
     Ok(())
 }
+
+pub async fn send_account_deletion_notification(
+    smtp_config: &setup::SmtpConfig,
+    to: &Email,
+) -> Result<()> {
+    let timestamp = Utc::now().format("%Y-%m-%d %H:%M:%S UTC");
+    send_email(
+        smtp_config,
+        to,
+        "Thanks For Having Used PluralSync 🔄 ❤️ - Your Account Is Deleted",
+        format!(
+            "Dear PluralSync User,\n\n\
+            This email confirms that your PluralSync account has been permanently deleted.\n\n\
+            Deletion timestamp: {timestamp}\n\n\
+            All your data, including authentication tokens, platform credentials and updaters \
+            have been removed from our servers. Your account cannot be recovered.\n\n\
+            Kinds, PluralSync"
+        ),
+    )
+    .await?;
+
+    Ok(())
+}
+
 
 async fn send_email(
     smtp_config: &setup::SmtpConfig,
