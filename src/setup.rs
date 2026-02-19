@@ -98,6 +98,7 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         password: cli_args.smtp_password.clone(),
         from_email: cli_args.smtp_from_email.clone(),
         frontend_base_url: cli_args.frontend_base_url.clone(),
+        dangerous_local_dev_mode_print_tokens_instead_of_send_email: cli_args.dangerous_local_dev_mode_print_tokens_instead_of_send_email,
     };
 
     Ok(ApplicationSetup {
@@ -129,6 +130,7 @@ pub struct SmtpConfig {
     pub password: String,
     pub from_email: String,
     pub frontend_base_url: String,
+    pub dangerous_local_dev_mode_print_tokens_instead_of_send_email: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -147,6 +149,7 @@ pub struct ApplicationConfig {
     pub smtp_password: String,
     pub smtp_from_email: String,
     pub frontend_base_url: String,
+    pub dangerous_local_dev_mode_print_tokens_instead_of_send_email: bool,
 }
 
 impl ApplicationConfig {
@@ -174,6 +177,11 @@ impl ApplicationConfig {
             smtp_password: env::var("SMTP_PASSWORD")?,
             smtp_from_email: env::var("SMTP_FROM_EMAIL")?,
             frontend_base_url: env::var("FRONTEND_BASE_URL")?,
+            dangerous_local_dev_mode_print_tokens_instead_of_send_email: env::var(
+                "DANGEROUS_LOCAL_DEV_MODE_PRINT_TOKENS_INSTEAD_OF_SEND_EMAIL",
+            )
+            .unwrap_or_else(|_| "false".to_string())
+            .parse()?,
         })
     }
 }

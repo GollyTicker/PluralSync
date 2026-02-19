@@ -94,6 +94,13 @@ async fn send_email(
     subject: &str,
     body: String,
 ) -> Result<()> {
+    if smtp_config.dangerous_local_dev_mode_print_tokens_instead_of_send_email {
+        log::info!("[DEV MODE - EMAIL NOT SENT] To: {}", to.inner);
+        log::info!("[DEV MODE - EMAIL SUBJECT] {}", subject);
+        log::info!("[DEV MODE - EMAIL BODY]\n{}", body);
+        return Ok(());
+    }
+
     let email = Message::builder()
         .from(smtp_config.from_email.parse()?)
         .to(to.inner.parse()?)
