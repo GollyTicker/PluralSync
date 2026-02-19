@@ -143,21 +143,35 @@ get_updater_statuses() {
 }
 export -f get_updater_statuses
 
-extract_verification_token_from_logs() {
-    container_name="$1"
+extract_token_from_logs() {
+    local container_name="$1"
+    local token_pattern="$2"
+    local token_type="${3:-token}"
     
-    echo "Extracting verification token from logs..."
+    echo "Extracting $token_type from logs..."
     LOGS="$(docker logs "$container_name" 2>&1 || true)"
-    TOKEN="$(echo "$LOGS" | grep -oP "verify-email\?token=\K[a-zA-Z0-9_-]+" | tail -1)"
+    TOKEN="$(echo "$LOGS" | grep -oP "$token_pattern" | tail -1)"
     
     if [[ "$TOKEN" != "" ]]; then
-        echo "Found token: $TOKEN"
+        echo "Found $token_type: $TOKEN"
     else
-        echo "ERROR: Could not extract verification token from logs"
+        echo "ERROR: Could not extract $token_type from logs"
         return 1
     fi
 }
+export -f extract_token_from_logs
+
+extract_verification_token_from_logs() {
+    local container_name="$1"
+    extract_token_from_logs "$container_name" "verify-email\?token=\K[a-zA-Z0-9_-]+" "verification token"
+}
 export -f extract_verification_token_from_logs
+
+extract_password_reset_token_from_logs() {
+    local container_name="$1"
+    extract_token_from_logs "$container_name" "reset-password\?token=\K[a-zA-Z0-9_-]+" "password reset token"
+}
+export -f extract_password_reset_token_from_logs
 
 verify_email_with_token() {
     echo "Verifying email with token: $TOKEN"
