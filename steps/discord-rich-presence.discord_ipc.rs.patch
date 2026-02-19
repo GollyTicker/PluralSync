@@ -26,11 +26,11 @@
 <     fn send_handshake(&mut self) -> Result<()> {
 ---
 >     fn send_handshake(&mut self) -> Result<Value> {
-92c92
+93c93
 <         self.recv()?;
 ---
 >         let (_, ready) = self.recv()?;
-94c94
+95c95
 <         Ok(())
 ---
 >         Ok(ready)

@@ -191,7 +191,7 @@ fn clear_activity(client: &mut DiscordIpcClient) -> Result<()> {
 }
 
 fn connect_to_discord_ipc() -> Result<DiscordIpcClient> {
-    let mut client = DiscordIpcClient::new(&DISCORD_PLURALSYNC_BOT_APPLICATION_ID.to_string());
+    let mut client = DiscordIpcClient::new(DISCORD_PLURALSYNC_BOT_APPLICATION_ID.to_string());
     log::info!("Connecting to Discord IPC Client...");
     let ready: ReadyResponse = serde_json::from_value(client.connect()?)?;
     let user = ready.data.user;

@@ -8,7 +8,7 @@ use argon2::{
 use base64::{Engine, prelude::BASE64_STANDARD_NO_PAD};
 
 use pluralsync_base::users::{JwtString, Secret, UserProvidedPassword};
-use rand::{Rng, distr, prelude::ThreadRng};
+use rand::{RngExt as _, distr, prelude::ThreadRng};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
