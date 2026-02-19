@@ -9,7 +9,7 @@ use pluralsync::{
     updater::Platform,
     users::{
         PrivacyFineGrained,
-        user_api::{ChangeEmailRequest, ForgotPasswordRequest, ResetPasswordAttempt},
+        user_api::{ChangeEmailRequest, EmailVerificationResponse, ForgotPasswordRequest, ResetPasswordAttempt},
     },
 };
 use pluralsync_base::{
@@ -81,6 +81,7 @@ fn main() -> Result<()> {
         export::<PasswordResetToken>(conf)?,
         export::<EmailVerificationToken>(conf)?,
         export::<ChangeEmailRequest>(conf)?,
+        export::<EmailVerificationResponse>(conf)?,
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");

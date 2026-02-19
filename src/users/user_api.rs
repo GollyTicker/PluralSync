@@ -24,12 +24,17 @@ use serde::Deserialize;
 use serde::Serialize;
 use sqlx::PgPool;
 
+#[derive(Serialize, Deserialize, specta::Type)]
+pub struct EmailVerificationResponse {
+    pub message: String,
+}
+
 #[post("/api/users/email/verify/<token>")]
 pub async fn post_api_user_email_verify(
     db_pool: &State<PgPool>,
     app_user_secrets: &State<database::ApplicationUserSecrets>,
     token: String,
-) -> HttpResult<()> {
+) -> HttpResult<Json<EmailVerificationResponse>> {
     log::info!("# | POST /api/users/email/verify/{token}");
 
     let email_verification_token = EmailVerificationToken {
@@ -63,7 +68,9 @@ pub async fn post_api_user_email_verify(
             user_id,
             new_email
         );
-        return Ok(());
+        return Ok(Json(EmailVerificationResponse {
+            message: "Your email address has been successfully changed.".to_string(),
+        }));
     }
 
     // Otherwise, try to verify as an initial registration
@@ -83,7 +90,9 @@ pub async fn post_api_user_email_verify(
             "# | POST /api/users/email/verify | Initial email verified for {}. Account created",
             temporary_user.email
         );
-        return Ok(());
+        return Ok(Json(EmailVerificationResponse {
+            message: "Your account has been successfully activated. You can now log in.".to_string(),
+        }));
     }
 
     Err((Status::BadRequest, "Token invalid or expired.".to_string()))

@@ -6,6 +6,7 @@ import Login from './components/Login.vue'
 import Logout from './components/Logout.vue'
 import ForgotPassword from './components/ForgotPassword.vue'
 import ResetPassword from './components/ResetPassword.vue'
+import VerifyEmail from './components/VerifyEmail.vue'
 
 const routes: any = [
   { path: '/', component: Start },
@@ -15,6 +16,7 @@ const routes: any = [
   { path: '/logout', component: Logout },
   { path: '/forgot-password', component: ForgotPassword },
   { path: '/reset-password', component: ResetPassword },
+  { path: '/verify-email', component: VerifyEmail },
 ]
 
 const router = createRouter({
