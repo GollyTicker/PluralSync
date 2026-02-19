@@ -1,0 +1,17 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO temporary_users (email, password_hash, email_verification_token_hash, email_verification_token_expires_at)\n        VALUES ($1, $2, $3, $4)\n        ON CONFLICT (email) DO UPDATE\n        SET\n            password_hash = EXCLUDED.password_hash,\n            email_verification_token_hash = EXCLUDED.email_verification_token_hash,\n            email_verification_token_expires_at = EXCLUDED.email_verification_token_expires_at,\n            created_at = NOW()",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Text",
+        "Text",
+        "Timestamptz"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6f95bb0541887c2750d809277ceed5026ed521a138b94965fac247492c425e34"
+}

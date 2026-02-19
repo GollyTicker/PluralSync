@@ -1,9 +1,14 @@
 import { expect, $, browser } from '@wdio/globals'
 import 'mocha'
 import { env } from 'process';
+import { execSync } from 'child_process';
+import axios from 'axios';
 
 const TEST_EMAIL = "test@example.com";
 const TEST_PASSWORD = "m?3yp%&wdS+";
+
+const account_test_email = `test-${Date.now()}@example.com`;
+const REGISTRATION_PASSWORD = 'a-secure-password';
 
 async function notLoggedIn() {
     await expect($('button[type="submit"]')).toHaveText("Login")
@@ -46,31 +51,139 @@ async function configUpdateAndRestartSucceeded() {
 
 async function register(email: string) {
     await $('#email').setValue(email);
-    await $('#password').setValue('a-secure-password');
+    await $('#password').setValue(REGISTRATION_PASSWORD);
     await $('button.register-button').click();
 }
 
+async function loginWithEmail(email: string, password?: string) {
+    await browser.url(env.PLURALSYNC_BASE_URL!);
+    await $('#email').setValue(email);
+    await $('#password').setValue(password ?? REGISTRATION_PASSWORD);
+    await $('button[type="submit"]').click();
+}
+
 async function registrationSucceeded() {
-    await expect($('.status-message')).toHaveText('Registration successful! You can now log in.');
+    await expect($('.status-message')).toHaveText('Registering your account... A verification link has been sent to your email. Click on it to activate your account!')
 }
 
 async function registrationFailed() {
-    await expect($('.status-message')).toHaveText('Registration failed: AxiosError: Request failed with status code 500. error returned from database: duplicate key value violates unique constraint "users_email_key"');
+    await expect($('.status-message')).toHaveText('Registration failed: AxiosError: Request failed with status code 409. This email is already being used.');
+}
+
+async function navigateToForgotPassword() {
+    const forgotPasswordLink = await $('a.forgot-password-link')
+    await forgotPasswordLink.click();
+}
+
+async function onForgotPasswordPage() {
+    await expect($('.forgot-password-container h1')).toHaveText('Forgot Password')
+}
+
+async function submitForgotPasswordForm(email: string) {
+    await $('#email').setValue(email)
+    await $('button[type="submit"]').click()
+}
+
+async function forgotPasswordSubmitted() {
+    await expect($('.success-message')).toExist()
+}
+
+async function onResetPasswordPage() {
+    await expect($('.reset-password-container h1')).toHaveText('Reset Password')
+}
+
+async function submitResetPasswordForm(newPassword: string) {
+    await $('#new-password').setValue(newPassword)
+    await $('#confirm-password').setValue(newPassword)
+    await $('button[type="submit"]').click()
+}
+
+async function resetPasswordSucceeded() {
+    await expect($('.success-message')).toExist()
+}
+
+async function getResetTokenFromLogs(): Promise<string> {
+    try {
+        // Source the test script which has the token extraction function
+        const token = execSync(
+            `bash -c 'cd .. && source test/source.sh && extract_password_reset_token_from_logs "pluralsync-api" >/dev/null 2>&1; echo "$TOKEN"'`,
+            { encoding: 'utf8', cwd: process.env.PWD }
+        ).trim();
+
+        if (!token) {
+            throw new Error('Token extraction returned empty result');
+        }
+
+        return token;
+    } catch (error) {
+        throw new Error(`Failed to extract reset token from logs: ${error}`);
+    }
+}
+
+async function getVerificationTokenFromLogs(): Promise<string> {
+    try {
+        // Source the test script which has the token extraction function
+        const token = execSync(
+            `bash -c 'cd .. && source test/source.sh && extract_verification_token_from_logs "pluralsync-api" >/dev/null 2>&1; echo "$TOKEN"'`,
+            { encoding: 'utf8', cwd: process.env.PWD }
+        ).trim();
+
+        if (!token) {
+            throw new Error('Token extraction returned empty result');
+        }
+
+        return token;
+    } catch (error) {
+        throw new Error(`Failed to extract verification token from logs: ${error}`);
+    }
+}
+
+async function newAccountVerificationSucceeded() {
+    await expect($('.status-message')).toHaveText('Your account has been successfully activated. You can now log in.')
+}
+
+async function verifyEmailViaAPI(token: string): Promise<void> {
+    try {
+        await axios.post(
+            `${env.PLURALSYNC_BASE_URL}/api/user/email/verify/${token}`,
+            {},
+            { headers: { 'Content-Type': 'application/json' } }
+        );
+    } catch (error) {
+        throw new Error(`Failed to verify email: ${error}`);
+    }
+}
+
+async function emailChangeSucceeded() {
+    await expect($('#email-change-status')).toHaveText('Confirmation link sent! Check your new email address to verify the change.');
+}
+
+async function submitEmailChange(newEmail: string) {
+    await $('#new-email').setValue(newEmail);
+    await $('#email-change-button').click();
+}
+
+async function emailVerificationSucceededForChange() {
+    await expect($('.status-message')).toHaveText('Your email address has been successfully changed.');
 }
 
 
 describe('PluralSync registration logic', () => {
-    const test_email = `test-${Date.now()}@example.com`;
 
     it('should allow a new user to register', async () => {
         await browser.url(env.PLURALSYNC_BASE_URL!);
-        await register(test_email);
+        await register(account_test_email);
         await registrationSucceeded();
     });
 
+    it('should verify the registered user email', async () => {
+        const token = await getVerificationTokenFromLogs();
+        await browser.url(env.PLURALSYNC_BASE_URL! + "/verify-email?token=" + token);
+        await newAccountVerificationSucceeded();
+    });
+
     it('should allow the new user to log in', async () => {
-        // The form is already filled from the registration step
-        await $('button[type="submit"]').click()
+        await loginWithEmail(account_test_email);
         await loggedInAndOnStatusPage();
     });
 
@@ -79,14 +192,86 @@ describe('PluralSync registration logic', () => {
         await notLoggedIn();
     });
 
-    it('should not allow registering with an existing email', async () => {
+    it('should not allow registering with the same email again', async () => {
         await browser.url(env.PLURALSYNC_BASE_URL!);
-        // This is the email of the default user, which already exists
-        await register(TEST_EMAIL);
+        await register(account_test_email);
         await registrationFailed();
     });
 });
 
+describe('PluralSync password reset logic', () => {
+    const newPassword = 'new-secure-password-123!@#';
+
+    it('when user navigates to forgot password page', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await navigateToForgotPassword();
+        await onForgotPasswordPage();
+    });
+
+    it('and user submits forgot password form', async () => {
+        await submitForgotPasswordForm(account_test_email);
+        await forgotPasswordSubmitted();
+    });
+
+    it('and the user resets the password with the token', async () => {
+        const token = await getResetTokenFromLogs();
+        await browser.url(`${env.PLURALSYNC_BASE_URL}/reset-password?token=${token}`);
+        await onResetPasswordPage();
+        await submitResetPasswordForm(newPassword);
+        await resetPasswordSucceeded();
+    });
+
+    it('should not allow login with old password after reset', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(account_test_email, REGISTRATION_PASSWORD);
+        await notLoggedIn();
+    });
+
+    it('should allow login with new password', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(account_test_email, newPassword);
+        await loggedInAndOnStatusPage();
+    });
+
+    it('should be able to logout after password reset', async () => {
+        await navigateToLogout();
+        await notLoggedIn();
+    });
+});
+
+describe('PluralSync email change logic', () => {
+    const newEmailAddress = `test-${Date.now()}-changed@example.com`;
+    const passwordAfterReset = 'new-secure-password-123!@#';
+
+    it('should allow user to request email change', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(account_test_email, passwordAfterReset);
+        await loggedInAndOnStatusPage();
+
+        await navigateToConfig();
+        await loggedInAndOnConfigPage();
+
+        await submitEmailChange(newEmailAddress);
+        await emailChangeSucceeded();
+    });
+
+    it('should verify email change with token from logs', async () => {
+        const token = await getVerificationTokenFromLogs();
+        await browser.url(env.PLURALSYNC_BASE_URL! + "/verify-email?token=" + token);
+        await emailVerificationSucceededForChange();
+    });
+
+    it('should allow login with new email after change is confirmed', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(newEmailAddress, passwordAfterReset);
+        await loggedInAndOnStatusPage();
+    });
+
+    it('should be able to logout after email change', async () => {
+        await navigateToLogout();
+        await notLoggedIn();
+    });
+});
 
 describe('PluralSync login logic', () => {
     it('should be intially not logged in', async () => {
@@ -116,7 +301,6 @@ describe('PluralSync login logic', () => {
         await notLoggedIn();
     });
 });
-
 
 describe('PluralSync updater status and config save and restarts', () => {
     it('should show the correct updater status', async () => {

@@ -82,6 +82,8 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
                 users::user_api::post_api_user_register,
                 users::user_api::post_api_user_login,
                 users::user_api::get_api_user_info,
+                users::user_api::post_api_user_email_verify,
+                users::user_api::post_api_user_email_change,
                 users::config_api::get_api_user_config,
                 users::config_api::post_api_user_config,
                 users::config_api::get_api_config_defaults,
