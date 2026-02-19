@@ -145,13 +145,26 @@ async function newAccountVerificationSucceeded() {
 async function verifyEmailViaAPI(token: string): Promise<void> {
     try {
         await axios.post(
-            `${env.PLURALSYNC_BASE_URL}/api/users/email/verify/${token}`,
+            `${env.PLURALSYNC_BASE_URL}/api/user/email/verify/${token}`,
             {},
             { headers: { 'Content-Type': 'application/json' } }
         );
     } catch (error) {
         throw new Error(`Failed to verify email: ${error}`);
     }
+}
+
+async function emailChangeSucceeded() {
+    await expect($('#email-change-status')).toHaveText('Confirmation link sent! Check your new email address to verify the change.');
+}
+
+async function submitEmailChange(newEmail: string) {
+    await $('#new-email').setValue(newEmail);
+    await $('#email-change-button').click();
+}
+
+async function emailVerificationSucceededForChange() {
+    await expect($('.status-message')).toHaveText('Your email address has been successfully changed.');
 }
 
 
@@ -221,6 +234,40 @@ describe('PluralSync password reset logic', () => {
     });
 
     it('should be able to logout after password reset', async () => {
+        await navigateToLogout();
+        await notLoggedIn();
+    });
+});
+
+describe('PluralSync email change logic', () => {
+    const newEmailAddress = `test-${Date.now()}-changed@example.com`;
+    const passwordAfterReset = 'new-secure-password-123!@#';
+
+    it('should allow user to request email change', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(account_test_email, passwordAfterReset);
+        await loggedInAndOnStatusPage();
+
+        await navigateToConfig();
+        await loggedInAndOnConfigPage();
+
+        await submitEmailChange(newEmailAddress);
+        await emailChangeSucceeded();
+    });
+
+    it('should verify email change with token from logs', async () => {
+        const token = await getVerificationTokenFromLogs();
+        await browser.url(env.PLURALSYNC_BASE_URL! + "/verify-email?token=" + token);
+        await emailVerificationSucceededForChange();
+    });
+
+    it('should allow login with new email after change is confirmed', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await loginWithEmail(newEmailAddress, passwordAfterReset);
+        await loggedInAndOnStatusPage();
+    });
+
+    it('should be able to logout after email change', async () => {
         await navigateToLogout();
         await notLoggedIn();
     });

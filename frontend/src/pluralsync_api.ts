@@ -52,19 +52,15 @@ export const pluralsync_api = {
   },
   verifyEmail: async function (token: EmailVerificationToken): Promise<EmailVerificationResponse> {
     const response = await http.post<EmailVerificationResponse>(
-      `/api/users/email/verify/${token.inner.inner}`
+      `/api/user/email/verify/${token.inner.inner}`,
     )
     return response.data
   },
   requestEmailChange: async function (newEmailRequest: ChangeEmailRequest): Promise<void> {
     const jwtString = await getJwt()
-    await http.post(
-      '/api/users/email/change',
-      newEmailRequest,
-      {
-        headers: { Authorization: `Bearer ${jwtString.inner}` },
-      },
-    )
+    await http.post('/api/user/email/change', newEmailRequest, {
+      headers: { Authorization: `Bearer ${jwtString.inner}` },
+    })
   },
   get_updater_status: async function (): Promise<UserUpdatersStatuses> {
     const jwtString = await getJwt()
@@ -76,6 +72,13 @@ export const pluralsync_api = {
   get_config: async function (): Promise<UserConfigDbEntries> {
     const jwtString = await getJwt()
     const response = await http.get<UserConfigDbEntries>('/api/user/config', {
+      headers: { Authorization: `Bearer ${jwtString.inner}` },
+    })
+    return response.data
+  },
+  get_user_info: async function (): Promise<any> {
+    const jwtString = await getJwt()
+    const response = await http.get<any>('/api/user/info', {
       headers: { Authorization: `Bearer ${jwtString.inner}` },
     })
     return response.data

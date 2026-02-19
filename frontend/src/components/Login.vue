@@ -69,7 +69,8 @@ const register = async () => {
   try {
     status.value = 'Sending registration request...'
     await pluralsync_api.register(creds)
-    status.value = 'Registering your account... A verification link has been sent to your email. Click on it to activate your account!'
+    status.value =
+      'Registering your account... A verification link has been sent to your email. Click on it to activate your account!'
   } catch (err: any) {
     status.value = 'Registration failed: ' + detailed_error_string(err)
     console.error('Registration failed:', err)

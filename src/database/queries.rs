@@ -434,7 +434,7 @@ impl UserInfoRaw {
 
 pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo> {
     log::debug!("# | db::get_user_info | {user_id}");
-    
+
     let row = sqlx::query_as::<_, UserInfoRaw>(
         "SELECT
             id,

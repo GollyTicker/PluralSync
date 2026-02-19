@@ -98,7 +98,8 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         password: cli_args.smtp_password.clone(),
         from_email: cli_args.smtp_from_email.clone(),
         frontend_base_url: cli_args.frontend_base_url.clone(),
-        dangerous_local_dev_mode_print_tokens_instead_of_send_email: cli_args.dangerous_local_dev_mode_print_tokens_instead_of_send_email,
+        dangerous_local_dev_mode_print_tokens_instead_of_send_email: cli_args
+            .dangerous_local_dev_mode_print_tokens_instead_of_send_email,
     };
 
     Ok(ApplicationSetup {

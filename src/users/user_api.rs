@@ -29,13 +29,13 @@ pub struct EmailVerificationResponse {
     pub message: String,
 }
 
-#[post("/api/users/email/verify/<token>")]
+#[post("/api/user/email/verify/<token>")]
 pub async fn post_api_user_email_verify(
     db_pool: &State<PgPool>,
     app_user_secrets: &State<database::ApplicationUserSecrets>,
     token: String,
 ) -> HttpResult<Json<EmailVerificationResponse>> {
-    log::info!("# | POST /api/users/email/verify/{token}");
+    log::info!("# | POST /api/user/email/verify/{token}");
 
     let email_verification_token = EmailVerificationToken {
         inner: Secret { inner: token },
@@ -63,11 +63,7 @@ pub async fn post_api_user_email_verify(
         database::set_new_verified_email(db_pool, &user_id, new_email.clone())
             .await
             .map_err(expose_internal_error)?;
-        log::info!(
-            "# | POST /api/users/email/verify | Email changed for {} to {}",
-            user_id,
-            new_email
-        );
+        log::info!("# | POST /api/user/email/verify | Email changed for {user_id} to {new_email}");
         return Ok(Json(EmailVerificationResponse {
             message: "Your email address has been successfully changed.".to_string(),
         }));
@@ -87,11 +83,12 @@ pub async fn post_api_user_email_verify(
         .await
         .map_err(expose_internal_error)?;
         log::info!(
-            "# | POST /api/users/email/verify | Initial email verified for {}. Account created",
+            "# | POST /api/user/email/verify | Initial email verified for {}. Account created",
             temporary_user.email
         );
         return Ok(Json(EmailVerificationResponse {
-            message: "Your account has been successfully activated. You can now log in.".to_string(),
+            message: "Your account has been successfully activated. You can now log in."
+                .to_string(),
         }));
     }
 
@@ -106,7 +103,7 @@ pub async fn post_api_user_register(
     credentials: Json<UserLoginCredentials>,
 ) -> HttpResult<()> {
     let email = credentials.email.clone();
-    log::info!("# | POST /api/user/register | {}", email);
+    log::info!("# | POST /api/user/register | {email}");
 
     if credentials.is_empty_and_thus_invalid() {
         return Err((
@@ -153,15 +150,14 @@ pub async fn post_api_user_register(
     .await
     .map_err(expose_internal_error)?;
 
-    email::send_verification_email(&smtp_config, &email, &email_verification_token)
+    email::send_verification_email(smtp_config, &email, &email_verification_token)
         .await
         .map_err(expose_internal_error)?;
 
     log::info!("# | post_api_user_register | Email verification sent to {email}");
 
     log::info!(
-        "# | POST /api/user/register | {} | temporary user created and verification email sent.",
-        email
+        "# | POST /api/user/register | {email} | temporary user created and verification email sent."
     );
 
     Ok(())
@@ -402,7 +398,7 @@ pub async fn post_api_user_email_change(
 
     let new_email = request.new_email.clone();
     email::send_email_change_confirmation_link_to_new_email(
-        &smtp_config,
+        smtp_config,
         &new_email.clone(),
         &email_verification_token,
     )
@@ -411,15 +407,14 @@ pub async fn post_api_user_email_change(
 
     log::info!("# | post_api_user_me_email_change | Email change confirmation sent to {new_email}");
 
-    email::send_email_change_notification_to_old_email(
-        &smtp_config,
+    let _ = email::send_email_change_notification_to_old_email(
+        smtp_config,
         &old_email,
         &request.new_email,
     )
     .await
-    .map_err(expose_internal_error)?;
-
-    log::info!("# | post_api_user_me_email_change | Email change notification sent to {old_email}");
+    .inspect_err(|e|log::warn!("# | post_api_user_me_email_change | Failed to send Email change notification sent to {old_email}: {e}"))
+    .inspect(|()| log::info!("# | post_api_user_me_email_change | Email change notification sent to {old_email}"));
 
     Ok(())
 }

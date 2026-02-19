@@ -177,8 +177,6 @@ verify_email_with_token() {
     echo "Verifying email with token: $TOKEN"
     curl -X POST -s --fail-with-body \
         -H "Content-Type: application/json" \
-        "$BASE_URL/api/users/email/verify/$TOKEN"
-    
-    echo "Email verified successfully."
+        "$BASE_URL/api/user/email/verify/$TOKEN"
 }
 export -f verify_email_with_token

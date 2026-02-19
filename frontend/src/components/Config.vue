@@ -14,8 +14,46 @@
       footer of this website)
     </p>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
-      <button type="submit">Save and Restart</button>
       <p id="config-update-status">{{ status }}</p>
+      <div class="config-section">
+        <h2>Account Settings</h2>
+        <div class="config-grid">
+          <div class="config-item">
+            <label for="current-email">Current Email</label>
+            <p class="config-description">
+              Your current email address associated with your PluralSync account.
+            </p>
+            <input id="current-email" type="email" :value="currentEmail" disabled />
+          </div>
+          <div class="config-item">
+            <label for="new-email">Change Email Address</label>
+            <p class="config-description">
+              Enter your new email address. You will receive a confirmation link at the new email
+              address to complete the change.
+            </p>
+            <input
+              id="new-email"
+              type="email"
+              v-model="newEmail"
+              placeholder="Enter new email address"
+              autocomplete="off"
+            />
+            <button
+              @click.prevent="requestEmailChange"
+              type="button"
+              id="email-change-button"
+              :disabled="emailChangeLoading"
+            >
+              {{ emailChangeLoading ? 'Sending...' : 'Change Email Address' }}
+            </button>
+            <p id="email-change-status">{{ emailChangeStatus }}</p>
+          </div>
+        </div>
+      </div>
+      <div class="config-section">
+        <h2>PluralSync Setings</h2>
+      </div>
+      <button type="submit">Save and Restart</button>
       <div class="config-section">
         <h2>Simply Plural</h2>
         <div class="config-grid">
@@ -483,6 +521,10 @@ const vrchatTwoFactor = ref('')
 const vrchatLoginStatus = ref('')
 const vrchatTmpCookie = ref('')
 const vrchatTwoFactorMethod: Ref<TwoFactorAuthMethod | undefined> = ref(undefined)
+const currentEmail = ref('')
+const newEmail = ref('')
+const emailChangeStatus = ref('')
+const emailChangeLoading = ref(false)
 
 const VRCHAT_LOGIN_SUCCESSFUL =
   'VRChat login successful and retrieved cookie! Please save config now.'
@@ -539,6 +581,32 @@ async function submitVRChat2FA() {
   }
 }
 
+async function requestEmailChange() {
+  if (!newEmail.value || !newEmail.value.trim()) {
+    emailChangeStatus.value = 'Please enter a new email address.'
+    return
+  }
+
+  if (newEmail.value === currentEmail.value) {
+    emailChangeStatus.value = 'New email must be different from your current email.'
+    return
+  }
+
+  emailChangeLoading.value = true
+  emailChangeStatus.value = ''
+  try {
+    await pluralsync_api.requestEmailChange({ new_email: { inner: newEmail.value } })
+    emailChangeStatus.value =
+      'Confirmation link sent! Check your new email address to verify the change.'
+    newEmail.value = ''
+  } catch (err) {
+    console.warn(err)
+    emailChangeStatus.value = 'Failed to request email change. Error: ' + detailed_error_string(err)
+  } finally {
+    emailChangeLoading.value = false
+  }
+}
+
 function copyText(text: string, event: MouseEvent) {
   navigator.clipboard
     .writeText(text)
@@ -556,6 +624,16 @@ async function fetchConfig() {
   try {
     config.value = await pluralsync_api.get_config()
     console.log('Received user config: ', config.value)
+  } catch (e) {
+    console.warn(e)
+  }
+}
+
+async function fetchUserInfo() {
+  try {
+    const userInfo = await pluralsync_api.get_user_info()
+    currentEmail.value = userInfo.email?.inner || ''
+    console.log('Received user info: ', userInfo)
   } catch (e) {
     console.warn(e)
   }
@@ -621,6 +699,7 @@ async function refreshPrivacyBuckets() {
 
 onMounted(async () => {
   await fetchConfig()
+  await fetchUserInfo()
   await fetchDefaults()
   config.value.simply_plural_token?.secret && (await refreshPrivacyBuckets())
 })
@@ -680,10 +759,11 @@ watch(
   width: 10rem;
   font-size: smaller;
   background-color: gray;
+  margin-top: 0.5rem;
 }
 
 .config-item button:hover {
-  background-color: black;
+  background-color: #555;
 }
 
 .copyable {

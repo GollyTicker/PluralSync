@@ -56,7 +56,7 @@ pub async fn send_email_change_confirmation_link_to_new_email(
     token: &EmailVerificationToken,
 ) -> Result<()> {
     let confirmation_link = format!(
-        "{}/confirm-email-change?token={}",
+        "{}/verify-email?token={}",
         smtp_config.frontend_base_url, token.inner.inner
     );
 
@@ -96,8 +96,8 @@ async fn send_email(
 ) -> Result<()> {
     if smtp_config.dangerous_local_dev_mode_print_tokens_instead_of_send_email {
         log::info!("[DEV MODE - EMAIL NOT SENT] To: {}", to.inner);
-        log::info!("[DEV MODE - EMAIL SUBJECT] {}", subject);
-        log::info!("[DEV MODE - EMAIL BODY]\n{}", body);
+        log::info!("[DEV MODE - EMAIL SUBJECT] {subject}");
+        log::info!("[DEV MODE - EMAIL BODY]\n{body}");
         return Ok(());
     }
 
