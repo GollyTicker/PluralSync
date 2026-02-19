@@ -35,7 +35,12 @@ http.interceptors.response.use(
   (error) => {
     const isLoginAttempt = router.currentRoute.value.path === '/login'
     const isAccountDeletionAttempt = router.currentRoute.value.path === '/settings/delete-account'
-    if (error.response && [401, 403].includes(error.response.status) && !isLoginAttempt && !isAccountDeletionAttempt) {
+    if (
+      error.response &&
+      [401, 403].includes(error.response.status) &&
+      !isLoginAttempt &&
+      !isAccountDeletionAttempt
+    ) {
       console.warn('Auth failed with 401/403 on request. Now redirecting to login. Error:', error)
       logoutAndBackToStart()
     }

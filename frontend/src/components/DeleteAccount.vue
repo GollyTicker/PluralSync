@@ -2,15 +2,18 @@
   <div class="delete-account-container">
     <h1>Delete Account</h1>
     <div class="warning-box">
-      <h2 style="margin-top: 0">⚠️ Attention! You are about to delete your account. This action is irreversible ⚠️</h2>
+      <h2 style="margin-top: 0">
+        ⚠️ Attention! You are about to delete your account. This action is irreversible ⚠️
+      </h2>
       <p>When you delete your account:</p>
       <ul>
         <li>All PluralSync updaters will stop and be permanently removed.</li>
-        <li>Your fronters symcs managed by PluralSync will NO LONGER work between SimplyPlural, PluralKit, Discord, VRChat, or other platforms.</li>
-        <li>Your website fronting page will stop functioning.</li>
         <li>
-          All saved data will be deleted (authentication tokens, platform credentials, etc.)
+          Your fronters symcs managed by PluralSync will NO LONGER work between SimplyPlural,
+          PluralKit, Discord, VRChat, or other platforms.
         </li>
+        <li>Your website fronting page will stop functioning.</li>
+        <li>All saved data will be deleted (authentication tokens, platform credentials, etc.)</li>
         <li>Your account cannot be recovered.</li>
       </ul>
       <p><strong>This is irreversible.</strong></p>
