@@ -56,3 +56,7 @@ interface Props {
 
 defineProps<Props>()
 </script>
+
+<style scoped>
+@import url('../assets/config.css');
+</style>

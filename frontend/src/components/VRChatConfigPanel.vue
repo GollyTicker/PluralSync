@@ -153,3 +153,7 @@ async function submitVRChat2FA() {
   }
 }
 </script>
+
+<style scoped>
+@import url('../assets/config.css');
+</style>

@@ -63,3 +63,7 @@ defineProps<Props>()
 
 const baseUrl = http.defaults.baseURL!
 </script>
+
+<style scoped>
+@import url('../assets/config.css');
+</style>

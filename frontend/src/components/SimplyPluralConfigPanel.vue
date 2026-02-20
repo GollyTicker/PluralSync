@@ -212,3 +212,7 @@ watch(
   },
 )
 </script>
+
+<style scoped>
+@import url('../assets/config.css');
+</style>

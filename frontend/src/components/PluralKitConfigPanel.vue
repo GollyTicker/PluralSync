@@ -61,3 +61,7 @@ function setSecret(key: SecretKeys, event: Event) {
   }
 }
 </script>
+
+<style scoped>
+@import url('../assets/config.css');
+</style>
