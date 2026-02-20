@@ -1,0 +1,5 @@
+CREATE TABLE history_status (
+    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    status TEXT NOT NULL,
+    time TIMESTAMPTZ NOT NULL DEFAULT NOW()
+)
