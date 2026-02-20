@@ -28,10 +28,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps({})
-
 import { ref, type Ref } from 'vue'
 import router from '@/router'
+import type { AxiosError } from 'axios'
 import type { UserLoginCredentials } from '@/pluralsync.bindings'
 import { detailed_error_string, pluralsync_api } from '@/pluralsync_api'
 
@@ -54,8 +53,8 @@ const login = async () => {
     console.log('Login successful!')
     status.value = ''
     router.push('/status')
-  } catch (err: any) {
-    status.value = 'Login failed:' + detailed_error_string(err)
+  } catch (err: unknown) {
+    status.value = 'Login failed:' + detailed_error_string(err as AxiosError | Error)
     console.error('Login failed:', err)
   }
 }
@@ -75,8 +74,8 @@ const register = async () => {
     await pluralsync_api.register(creds)
     status.value =
       'Registering your account... A verification link has been sent to your email. Click on it to activate your account!'
-  } catch (err: any) {
-    status.value = 'Registration failed: ' + detailed_error_string(err)
+  } catch (err: unknown) {
+    status.value = 'Registration failed: ' + detailed_error_string(err as AxiosError | Error)
     console.error('Registration failed:', err)
   }
 }

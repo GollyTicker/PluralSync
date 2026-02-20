@@ -512,14 +512,14 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref, watch } from 'vue'
 import router from '@/router'
-import {
-  type Decrypted,
-  type UserConfigDbEntries,
-  type VRChatCredentials,
-  type VRChatCredentialsWithTwoFactorAuth,
-  type TwoFactorAuthMethod,
-  PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL,
+import type {
+  Decrypted,
+  UserConfigDbEntries,
+  VRChatCredentials,
+  VRChatCredentialsWithTwoFactorAuth,
+  TwoFactorAuthMethod,
 } from '@/pluralsync.bindings'
+import { PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL } from '@/pluralsync.bindings'
 import { detailed_error_string, http, pluralsync_api } from '@/pluralsync_api'
 import { get_privacy_buckets, type PrivacyBucket } from '@/simply_plural_api'
 
@@ -721,7 +721,9 @@ onMounted(async () => {
   await fetchConfig()
   await fetchUserInfo()
   await fetchDefaults()
-  config.value.simply_plural_token?.secret && (await refreshPrivacyBuckets())
+  if (config.value.simply_plural_token?.secret) {
+    await refreshPrivacyBuckets()
+  }
 })
 
 watch(

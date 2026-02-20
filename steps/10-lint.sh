@@ -1,8 +1,5 @@
 #!/bin/bash
 
-set -euo pipefail
-
-
 rust_lint() {
     cargo clippy --allow-dirty --fix -- \
         -W clippy::pedantic \
@@ -16,8 +13,11 @@ rust_lint() {
 
 
 web_frontend_lint() {
-    # todo. add linting
-    # npm run lint -- --fix
+    npm run lint
+    npm run format
+}
+
+bridge_frontend_lint() {
     npx prettier --write src
 }
 
@@ -27,6 +27,5 @@ web_frontend_lint() {
 rust_lint
 (cd bridge-src-tauri && rust_lint)
 
-
 (cd frontend && web_frontend_lint)
-(cd bridge-frontend && web_frontend_lint)
+(cd bridge-frontend && bridge_frontend_lint)

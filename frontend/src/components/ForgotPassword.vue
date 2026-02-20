@@ -25,6 +25,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { AxiosError } from 'axios'
 import { pluralsync_api, detailed_error_string } from '@/pluralsync_api'
 
 const email = ref('')
@@ -38,8 +39,8 @@ const handleSubmit = async () => {
   try {
     await pluralsync_api.forgotPassword({ email: { inner: email.value } })
     submitted.value = true
-  } catch (err: any) {
-    error.value = detailed_error_string(err)
+  } catch (err: unknown) {
+    error.value = detailed_error_string(err as AxiosError | Error)
   } finally {
     loading.value = false
   }

@@ -61,6 +61,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import router from '@/router'
+import type { AxiosError } from 'axios'
 import { pluralsync_api, detailed_error_string } from '@/pluralsync_api'
 
 const password = ref('')
@@ -105,8 +106,8 @@ async function deleteAccount() {
     setTimeout(() => {
       router.push('/')
     }, 2000)
-  } catch (err: any) {
-    error.value = detailed_error_string(err)
+  } catch (err: unknown) {
+    error.value = detailed_error_string(err as AxiosError | Error)
     loading.value = false
   }
 }

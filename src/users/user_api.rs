@@ -434,6 +434,7 @@ pub async fn get_api_user_info(
     Ok(Json(user_info.into()))
 }
 
+// NOTE: specta::Type is manually exported in bindings
 #[derive(Serialize, Deserialize)]
 pub struct UserInfoUI {
     pub id: UserId,

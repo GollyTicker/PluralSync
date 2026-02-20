@@ -26,6 +26,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import type { AxiosError } from 'axios'
 import { pluralsync_api, detailed_error_string } from '@/pluralsync_api'
 
 const route = useRoute()
@@ -65,8 +66,8 @@ const handleSubmit = async () => {
       new_password: { inner: { inner: newPassword.value } },
     })
     submitted.value = true
-  } catch (err: any) {
-    error.value = detailed_error_string(err)
+  } catch (err: unknown) {
+    error.value = detailed_error_string(err as AxiosError | Error)
   } finally {
     loading.value = false
   }

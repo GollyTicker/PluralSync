@@ -86,6 +86,7 @@ fn main() -> Result<()> {
         export::<ChangeEmailRequest>(conf)?,
         export::<EmailVerificationResponse>(conf)?,
         export::<DeleteAccountRequest>(conf)?,
+        "export type UserInfoUI = { id: { inner: string }, email: { inner: string }, created_at: string }".to_owned(),
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");

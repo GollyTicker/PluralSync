@@ -16,6 +16,7 @@ import type {
   EmailVerificationResponse,
   ChangeEmailRequest,
   DeleteAccountRequest,
+  UserInfoUI,
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
@@ -24,9 +25,9 @@ export const http = axios.create({
   baseURL: import.meta.env.VITE_PLURALSYNC_BASE_URL || '' /* use relate url by default */,
 })
 
-export function detailed_error_string(error: any): string {
-  const axiosErrorString = (<AxiosError>error)?.response?.data ?? ''
-  return error.toString() + '. ' + axiosErrorString
+export function detailed_error_string(error: unknown): string {
+  const axiosErrorString = (error as AxiosError)?.response?.data ?? ''
+  return (error as Error).toString() + '. ' + axiosErrorString
 }
 
 // whenever the user opens directly into a page with an outdated jwt, redirect to the login page.
@@ -84,9 +85,9 @@ export const pluralsync_api = {
     })
     return response.data
   },
-  get_user_info: async function (): Promise<any> {
+  get_user_info: async function (): Promise<UserInfoUI> {
     const jwtString = await getJwt()
-    const response = await http.get<any>('/api/user/info', {
+    const response = await http.get<UserInfoUI>('/api/user/info', {
       headers: { Authorization: `Bearer ${jwtString.inner}` },
     })
     return response.data
