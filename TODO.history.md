@@ -31,30 +31,31 @@ CREATE TABLE history_status (
 - Default values: `Some(100)` and `Some(7)`
 - Validation: 0–1000 range for history_limit, 0–30 for history_truncate_after_days
 
-**2. History Module (`src/history/history.rs`)** ✅ COMPLETED
+**2. History Module (`src/history/history_api.rs`)** ✅ COMPLETED
 - `HistoryEntry` struct with `specta::Type` export:
   - `id: String`
   - `user_id: UserId`
   - `status_text: String`
   - `created_at: chrono::DateTime<chrono::Utc>`
-- Storage functions:
-  - `store_history_entry(pool, user_id, status_text, history_limit, history_truncate_after_days)` – inserts new entry, then prunes old entries beyond limit
-  - `get_history_entries(pool, user_id, limit)` – returns latest N entries ordered by created_at DESC
-  - `get_most_recent_status_text(pool, user_id)` – for deduplication
-  - `prune_history(pool, user_id, history_limit, history_truncate_after_days)` – internal pruning logic
-- Deduplication: Only store if `status_text` differs from most recent entry (to be integrated in manager.rs)
+- API endpoint `get_api_user_history_fronting()`:
+  - Fetches user config with validated limits
+  - Returns latest N entries ordered by created_at DESC
+- Storage functions (inlined in `change_processor.rs`):
+  - `store_history_entry()` – inserts new entry, then prunes old entries beyond limit
+  - `get_history_entries()` – retrieves entries from database
+  - `prune_history()` – internal pruning logic in database module
 
-**3. API Endpoint** ⏳ TODO
+**3. API Endpoint** ✅ COMPLETED
 - `GET /api/user/history/fronting`
 - Returns `Vec<HistoryEntry>`
 - Requires JWT authentication
+- Implemented in `src/history/history_api.rs`
 
-**4. Integration Point (`src/updater/manager.rs`)** ⏳ TODO
-In `fetch_and_update_fronters()`, after sending fronters to channel:
-- Generate formatted status string using existing `format_fronting_status()`
-- Check if different from last stored entry (deduplication)
-  - This can be done with the existing `OnlyChangesImmediateSend`
-- Call `store_history_entry()` to persist
+**4. Integration Point (`src/updater/change_processor.rs`)** ✅ COMPLETED
+- History storage integrated in `loop_logic()` via `append_new_fronters_to_history()`
+- Generates formatted status string using existing `format_fronting_status()`
+- Calls `store_history_entry()` to persist and prune old entries
+- History limit of 0 effectively disables history (prunes all entries)
 
 ### Frontend Implementation
 
@@ -106,20 +107,29 @@ WHERE user_id = $1
 - Both conditions are OR'd so entries are removed if they exceed EITHER limit
 
 ### Files to Create/Modify
-**Create:** ✅ COMPLETED
-- `src/history/mod.rs`
-- `src/history/history.rs`
 
-**Modify:** 
+**Create:**
+- `src/history/mod.rs` ✅ COMPLETED
+- `src/history/history_api.rs` ✅ COMPLETED (contains `HistoryEntry` struct and API endpoint)
+
+**Modify:**
 - `docker/migrations/015_history_status.sql` – updated schema ✅ COMPLETED
 - `src/users/config.rs` – add `history_limit` and `history_truncate_after_days` fields ✅ COMPLETED
+  - Added to `UserConfigDbEntries` as `Option<i32>`
+  - Added to `UserConfigForUpdater` as `usize` (validated)
+  - Validation: 0–1000 for limit, 0–30 for days
 - `src/lib.rs` – register history module ✅ COMPLETED
 - `src/users/model.rs` – add `specta::Type` to `UserId` ✅ COMPLETED
 - `src/database/queries.rs` – include new fields in queries ✅ COMPLETED
+  - `insert_history_entry()` – inserts new history entry
+  - `get_history_entries()` – retrieves entries ordered by created_at DESC
+  - `prune_history()` – removes old entries based on limit and age
 - `src/database/constraints.rs` – include new fields in downgrade/upgrade functions ✅ COMPLETED
-- `src/updater/manager.rs` – integrate history storage ⏳ TODO
-- `src/main.rs` – register new endpoint ⏳ TODO
-- `src/users/history_api.rs` – create API endpoint ⏳ TODO
+- `src/updater/change_processor.rs` – integrate history storage ✅ COMPLETED
+  - Added `append_new_fronters_to_history()` function
+  - Added inline `store_history_entry()` function
+- `src/main.rs` – register new endpoint ✅ COMPLETED
+  - Added `history::get_api_user_history_fronting` to routes
 - `frontend/src/router.ts` – add history route ⏳ TODO
 - `frontend/src/App.vue` – add navigation link ⏳ TODO
 - `frontend/src/components/HistoryTab.vue` – create component ⏳ TODO

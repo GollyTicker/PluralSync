@@ -1,6 +1,7 @@
 use anyhow::Result;
 use anyhow::anyhow;
 
+use pluralsync::history;
 use pluralsync::meta_api;
 use pluralsync::metrics;
 use pluralsync::platforms;
@@ -96,6 +97,7 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
                 platforms::vrchat_api::post_api_user_platform_vrchat_auth_2fa_request,
                 platforms::vrchat_api::post_api_user_platform_vrchat_auth_2fa_resolve,
                 platforms::discord_api::get_api_user_platform_discord_bridge_events,
+                history::get_api_user_history_fronting,
                 meta_api::get_api_meta_pluralsync_variant,
             ],
         )

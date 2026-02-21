@@ -3,8 +3,10 @@ use pluralsync_base::communication::LatestReceiver;
 use pluralsync_base::updater::UpdaterStatus;
 use std::collections::HashMap;
 
+use crate::plurality::fronting_status::{CleanForPlatform, FrontingFormat, format_fronting_status};
 use crate::updater::platforms::{Platform, Updater};
 use crate::updater::{manager, platforms};
+use crate::users::UserId;
 use crate::{database, int_counter_metric, plurality, users};
 use anyhow::Result;
 
@@ -62,7 +64,7 @@ pub async fn run_listener_for_changes(
 
         log_error_and_continue(
             "Updater Logic",
-            loop_logic(&config, &mut updaters, &fronters).await,
+            loop_logic(&config, &mut updaters, &fronters, db_pool).await,
             &config,
         );
 
@@ -98,6 +100,7 @@ async fn loop_logic(
     config: &users::UserConfigForUpdater,
     updaters: &mut UserUpdaters,
     fronters: &[plurality::Fronter],
+    db_pool: &sqlx::PgPool,
 ) -> Result<()> {
     for updater in updaters.values_mut() {
         if updater.enabled(config) {
@@ -109,6 +112,48 @@ async fn loop_logic(
         }
     }
 
+    append_new_fronters_to_history(config, fronters, db_pool).await;
+
+    Ok(())
+}
+
+async fn append_new_fronters_to_history(
+    config: &users::UserConfigForUpdater,
+    fronters: &[plurality::Fronter],
+    db_pool: &sqlx::PgPool,
+) {
+    let fronting_format = FrontingFormat {
+        max_length: None,
+        cleaning: CleanForPlatform::NoClean,
+        prefix: config.status_prefix.clone(),
+        status_if_no_fronters: config.status_no_fronts.clone(),
+        truncate_names_to_length_if_status_too_long: config.status_truncate_names_to,
+    };
+    let status_text = format_fronting_status(&fronting_format, fronters);
+
+    log_error_and_continue(
+        "store history",
+        store_history_entry(
+            db_pool,
+            &config.user_id,
+            &status_text,
+            config.history_limit,
+            config.history_truncate_after_days,
+        )
+        .await,
+        config,
+    );
+}
+
+async fn store_history_entry(
+    pool: &sqlx::PgPool,
+    user_id: &UserId,
+    status_text: &str,
+    history_limit: usize,
+    history_truncate_after_days: usize,
+) -> Result<(), anyhow::Error> {
+    database::insert_history_entry(pool, user_id, status_text).await?;
+    database::prune_history(pool, user_id, history_limit, history_truncate_after_days).await?;
     Ok(())
 }
 

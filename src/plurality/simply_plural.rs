@@ -395,6 +395,8 @@ mod tests {
             vrchat_password: Default::default(),
             vrchat_cookie: Default::default(),
             pluralkit_token: Default::default(),
+            history_limit: Default::default(),
+            history_truncate_after_days: Default::default(),
         }
     }
 

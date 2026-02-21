@@ -604,9 +604,9 @@ pub async fn insert_history_entry(
 pub async fn get_history_entries(
     db_pool: &PgPool,
     user_id: &UserId,
-    limit: i32,
+    limit: usize,
 ) -> Result<Vec<HistoryEntry>> {
-    let limit: i64 = limit.into();
+    let limit: i64 = limit.try_into()?;
     log::debug!("# | db::get_history_entries | {user_id} | limit={limit}");
     sqlx::query_as!(
         HistoryEntry,
@@ -630,10 +630,10 @@ pub async fn get_history_entries(
 pub async fn prune_history(
     db_pool: &PgPool,
     user_id: &UserId,
-    history_limit: i32,
-    history_truncate_after_days: i32,
+    history_limit: usize,
+    history_truncate_after_days: usize,
 ) -> Result<()> {
-    let history_limit: i64 = history_limit.into();
+    let history_limit: i64 = history_limit.try_into()?;
     log::debug!(
         "# | db::prune_history | {user_id} | limit={history_limit}, days={history_truncate_after_days}"
     );

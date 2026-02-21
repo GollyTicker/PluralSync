@@ -238,6 +238,9 @@ pub struct UserConfigForUpdater {
     pub vrchat_password: database::Decrypted,
     pub vrchat_cookie: database::Decrypted,
     pub pluralkit_token: database::Decrypted,
+
+    pub history_limit: usize,
+    pub history_truncate_after_days: usize,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug, Default)]
@@ -261,6 +264,7 @@ impl From<i32> for WaitSeconds {
 int_counter_metric!(CONFIG_CREATE_WITH_STRONG_CONSTRAINTS_TOTAL_COUNT);
 int_counter_metric!(CONFIG_CREATE_WITH_STRONG_CONSTRAINTS_SUCCESS_COUNT);
 
+#[allow(clippy::too_many_lines)]
 pub fn create_config_with_strong_constraints<Constraints>(
     user_id: &UserId,
     client: &reqwest::Client,
@@ -350,6 +354,14 @@ where
             local_config_with_defaults,
             pluralkit_token
         )?,
+        history_limit: config_value!(
+            local_config_with_defaults,
+            history_limit
+        )?.try_into()?,
+        history_truncate_after_days: config_value!(
+            local_config_with_defaults,
+            history_truncate_after_days
+        )?.try_into()?,
     };
 
     if config.privacy_fine_grained == PrivacyFineGrained::ViaPrivacyBuckets
@@ -361,23 +373,17 @@ where
         ));
     }
 
-    // Validate history_limit (0-1000)
-    let history_limit = local_config_with_defaults
-        .history_limit
-        .ok_or_else(|| anyhow!("history_limit must be set (default should be 100)"))?;
-    if !(0..=1000).contains(&history_limit) {
+    if !(0..=1000).contains(&config.history_limit) {
         return Err(anyhow!(
-            "history_limit must be between 0 and 1000, got {history_limit}"
+            "history_limit must be between 0 and 1000, got {}",
+            config.history_limit
         ));
     }
 
-    // Validate history_truncate_after_days (0-30)
-    let history_truncate_after_days = local_config_with_defaults
-        .history_truncate_after_days
-        .ok_or_else(|| anyhow!("history_truncate_after_days must be set (default should be 7)"))?;
-    if !(0..=30).contains(&history_truncate_after_days) {
+    if !(0..=30).contains(&config.history_truncate_after_days) {
         return Err(anyhow!(
-            "history_truncate_after_days must be between 0 and 30, got {history_truncate_after_days}"
+            "history_truncate_after_days must be between 0 and 30, got {}",
+            config.history_truncate_after_days
         ));
     }
 
