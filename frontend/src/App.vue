@@ -14,6 +14,7 @@
       </div>
       <div class="nav-links-container">
         <router-link v-if="loggedIn" to="/status">Status</router-link>
+        <router-link v-if="loggedIn" to="/history">History</router-link>
         <router-link v-if="loggedIn" to="/config">Settings</router-link>
         <router-link v-if="loggedIn" to="/logout">Logout</router-link>
       </div>

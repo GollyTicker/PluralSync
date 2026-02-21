@@ -3,7 +3,7 @@
     <h1 id="status-page-title">Updaters Status</h1>
     <p v-if="fronting_status?.inner">
       Example fronting status:
-      <span id="fronting-status-example">{{ fronting_status?.inner }}</span>
+      <span id="fronting-status-example" class="fronting-status-text">{{ fronting_status?.inner }}</span>
     </p>
     <div class="status-list">
       <div v-for="(status, name) in updaters" :key="name" class="status-item">
@@ -95,65 +95,13 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.status-container {
-  padding: 2rem;
-  font-family: sans-serif;
-}
-
-.status-list {
-  margin-top: 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.status-item {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 1rem;
-  background-color: var(--color-background-soft);
-  border-radius: 5px;
-}
-
-#fronting-status-example {
-  font-family: monospace;
-  padding: 0.2em 0.5em;
-  border-radius: 6px;
-  display: inline-block;
-  background-color: var(--color-background-soft);
-}
+@import url('../assets/status.css');
 
 .service-name {
   font-weight: bold;
 }
 
-.status-badge {
-  padding: 0.25rem 0.75rem;
-  margin-left: 2em;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-  font-weight: bold;
-}
-
-.status-Running {
-  background-color: green;
-  color: white;
-}
-
-.status-Starting {
-  background-color: lightgreen;
-  color: white;
-}
-
-.status-Disabled {
-  background-color: gray;
-  color: white;
-}
-
-.status-Error {
-  background-color: orange;
-  color: white;
+.status-info {
+  margin-left: 1rem;
 }
 </style>

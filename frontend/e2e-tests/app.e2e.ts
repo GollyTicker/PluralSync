@@ -51,6 +51,20 @@ async function configUpdateAndRestartSucceeded() {
 //     await expect($('#config-update-status')).toHaveText('Failed to save config and restart updaters.');
 // }
 
+async function navigateToHistory() {
+    await $('a[href="/history"]').click();
+}
+
+async function loggedInAndOnHistoryPage() {
+    await expect($('.history-container h1')).toHaveText('Fronting History');
+}
+
+async function setHistoryLimit(limit: number) {
+    await $('#history-limit').setValue(limit.toString());
+    await $('button[type="submit"]').click();
+    await configUpdateAndRestartSucceeded();
+}
+
 async function register(email: string) {
     await $('#email').setValue(email);
     await $('#password').setValue(REGISTRATION_PASSWORD);
@@ -462,4 +476,38 @@ describe('PluralSync updater status and config save and restarts', () => {
     //     await navigateToStatus();
     //     await navigateToConfig();
     // });
+});
+
+describe('PluralSync history tab', () => {
+
+    it('should open the history tab and display the history container', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await login();
+        await loggedInAndOnStatusPage();
+
+        await navigateToHistory();
+        await loggedInAndOnHistoryPage();
+    });
+
+    it('should display history entries when history is enabled', async () => {
+        await navigateToHistory();
+        await loggedInAndOnHistoryPage();
+        await expect($('.history-status-text')).toHaveText("F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First");
+    });
+
+    it('should show no history entries when history limit is set to 0', async () => {
+        await navigateToConfig();
+        await loggedInAndOnConfigPage();
+
+        // Set history limit to 0 to disable history
+        await setHistoryLimit(0);
+        await configUpdateAndRestartSucceeded();
+
+        await navigateToHistory();
+        await loggedInAndOnHistoryPage();
+
+        // Verify that the empty state message is shown
+        await expect($('.history-empty')).toExist();
+        await expect($('.history-empty p')).toHaveText('No history entries found.');
+    });
 });

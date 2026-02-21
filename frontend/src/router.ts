@@ -9,11 +9,13 @@ import LogoutButton from './components/LogoutButton.vue'
 import ForgotPassword from './components/ForgotPassword.vue'
 import ResetPassword from './components/ResetPassword.vue'
 import VerifyEmail from './components/VerifyEmail.vue'
+import HistoryTab from './components/HistoryTab.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: StartPage },
   { path: '/login', component: LoginPage },
   { path: '/status', component: StatusDisplay },
+  { path: '/history', component: HistoryTab },
   { path: '/config', component: ConfigSettings },
   { path: '/settings/delete-account', component: DeleteAccount },
   { path: '/logout', component: LogoutButton },

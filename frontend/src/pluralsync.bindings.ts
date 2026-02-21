@@ -1,3 +1,4 @@
+export type UserId = { inner: string };
 export type Email = { inner: string };
 export type UserProvidedPassword = { inner: Secret };
 export type Secret = { inner: string };
@@ -29,6 +30,8 @@ export type UserConfigDbEntries = {
     vrchat_password?: Decrypted;
     vrchat_cookie?: Decrypted;
     pluralkit_token?: Decrypted;
+    history_limit?: number;
+    history_truncate_after_days?: number;
 };
 export type PrivacyFineGrained = "NoFineGrained" | "ViaFriend" | "ViaPrivacyBuckets";
 export type JwtString = { inner: string };
@@ -50,4 +53,5 @@ export type EmailVerificationToken = { inner: Secret };
 export type ChangeEmailRequest = { new_email: Email };
 export type EmailVerificationResponse = { message: string };
 export type DeleteAccountRequest = { password: UserProvidedPassword; confirmation: string };
-export type UserInfoUI = { id: { inner: string }, email: { inner: string }, created_at: string };
+export type UserInfoUI = { id: UserId, email: { inner: string }, created_at: string };
+export type HistoryEntry = { id: string; user_id: UserId; status_text: string; created_at: string };

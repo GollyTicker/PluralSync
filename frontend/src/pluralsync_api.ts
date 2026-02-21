@@ -17,6 +17,7 @@ import type {
   ChangeEmailRequest,
   DeleteAccountRequest,
   UserInfoUI,
+  HistoryEntry,
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
@@ -145,5 +146,12 @@ export const pluralsync_api = {
       data: deleteAccountRequest,
       headers: { Authorization: `Bearer ${jwtString.inner}` },
     })
+  },
+  get_history_fronting: async function (): Promise<HistoryEntry[]> {
+    const jwtString = await getJwt()
+    const response = await http.get<HistoryEntry[]>('/api/user/history/fronting', {
+      headers: { Authorization: `Bearer ${jwtString.inner}` },
+    })
+    return response.data
   },
 }

@@ -1,6 +1,7 @@
 use anyhow::Result;
 use pluralsync::{
     database::Decrypted,
+    history::HistoryEntry,
     platforms::{
         TwoFactorAuthCode, TwoFactorAuthMethod, TwoFactorCodeRequiredResponse, VRChatCredentials,
         VRChatCredentialsWithCookie, VRChatCredentialsWithTwoFactorAuth,
@@ -8,7 +9,7 @@ use pluralsync::{
     },
     updater::Platform,
     users::{
-        PrivacyFineGrained,
+        PrivacyFineGrained, UserId,
         user_api::{
             ChangeEmailRequest, DeleteAccountRequest, EmailVerificationResponse,
             ForgotPasswordRequest, ResetPasswordAttempt,
@@ -34,6 +35,7 @@ fn main() -> Result<()> {
     println!("Exporting to {DESTINATION}...");
     let conf = &ExportConfiguration::default();
     let defs = [
+        export::<UserId>(conf)?,
         export::<Email>(conf)?,
         export::<UserProvidedPassword>(conf)?,
         export::<Secret>(conf)?,
@@ -65,6 +67,8 @@ fn main() -> Result<()> {
     vrchat_password?: Decrypted;
     vrchat_cookie?: Decrypted;
     pluralkit_token?: Decrypted;
+    history_limit?: number;
+    history_truncate_after_days?: number;
 }".to_owned(),
         export::<PrivacyFineGrained>(conf)?,
         export::<JwtString>(conf)?,
@@ -86,7 +90,8 @@ fn main() -> Result<()> {
         export::<ChangeEmailRequest>(conf)?,
         export::<EmailVerificationResponse>(conf)?,
         export::<DeleteAccountRequest>(conf)?,
-        "export type UserInfoUI = { id: { inner: string }, email: { inner: string }, created_at: string }".to_owned(),
+        "export type UserInfoUI = { id: UserId, email: { inner: string }, created_at: string }".to_owned(),
+        export::<HistoryEntry>(conf)?,
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");

@@ -22,3 +22,5 @@ is stored encrypted and at industry-standard security. Self hosting is possible 
 Developed with ❤️ by [Ayake](https://github.com/GollyTicker)\*.
 
 Disclaimer: This software was written with AI-assistance to speedup and improve development. The code is reviewed equally to hand-written code to ensure good quality, safe and reliable software.
+
+PluralSync was formerly named SP2Any
