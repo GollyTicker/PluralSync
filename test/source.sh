@@ -12,6 +12,8 @@ export SHOW_CUSTOM_FRONTS=true
 export RESPECT_FRONT_NOTIFICATIONS_DISABLED=true
 export PRIVACY_FINE_GRAINED=ViaPrivacyBuckets
 export PRIVACY_FINE_GRAINED_BUCKETS="[\"68e23553d3877cbeb6000000\"]"
+export HISTORY_LIMIT=100
+export HISTORY_TRUNCATE_AFTER_DAYS=7
 
 source docker/source.sh # await
 
@@ -67,6 +69,8 @@ get_user_config_json() {
         \"respect_front_notifications_disabled\": ${RESPECT_FRONT_NOTIFICATIONS_DISABLED},
         \"privacy_fine_grained\": \"${PRIVACY_FINE_GRAINED}\",
         \"privacy_fine_grained_buckets\": ${PRIVACY_FINE_GRAINED_BUCKETS},
+        \"history_limit\": ${HISTORY_LIMIT},
+        \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
         $SIMPLY_PLURAL_TOKEN_LINE
         $DISCORD_STATUS_MESSAGE_TOKEN_LINE
         $VRCHAT_USERNAME_LINE
@@ -178,5 +182,6 @@ verify_email_with_token() {
     curl -X POST -s --fail-with-body \
         -H "Content-Type: application/json" \
         "$BASE_URL/api/user/email/verify/$TOKEN"
+    echo ""
 }
 export -f verify_email_with_token

@@ -589,6 +589,18 @@ pub async fn insert_history_entry(
     status_text: &str,
 ) -> Result<()> {
     log::debug!("# | db::insert_history_entry | {user_id}");
+
+    // Get the most recent entry to check for duplicates
+    let recent_entries = get_history_entries(db_pool, user_id, 1).await?;
+    if let Some(most_recent) = recent_entries.first() {
+        if most_recent.status_text == status_text {
+            log::debug!(
+                "# | db::insert_history_entry | {user_id} | skipping duplicate entry"
+            );
+            return Ok(());
+        }
+    }
+
     sqlx::query!(
         "INSERT INTO history_status (user_id, status_text)
         VALUES ($1, $2)",
