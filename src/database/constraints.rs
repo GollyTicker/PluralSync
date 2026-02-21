@@ -93,6 +93,8 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         vrchat_password: value.vrchat_password.clone(),
         vrchat_cookie: value.vrchat_cookie.clone(),
         pluralkit_token: value.pluralkit_token.clone(),
+        history_limit: value.history_limit,
+        history_truncate_after_days: value.history_truncate_after_days,
     }
 }
 
@@ -125,5 +127,7 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         vrchat_password: value.vrchat_password.clone(),
         vrchat_cookie: value.vrchat_cookie.clone(),
         pluralkit_token: value.pluralkit_token.clone(),
+        history_limit: value.history_limit,
+        history_truncate_after_days: value.history_truncate_after_days,
     }
 }

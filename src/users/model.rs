@@ -1,10 +1,12 @@
 use std::{fmt::Display, str::FromStr};
 
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use sqlx::{FromRow, types::Uuid};
 
-#[derive(Debug, Serialize, Deserialize, Clone, FromRow, sqlx::Type, Eq, Hash, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, Clone, FromRow, sqlx::Type, Eq, Hash, PartialEq, Type)]
 pub struct UserId {
+    #[specta(type = String)]
     pub inner: Uuid,
 }
 

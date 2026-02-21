@@ -1,5 +1,10 @@
 CREATE TABLE history_status (
-    user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL,
-    time TIMESTAMPTZ NOT NULL DEFAULT NOW()
-)
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    status_text TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE users
+ADD COLUMN history_limit INTEGER CHECK (history_limit >= 0),
+ADD COLUMN history_truncate_after_days INTEGER CHECK (history_truncate_after_days >= 0);

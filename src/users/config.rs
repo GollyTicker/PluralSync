@@ -56,6 +56,9 @@ where
     pub website_system_name: Option<String>,
     pub website_url_name: Option<String>,
 
+    pub history_limit: Option<i32>,
+    pub history_truncate_after_days: Option<i32>,
+
     pub simply_plural_token: Option<Secret>,
     pub discord_status_message_token: Option<Secret>,
     pub vrchat_username: Option<Secret>,
@@ -105,6 +108,10 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             vrchat_password: self.vrchat_password.clone().or(defaults.vrchat_password),
             vrchat_cookie: self.vrchat_cookie.clone().or(defaults.vrchat_cookie),
             pluralkit_token: self.pluralkit_token.clone().or(defaults.pluralkit_token),
+            history_limit: self.history_limit.or(defaults.history_limit),
+            history_truncate_after_days: self
+                .history_truncate_after_days
+                .or(defaults.history_truncate_after_days),
             valid_constraints: self.valid_constraints.clone(), // Constraints are not defaulted
         }
     }
@@ -130,6 +137,8 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             valid_constraints: None,
             website_system_name: None,
             website_url_name: None,
+            history_limit: Some(100),
+            history_truncate_after_days: Some(7),
             simply_plural_token: None,
             discord_status_message_token: None,
             vrchat_username: None,
@@ -352,6 +361,26 @@ where
         ));
     }
 
+    // Validate history_limit (0-1000)
+    let history_limit = local_config_with_defaults
+        .history_limit
+        .ok_or_else(|| anyhow!("history_limit must be set (default should be 100)"))?;
+    if !(0..=1000).contains(&history_limit) {
+        return Err(anyhow!(
+            "history_limit must be between 0 and 1000, got {history_limit}"
+        ));
+    }
+
+    // Validate history_truncate_after_days (0-30)
+    let history_truncate_after_days = local_config_with_defaults
+        .history_truncate_after_days
+        .ok_or_else(|| anyhow!("history_truncate_after_days must be set (default should be 7)"))?;
+    if !(0..=30).contains(&history_truncate_after_days) {
+        return Err(anyhow!(
+            "history_truncate_after_days must be between 0 and 30, got {history_truncate_after_days}"
+        ));
+    }
+
     log::debug!("# | create_config_with_strong_constraints | {user_id} | created");
 
     let valid_config =
@@ -408,6 +437,8 @@ mod tests {
             vrchat_cookie: None,
             valid_constraints: None,
             pluralkit_token: None,
+            history_limit: Some(100),
+            history_truncate_after_days: Some(7),
         };
 
         let (config_for_updater, _) =
@@ -455,6 +486,8 @@ mod tests {
             pluralkit_token: Some(Decrypted {
                 secret: "pk_token_123".to_string(),
             }),
+            history_limit: Some(100),
+            history_truncate_after_days: Some(7),
             valid_constraints: None,
         };
 
@@ -479,6 +512,8 @@ mod tests {
   "enable_to_pluralkit": true,
   "website_system_name": "Our System",
   "website_url_name": "our-system",
+  "history_limit": 100,
+  "history_truncate_after_days": 7,
   "simply_plural_token": {
     "secret": "sp_token_123"
   },

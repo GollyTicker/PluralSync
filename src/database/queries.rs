@@ -219,6 +219,8 @@ pub async fn get_user(
             enable_to_pluralkit,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
+            history_limit,
+            history_truncate_after_days,
             '' AS simply_plural_token,
             '' AS discord_status_message_token,
             '' AS vrchat_username,
@@ -268,7 +270,9 @@ pub async fn set_user_config_secrets(
             privacy_fine_grained = $22,
             privacy_fine_grained_buckets = $23,
             enable_to_pluralkit = $24,
-            enc__pluralkit_token = pgp_sym_encrypt($25, $9)
+            enc__pluralkit_token = pgp_sym_encrypt($25, $9),
+            history_limit = $26,
+            history_truncate_after_days = $27
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -296,6 +300,8 @@ pub async fn set_user_config_secrets(
     .bind(config.privacy_fine_grained_buckets)
     .bind(config.enable_to_pluralkit)
     .bind(config.pluralkit_token.map(|s| s.secret))
+    .bind(config.history_limit)
+    .bind(config.history_truncate_after_days)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow!(e))?;
@@ -345,6 +351,8 @@ pub async fn get_user_secrets(
             enable_to_pluralkit,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
+            history_limit,
+            history_truncate_after_days,
             pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
             pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
             pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
