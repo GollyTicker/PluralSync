@@ -9,7 +9,7 @@
       <ul>
         <li>All PluralSync updaters will stop and be permanently removed.</li>
         <li>
-          Your fronters symcs managed by PluralSync will NO LONGER work between SimplyPlural,
+          Your fronters syncs managed by PluralSync will NO LONGER work between SimplyPlural,
           PluralKit, Discord, VRChat, or other platforms.
         </li>
         <li>Your website fronting page will stop functioning.</li>
