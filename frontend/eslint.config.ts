@@ -22,4 +22,10 @@ export default defineConfigWithVueTs(
   pluginVue.configs['flat/essential'],
   vueTsConfigs.recommended,
   skipFormatting,
+  {
+    name: 'app/vue-props-override',
+    rules: {
+      'vue/no-mutating-props': ["error", { "shallowOnly": true }],
+    },
+  },
 )

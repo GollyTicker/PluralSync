@@ -85,7 +85,6 @@
   </div>
 </template>
 
-<!-- eslint-disable vue/no-mutating-props -->
 <script setup lang="ts">
 import type { UserConfigDbEntries, Decrypted } from '@/pluralsync.bindings'
 import { PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL } from '@/pluralsync.bindings'

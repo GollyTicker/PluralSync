@@ -137,7 +137,6 @@
   </div>
 </template>
 
-<!-- eslint-disable vue/no-mutating-props -->
 <script setup lang="ts">
 import { ref, watch, type Ref } from 'vue'
 import type { UserConfigDbEntries, Decrypted } from '@/pluralsync.bindings'

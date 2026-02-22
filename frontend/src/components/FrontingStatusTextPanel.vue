@@ -45,7 +45,6 @@
   </div>
 </template>
 
-<!-- eslint-disable vue/no-mutating-props -->
 <script setup lang="ts">
 import type { UserConfigDbEntries } from '@/pluralsync.bindings'
 

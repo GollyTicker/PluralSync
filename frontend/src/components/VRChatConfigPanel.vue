@@ -73,7 +73,6 @@
   </div>
 </template>
 
-<!-- eslint-disable vue/no-mutating-props -->
 <script setup lang="ts">
 import { ref, type Ref } from 'vue'
 import type {
