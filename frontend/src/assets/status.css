@@ -105,6 +105,13 @@
   font-size: 0.85em;
   color: #888;
   white-space: nowrap;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.history-timezone {
+  color: #666;
 }
 
 /* Responsive adjustments */

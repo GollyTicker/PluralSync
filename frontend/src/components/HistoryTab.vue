@@ -15,8 +15,9 @@
       <div v-for="entry in history" :key="entry.id" class="history-item">
         <div class="history-header">
           <span class="history-status-text">{{ entry.status_text }}</span>
-          <span class="history-timestamp" :title="formatFullDate(entry.created_at)">
-            {{ formatRelativeTime(entry.created_at) }}
+          <span class="history-timestamp">
+            <span>{{ formatRelativeTime(entry.created_at) }}</span>
+            <span class="history-timezone">{{ new Date(entry.created_at).toLocaleString() }}</span>
           </span>
         </div>
       </div>
@@ -51,11 +52,6 @@ function formatRelativeTime(dateString: string): string {
   } else {
     return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
   }
-}
-
-function formatFullDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleString()
 }
 
 const fetchHistory = async () => {
