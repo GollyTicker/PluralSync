@@ -405,7 +405,7 @@ mod tests {
             member_id: "test_member".to_string(),
             content: MemberContent {
                 name: "Test Member".to_string(),
-                avatar_url: "".to_string(),
+                avatar_url: Option::None,
                 info: serde_json::Value::Null,
                 archived,
                 front_notifications_disabled,
