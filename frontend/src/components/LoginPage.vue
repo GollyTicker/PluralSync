@@ -29,11 +29,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, type Ref } from 'vue'
+import { onMounted, ref, type Ref } from 'vue'
 import router from '@/router'
 import type { AxiosError } from 'axios'
 import type { UserLoginCredentials } from '@/pluralsync.bindings'
 import { detailed_error_string, pluralsync_api } from '@/pluralsync_api'
+import { loggedIn } from '@/jwt'
+
+onMounted(() => {
+  if (loggedIn.value) {
+    router.push('/status')
+  }
+})
 
 const email: Ref<string> = ref('')
 const password: Ref<string> = ref('')

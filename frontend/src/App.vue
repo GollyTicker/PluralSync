@@ -2,8 +2,10 @@
   <div id="app-container">
     <nav>
       <div id="app-header">
-        <img src="/favicon.png" alt="logo" />
-        <h1 class="title">PluralSync</h1>
+        <router-link to="/" class="header-link">
+          <img src="/favicon.png" alt="logo" />
+          <h1 class="title">PluralSync</h1>
+        </router-link>
         <p
           v-if="variantInfo?.show_in_ui"
           id="variant-info"
@@ -79,10 +81,12 @@ nav {
   font-weight: bold;
   text-decoration: none;
   padding: 0.5em 1em;
-  border: 1px solid transparent;
-  border-radius: 0.25rem;
   color: black;
   background-color: var(--color-background-mute);
+}
+
+.nav-links-container a.router-link-active {
+  border-bottom-color: var(--color-primary);
 }
 
 #variant-info {
@@ -99,7 +103,7 @@ nav {
   white-space: nowrap;
 }
 
-nav a:hover {
+.nav-links-container a:hover {
   color: var(--color-primary);
 }
 
@@ -109,10 +113,21 @@ nav a:hover {
   margin-right: 2rem;
 }
 
+#app-header .header-link {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: black;
+}
+
+#app-header .header-link:hover .title {
+  border-color: var(--color-primary);
+}
+
 #app-header img {
   width: 40px;
   height: 40px;
-  margin-right: 1rem;
+  margin-right: 0.3rem;
 }
 
 #app-header .title {

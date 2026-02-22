@@ -1,8 +1,13 @@
 @import './base.css';
 
 @media (hover: hover) {
+  a {
+    border: 2px solid transparent;
+    border-radius: 0.25rem;
+  }
+
   a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
+    border-color: hsla(160, 100%, 37%, 0.2);
   }
 }
 

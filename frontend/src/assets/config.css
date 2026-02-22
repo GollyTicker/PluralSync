@@ -70,14 +70,14 @@ button {
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
-  background-color: #007bff;
+  background-color: var(--color-primary);
   color: white;
   font-weight: bold;
   cursor: pointer;
 }
 
 button:hover {
-  background-color: #0056b3;
+  background-color: var(--color-secondary);
 }
 
 .danger-button {
@@ -127,7 +127,7 @@ button:hover {
 }
 
 .config-item input[type='checkbox']:checked {
-  background-color: #007bff;
+  background-color: var(--color-secondary);
 }
 
 .config-item input[type='checkbox']:checked::before {
