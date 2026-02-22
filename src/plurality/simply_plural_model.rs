@@ -10,6 +10,9 @@ pub const GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID: &str =
 
 pub const SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME: &str = "VRChat Status Name";
 
+pub type AllMembersList = Vec<Member>;
+pub type AllCustomFrontsList = Vec<CustomFront>;
+
 #[derive(Deserialize, Debug, Clone)]
 pub struct FrontEntry {
     pub content: FrontEntryContent,
@@ -55,7 +58,7 @@ where
 pub struct Fronter {
     pub fronter_id: String,
     pub name: String,
-    pub avatar_url: String,
+    pub avatar_url: Option<String>,
     pub vrchat_status_name: Option<String>,
     pub pluralkit_id: Option<String>,
     pub start_time: Option<chrono::DateTime<chrono::Utc>>,
@@ -74,19 +77,62 @@ pub struct CustomFront {
     pub content: CustomFrontContent,
     #[serde(rename = "id")]
     pub custom_front_id: String,
+    /// Provided by SP: Not sure when this can even be false...
+    pub exists: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct CustomFrontContent {
     pub name: String,
 
+    #[serde(rename = "uid")]
+    pub system_id: String,
+
+    #[serde(default)]
+    #[serde(rename = "desc")]
+    pub description: String,
+    #[serde(default)]
+    #[serde(rename = "supportDescMarkdown")]
+    pub support_description_markdown: bool,
+
     #[serde(rename = "avatarUrl")]
     #[serde(default)]
-    pub avatar_url: String,
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub avatar_url: Option<String>,
 
+    #[serde(rename = "avatarUuid")]
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub avatar_uuid: Option<String>,
+
+    #[serde(rename = "frame")]
+    #[serde(default)]
+    pub avatar_frame: serde_json::Value,
+
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub color: Option<String>,
+
+    #[serde(rename = "preventsFrontNotifs")]
+    #[serde(default)]
+    pub front_notifications_disabled: bool,
+
+    /* the fields `private` and `preventTrusted` are always true for all members (according to our testing)!
+    so it doesn't mean what we mean by member privacy.
+    hence, we don't use them in our implementation
+    */
+    #[serde(default)]
+    pub private: bool,
+    #[serde(rename = "preventTrusted")]
+    #[serde(default)]
+    pub prevent_trusted: bool,
     #[serde(rename = "buckets")]
     #[serde(default)]
     pub privacy_buckets: Vec<String>,
+
+    #[serde(rename = "lastOperationTime")]
+    #[serde(deserialize_with = "parse_epoch_millis_to_datetime_utc")]
+    pub last_changed_at: chrono::DateTime<chrono::Utc>,
 }
 
 impl From<CustomFront> for Fronter {
@@ -108,15 +154,44 @@ pub struct Member {
     pub content: MemberContent,
     #[serde(rename = "id")]
     pub member_id: String,
+    /// Provided by SP: Not sure when this can even be false...
+    pub exists: bool,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct MemberContent {
     pub name: String,
 
+    #[serde(rename = "uid")]
+    pub system_id: String,
+
+    #[serde(default)]
+    #[serde(rename = "desc")]
+    pub description: String,
+    #[serde(default)]
+    #[serde(rename = "supportDescMarkdown")]
+    pub support_description_markdown: bool,
+
+    #[serde(default)]
+    pub pronouns: String,
+
     #[serde(rename = "avatarUrl")]
     #[serde(default)]
-    pub avatar_url: String,
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub avatar_url: Option<String>,
+
+    #[serde(rename = "avatarUuid")]
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub avatar_uuid: Option<String>,
+
+    #[serde(rename = "frame")]
+    #[serde(default)]
+    pub avatar_frame: serde_json::Value,
+
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
+    pub color: Option<String>,
 
     #[serde(default)]
     pub info: serde_json::Value,
@@ -124,6 +199,9 @@ pub struct MemberContent {
     // { "<vrcsn_field_id>": "<vrcsn>", ...}
     #[serde(default)]
     pub archived: bool,
+    #[serde(rename = "archivedReason")]
+    #[serde(default)]
+    pub archived_reason: bool,
 
     #[serde(rename = "preventsFrontNotifs")]
     #[serde(default)]
@@ -131,16 +209,29 @@ pub struct MemberContent {
 
     /* the fields `private` and `preventTrusted` are always true for all members (according to our testing)!
     so it doesn't mean what we mean by member privacy.
-    hence, we don't include it in our implementation
+    hence, we don't use them in our implementation
     */
+    #[serde(default)]
+    pub private: bool,
+    #[serde(rename = "preventTrusted")]
+    #[serde(default)]
+    pub prevent_trusted: bool,
     #[serde(rename = "buckets")]
     #[serde(default)]
     pub privacy_buckets: Vec<String>,
+
+    #[serde(rename = "lastOperationTime")]
+    #[serde(deserialize_with = "parse_epoch_millis_to_datetime_utc")]
+    pub last_changed_at: chrono::DateTime<chrono::Utc>,
 
     #[serde(rename = "pkId")]
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
     pub pluralkit_id: Option<String>,
+
+    #[serde(rename = "receiveMessageBoardNotifs")]
+    #[serde(default)]
+    pub receive_message_board_notifications: bool,
 
     // this will be populated later after deserialisation
     #[serde(default)]
@@ -194,6 +285,7 @@ pub struct FriendContent {
     #[serde(default)]
     pub assigned_privacy_buckets: Vec<String>,
 }
+
 
 pub fn relevantly_changed_based_on_simply_plural_websocket_event(
     message: &tungstenite::Utf8Bytes,
