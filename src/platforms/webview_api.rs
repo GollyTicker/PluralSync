@@ -116,9 +116,7 @@ fn generate_html(website_system_name: &str, fronts: &[plurality::Fronter]) -> St
         .map(|m| -> String {
             format!(
                 "<div><img src=\"{}\" /><p>{}</p></div>",
-                html_escape::encode_double_quoted_attribute(
-                    &m.avatar_url.clone().unwrap_or_default()
-                ),
+                html_escape::encode_double_quoted_attribute(&m.avatar_url),
                 html_escape::encode_text(&m.name)
             )
         })
@@ -195,7 +193,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "<script>alert('XSS')</script>".to_string(),
-            avatar_url: Some("https://example.com/avatar.png".to_string()),
+            avatar_url: "https://example.com/avatar.png".to_string(),
             vrchat_status_name: None,
             start_time: None,
             privacy_buckets: vec![],
@@ -230,7 +228,7 @@ mod tests {
             Fronter {
                 fronter_id: "id1".to_string(),
                 name: "Fronter 1".to_string(),
-                avatar_url: Some("https://example.com/avatar1.png".to_string()),
+                avatar_url: "https://example.com/avatar1.png".to_string(),
                 vrchat_status_name: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -239,7 +237,7 @@ mod tests {
             Fronter {
                 fronter_id: "id2".to_string(),
                 name: "Fronter 2".to_string(),
-                avatar_url: Some("https://example.com/avatar2.png".to_string()),
+                avatar_url: "https://example.com/avatar2.png".to_string(),
                 vrchat_status_name: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -260,7 +258,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "Dangerous".to_string(),
-            avatar_url: Some("https://example.com/\" onerror=\"alert('oops')".to_string()),
+            avatar_url: "https://example.com/\" onerror=\"alert('oops')".to_string(),
             vrchat_status_name: None,
             start_time: None,
             privacy_buckets: vec![],
@@ -277,7 +275,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "Hacker".to_string(),
-            avatar_url: Some("\"><script>alert('xss')</script>".to_string()),
+            avatar_url: "\"><script>alert('xss')</script>".to_string(),
             vrchat_status_name: None,
             start_time: None,
             privacy_buckets: vec![],
