@@ -6,11 +6,13 @@ use std::option::Option;
 
 use crate::{
     database::{Decrypted, ValidConstraints, constraints, secrets},
-    history::HistoryEntry,
-    metrics::PASSWORD_RESET_REQUESTS_TOTAL,
     setup,
     users::{self, SecretHashString, UserConfigDbEntries, UserId},
 };
+
+// ============================================================================
+// Temporary User & Email Verification
+// ============================================================================
 
 pub async fn find_temporary_user_by_token_hash(
     db_pool: &PgPool,
@@ -37,6 +39,57 @@ pub async fn find_temporary_user_by_token_hash(
     Ok(temporary_user)
 }
 
+pub async fn create_or_update_temporary_user(
+    db_pool: &PgPool,
+    email: Email,
+    password_hash: SecretHashString,
+    email_verification_token_hash: SecretHashString,
+    email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
+) -> Result<()> {
+    log::debug!("# | db::create_or_update_temporary_user | {email}");
+    sqlx::query!(
+        "INSERT INTO temporary_users (email, password_hash, email_verification_token_hash, email_verification_token_expires_at)
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT (email) DO UPDATE
+        SET
+            password_hash = EXCLUDED.password_hash,
+            email_verification_token_hash = EXCLUDED.email_verification_token_hash,
+            email_verification_token_expires_at = EXCLUDED.email_verification_token_expires_at,
+            created_at = NOW()",
+        email.inner,
+        password_hash.inner,
+        email_verification_token_hash.inner,
+        email_verification_token_expires_at
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+pub async fn find_user_id_by_email_verification_token_hash(
+    db_pool: &PgPool,
+    token_hash: &SecretHashString,
+) -> Result<Option<UserId>> {
+    log::debug!("# | db::find_user_id_by_email_verification_token_hash | {token_hash}");
+    let user_id = sqlx::query_as!(
+        UserId,
+        "SELECT
+            id AS inner
+        FROM users WHERE email_verification_token_hash = $1",
+        token_hash.inner
+    )
+    .fetch_optional(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(user_id)
+}
+
+// ============================================================================
+// User Creation & Authentication
+// ============================================================================
+
 pub async fn create_user(
     db_pool: &PgPool,
     email: Email,
@@ -54,6 +107,83 @@ pub async fn create_user(
     .map_err(|e| anyhow!(e))
 }
 
+pub async fn get_user_id(db_pool: &PgPool, email: Email) -> Result<UserId> {
+    log::debug!("# | db::get_user_id | {email}");
+    sqlx::query_as!(
+        UserId,
+        "SELECT
+            id AS inner
+        FROM users WHERE email = $1",
+        email.inner
+    )
+    .fetch_one(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))
+}
+
+pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo> {
+    log::debug!("# | db::get_user_info | {user_id}");
+
+    let row = sqlx::query_as::<_, UserInfoRaw>(
+        "SELECT
+            id,
+            email,
+            password_hash,
+            created_at,
+            new_email,
+            email_verification_token_hash,
+            email_verification_token_expires_at
+        FROM users WHERE id = $1",
+    )
+    .bind(user_id.inner)
+    .fetch_one(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(row.into_user_info())
+}
+
+pub async fn find_user_by_website_url_name(
+    db_pool: &PgPool,
+    website_url_name: &str,
+) -> Result<UserInfo> {
+    log::debug!("# | db::find_user_by_website_url_name | {website_url_name}");
+    let row = sqlx::query_as::<_, UserInfoRaw>(
+        "SELECT
+            id,
+            email,
+            password_hash,
+            created_at,
+            new_email,
+            email_verification_token_hash,
+            email_verification_token_expires_at
+            FROM users WHERE website_url_name = $1",
+    )
+    .bind(website_url_name)
+    .fetch_one(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))?;
+
+    Ok(row.into_user_info())
+}
+
+pub async fn delete_user(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
+    log::debug!("# | db::delete_user | {user_id}");
+    sqlx::query!(
+        "DELETE FROM users
+        WHERE id = $1",
+        user_id.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+// ============================================================================
+// Password Reset
+// ============================================================================
+
 pub async fn create_password_reset_request(
     db_pool: &PgPool,
     user_id: &UserId,
@@ -61,7 +191,7 @@ pub async fn create_password_reset_request(
     expires_at: &chrono::DateTime<chrono::Utc>,
 ) -> Result<()> {
     log::debug!("# | db::create_password_reset_request | {user_id}");
-    PASSWORD_RESET_REQUESTS_TOTAL
+    crate::metrics::PASSWORD_RESET_REQUESTS_TOTAL
         .with_label_values(&["create_password_reset_request"])
         .inc();
     // remove any previous password reset attempts
@@ -119,34 +249,6 @@ pub async fn delete_password_reset_request(db_pool: &PgPool, user_id: &UserId) -
     .map_err(|e| anyhow!(e))
 }
 
-pub async fn create_or_update_temporary_user(
-    db_pool: &PgPool,
-    email: Email,
-    password_hash: SecretHashString,
-    email_verification_token_hash: SecretHashString,
-    email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
-) -> Result<()> {
-    log::debug!("# | db::create_or_update_temporary_user | {email}");
-    sqlx::query!(
-        "INSERT INTO temporary_users (email, password_hash, email_verification_token_hash, email_verification_token_expires_at)
-        VALUES ($1, $2, $3, $4)
-        ON CONFLICT (email) DO UPDATE
-        SET
-            password_hash = EXCLUDED.password_hash,
-            email_verification_token_hash = EXCLUDED.email_verification_token_hash,
-            email_verification_token_expires_at = EXCLUDED.email_verification_token_expires_at,
-            created_at = NOW()",
-        email.inner,
-        password_hash.inner,
-        email_verification_token_hash.inner,
-        email_verification_token_expires_at
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
-}
-
 pub async fn update_user_password(
     db_pool: &PgPool,
     user_id: &UserId,
@@ -164,38 +266,56 @@ pub async fn update_user_password(
     .map_err(|e| anyhow!(e))
 }
 
-pub async fn find_user_id_by_email_verification_token_hash(
+// ============================================================================
+// Email Change
+// ============================================================================
+
+pub async fn update_user_email_change_fields(
     db_pool: &PgPool,
-    token_hash: &SecretHashString,
-) -> Result<Option<UserId>> {
-    log::debug!("# | db::find_user_id_by_email_verification_token_hash | {token_hash}");
-    let user_id = sqlx::query_as!(
-        UserId,
-        "SELECT
-            id AS inner
-        FROM users WHERE email_verification_token_hash = $1",
-        token_hash.inner
+    user_id: &UserId,
+    new_email: Email,
+    email_verification_token_hash: SecretHashString,
+    email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
+) -> Result<()> {
+    log::debug!("# | db::update_user_email_change_fields | {user_id} for new email {new_email}");
+    sqlx::query!(
+        "UPDATE users
+        SET
+            new_email = $1,
+            email_verification_token_hash = $2,
+            email_verification_token_expires_at = $3
+        WHERE id = $4",
+        new_email.inner,
+        email_verification_token_hash.inner,
+        email_verification_token_expires_at,
+        user_id.inner
     )
-    .fetch_optional(db_pool)
+    .execute(db_pool)
     .await
-    .map_err(|e| anyhow!(e))?;
-
-    Ok(user_id)
-}
-
-pub async fn get_user_id(db_pool: &PgPool, email: Email) -> Result<UserId> {
-    log::debug!("# | db::get_user_id | {email}");
-    sqlx::query_as!(
-        UserId,
-        "SELECT
-            id AS inner
-        FROM users WHERE email = $1",
-        email.inner
-    )
-    .fetch_one(db_pool)
-    .await
+    .map(|_| ())
     .map_err(|e| anyhow!(e))
 }
+
+pub async fn set_new_verified_email(
+    db_pool: &PgPool,
+    user_id: &UserId,
+    new_email: Email,
+) -> Result<()> {
+    log::debug!("# | db::update_user_email | {user_id} to {new_email}");
+    sqlx::query!(
+        "UPDATE users SET email = $1, new_email = NULL WHERE id = $2",
+        new_email.inner,
+        user_id.inner
+    )
+    .execute(db_pool)
+    .await
+    .map(|_| ())
+    .map_err(|e| anyhow!(e))
+}
+
+// ============================================================================
+// User Config (Non-Secret)
+// ============================================================================
 
 pub async fn get_user(
     db_pool: &PgPool,
@@ -232,6 +352,70 @@ pub async fn get_user(
             FROM users WHERE id = $1",
     )
     .bind(user_id.inner)
+    .fetch_one(db_pool)
+    .await
+    .map_err(|e| anyhow!(e))
+}
+
+// ============================================================================
+// User Config with Secrets
+// ============================================================================
+
+pub async fn get_user_config_with_secrets(
+    db_pool: &PgPool,
+    user_id: &UserId,
+    client: &reqwest::Client,
+    application_user_secret: &secrets::ApplicationUserSecrets,
+) -> Result<users::UserConfigForUpdater> {
+    log::debug!("# | db::get_user_config_with_secrets | {user_id}");
+
+    let config = get_user_secrets(db_pool, user_id, application_user_secret).await?;
+
+    let (config, _) = users::create_config_with_strong_constraints(user_id, client, &config)?;
+
+    Ok(config)
+}
+
+pub async fn get_user_secrets(
+    db_pool: &PgPool,
+    user_id: &UserId,
+    application_user_secret: &secrets::ApplicationUserSecrets,
+) -> Result<UserConfigDbEntries<secrets::Decrypted, constraints::ValidConstraints>> {
+    log::debug!("# | db::get_user_secrets | {user_id}");
+
+    let secrets_key = compute_user_secrets_key(user_id, application_user_secret);
+
+    sqlx::query_as(
+        "SELECT
+            website_system_name,
+            website_url_name,
+            status_prefix,
+            status_no_fronts,
+            status_truncate_names_to,
+            show_members_non_archived,
+            show_members_archived,
+            show_custom_fronts,
+            respect_front_notifications_disabled,
+            enable_website,
+            enable_discord,
+            enable_discord_status_message,
+            enable_vrchat,
+            enable_to_pluralkit,
+            privacy_fine_grained,
+            privacy_fine_grained_buckets,
+            history_limit,
+            history_truncate_after_days,
+            pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
+            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
+            pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
+            pgp_sym_decrypt(enc__vrchat_password, $2) AS vrchat_password,
+            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS vrchat_cookie,
+            pgp_sym_decrypt(enc__pluralkit_token, $2) AS pluralkit_token,
+            true AS valid_constraints
+            FROM users WHERE id = $1",
+    )
+    .bind(user_id.inner)
+    .bind(secrets_key.inner)
     .fetch_one(db_pool)
     .await
     .map_err(|e| anyhow!(e))
@@ -310,66 +494,6 @@ pub async fn set_user_config_secrets(
     Ok(())
 }
 
-pub async fn get_user_config_with_secrets(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    client: &reqwest::Client,
-    application_user_secret: &secrets::ApplicationUserSecrets,
-) -> Result<users::UserConfigForUpdater> {
-    log::debug!("# | db::get_user_config_with_secrets | {user_id}");
-
-    let config = get_user_secrets(db_pool, user_id, application_user_secret).await?;
-
-    let (config, _) = users::create_config_with_strong_constraints(user_id, client, &config)?;
-
-    Ok(config)
-}
-
-pub async fn get_user_secrets(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    application_user_secret: &secrets::ApplicationUserSecrets,
-) -> Result<UserConfigDbEntries<secrets::Decrypted, constraints::ValidConstraints>> {
-    log::debug!("# | db::get_user_secrets | {user_id}");
-
-    let secrets_key = compute_user_secrets_key(user_id, application_user_secret);
-
-    sqlx::query_as(
-        "SELECT
-            website_system_name,
-            website_url_name,
-            status_prefix,
-            status_no_fronts,
-            status_truncate_names_to,
-            show_members_non_archived,
-            show_members_archived,
-            show_custom_fronts,
-            respect_front_notifications_disabled,
-            enable_website,
-            enable_discord,
-            enable_discord_status_message,
-            enable_vrchat,
-            enable_to_pluralkit,
-            privacy_fine_grained,
-            privacy_fine_grained_buckets,
-            history_limit,
-            history_truncate_after_days,
-            pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
-            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
-            pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
-            pgp_sym_decrypt(enc__vrchat_password, $2) AS vrchat_password,
-            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS vrchat_cookie,
-            pgp_sym_decrypt(enc__pluralkit_token, $2) AS pluralkit_token,
-            true AS valid_constraints
-            FROM users WHERE id = $1",
-    )
-    .bind(user_id.inner)
-    .bind(secrets_key.inner)
-    .fetch_one(db_pool)
-    .await
-    .map_err(|e| anyhow!(e))
-}
-
 pub async fn modify_user_secrets(
     db_pool: &PgPool,
     user_id: &UserId,
@@ -396,6 +520,10 @@ pub async fn modify_user_secrets(
     Ok(())
 }
 
+// ============================================================================
+// All Users
+// ============================================================================
+
 pub async fn get_all_users(db_pool: &PgPool) -> Result<Vec<UserId>> {
     log::debug!("# | db::get_all_users");
 
@@ -412,6 +540,29 @@ pub async fn get_all_users(db_pool: &PgPool) -> Result<Vec<UserId>> {
     log::debug!("# | db::get_all_users | retrieved={}", users.len());
 
     Ok(users)
+}
+
+// ============================================================================
+// Helper Functions & Structs
+// ============================================================================
+
+fn compute_user_secrets_key(
+    user_id: &UserId,
+    application_user_secret: &secrets::ApplicationUserSecrets,
+) -> secrets::UserSecretsDecryptionKey {
+    let user_id = user_id.inner.to_string();
+    let app_user_secret = &application_user_secret.inner;
+
+    let digest = {
+        let mut hasher = Sha256::new();
+        hasher.update(user_id);
+        hasher.update(app_user_secret);
+        hasher.finalize()
+    };
+
+    let hex_string = format!("{digest:x}");
+
+    secrets::UserSecretsDecryptionKey { inner: hex_string }
 }
 
 #[derive(FromRow)]
@@ -441,114 +592,6 @@ impl UserInfoRaw {
     }
 }
 
-pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo> {
-    log::debug!("# | db::get_user_info | {user_id}");
-
-    let row = sqlx::query_as::<_, UserInfoRaw>(
-        "SELECT
-            id,
-            email,
-            password_hash,
-            created_at,
-            new_email,
-            email_verification_token_hash,
-            email_verification_token_expires_at
-        FROM users WHERE id = $1",
-    )
-    .bind(user_id.inner)
-    .fetch_one(db_pool)
-    .await
-    .map_err(|e| anyhow!(e))?;
-
-    Ok(row.into_user_info())
-}
-
-pub async fn set_new_verified_email(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    new_email: Email,
-) -> Result<()> {
-    log::debug!("# | db::update_user_email | {user_id} to {new_email}");
-    sqlx::query!(
-        "UPDATE users SET email = $1, new_email = NULL WHERE id = $2",
-        new_email.inner,
-        user_id.inner
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
-}
-
-pub async fn find_user_by_website_url_name(
-    db_pool: &PgPool,
-    website_url_name: &str,
-) -> Result<UserInfo> {
-    log::debug!("# | db::find_user_by_website_url_name | {website_url_name}");
-    let row = sqlx::query_as::<_, UserInfoRaw>(
-        "SELECT
-            id,
-            email,
-            password_hash,
-            created_at,
-            new_email,
-            email_verification_token_hash,
-            email_verification_token_expires_at
-            FROM users WHERE website_url_name = $1",
-    )
-    .bind(website_url_name)
-    .fetch_one(db_pool)
-    .await
-    .map_err(|e| anyhow!(e))?;
-
-    Ok(row.into_user_info())
-}
-
-pub async fn update_user_email_change_fields(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    new_email: Email,
-    email_verification_token_hash: SecretHashString,
-    email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
-) -> Result<()> {
-    log::debug!("# | db::update_user_email_change_fields | {user_id} for new email {new_email}");
-    sqlx::query!(
-        "UPDATE users
-        SET
-            new_email = $1,
-            email_verification_token_hash = $2,
-            email_verification_token_expires_at = $3
-        WHERE id = $4",
-        new_email.inner,
-        email_verification_token_hash.inner,
-        email_verification_token_expires_at,
-        user_id.inner
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
-}
-
-fn compute_user_secrets_key(
-    user_id: &UserId,
-    application_user_secret: &secrets::ApplicationUserSecrets,
-) -> secrets::UserSecretsDecryptionKey {
-    let user_id = user_id.inner.to_string();
-    let app_user_secret = &application_user_secret.inner;
-
-    let digest = {
-        let mut hasher = Sha256::new();
-        hasher.update(user_id);
-        hasher.update(app_user_secret);
-        hasher.finalize()
-    };
-
-    let hex_string = format!("{digest:x}");
-
-    secrets::UserSecretsDecryptionKey { inner: hex_string }
-}
-
 #[derive(FromRow)]
 pub struct UserInfo {
     pub id: UserId,
@@ -568,112 +611,4 @@ pub struct TemporaryUser {
     pub email_verification_token_hash: SecretHashString,
     pub email_verification_token_expires_at: chrono::DateTime<chrono::Utc>,
     pub created_at: chrono::DateTime<chrono::Utc>,
-}
-
-pub async fn delete_user(db_pool: &PgPool, user_id: &UserId) -> Result<()> {
-    log::debug!("# | db::delete_user | {user_id}");
-    sqlx::query!(
-        "DELETE FROM users
-        WHERE id = $1",
-        user_id.inner
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
-}
-
-pub async fn insert_history_entry(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    status_text: &str,
-) -> Result<()> {
-    log::debug!("# | db::insert_history_entry | {user_id}");
-
-    // Get the most recent entry to check for duplicates
-    let recent_entries = get_history_entries(db_pool, user_id, 1).await?;
-    if let Some(most_recent) = recent_entries.first() {
-        if most_recent.status_text == status_text {
-            log::debug!(
-                "# | db::insert_history_entry | {user_id} | skipping duplicate entry"
-            );
-            return Ok(());
-        }
-    }
-
-    sqlx::query!(
-        "INSERT INTO history_status (user_id, status_text)
-        VALUES ($1, $2)",
-        user_id.inner,
-        status_text
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
-}
-
-pub async fn get_history_entries(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    limit: usize,
-) -> Result<Vec<HistoryEntry>> {
-    let limit: i64 = limit.try_into()?;
-    log::debug!("# | db::get_history_entries | {user_id} | limit={limit}");
-    sqlx::query_as!(
-        HistoryEntry,
-        "SELECT
-            id,
-            user_id,
-            status_text,
-            created_at
-        FROM history_status
-        WHERE user_id = $1
-        ORDER BY created_at DESC
-        LIMIT $2",
-        user_id.inner,
-        limit
-    )
-    .fetch_all(db_pool)
-    .await
-    .map_err(|e| anyhow!(e))
-}
-
-pub async fn prune_history(
-    db_pool: &PgPool,
-    user_id: &UserId,
-    history_limit: usize,
-    history_truncate_after_days: usize,
-) -> Result<()> {
-    let history_limit: i64 = history_limit.try_into()?;
-    log::debug!(
-        "# | db::prune_history | {user_id} | limit={history_limit}, days={history_truncate_after_days}"
-    );
-
-    // Prune by count and/or age in a single query
-    // If limit is 0, all entries are removed (disables history)
-    // If days is 0, no age-based pruning occurs
-    sqlx::query!(
-        "DELETE FROM history_status
-        WHERE user_id = $1
-          AND (
-            -- Prune by count: keep only the most recent N entries
-            (id NOT IN (
-              SELECT id FROM history_status
-              WHERE user_id = $1
-              ORDER BY created_at DESC
-              LIMIT $2
-            ))
-            OR
-            -- Prune by age: remove entries older than N days (0 disables)
-            (created_at <= NOW() - ($3 || ' days')::INTERVAL)
-          )",
-        user_id.inner,
-        history_limit,
-        history_truncate_after_days.to_string()
-    )
-    .execute(db_pool)
-    .await
-    .map(|_| ())
-    .map_err(|e| anyhow!(e))
 }

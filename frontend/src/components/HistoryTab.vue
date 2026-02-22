@@ -2,7 +2,8 @@
   <div class="history-container">
     <h1>Fronting History</h1>
     <p class="history-description">
-      View your recent fronting status changes. This history helps you track when switches occurred and see the status text at that time.
+      View your recent fronting status changes. This history helps you track when switches occurred
+      and see the status text at that time.
     </p>
     <div v-if="history.length === 0" class="history-empty">
       <p>No history entries found.</p>

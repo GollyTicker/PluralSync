@@ -10,10 +10,10 @@ use pluralsync::{
     updater::Platform,
     users::{
         PrivacyFineGrained, UserId,
-        user_api::{
-            ChangeEmailRequest, DeleteAccountRequest, EmailVerificationResponse,
-            ForgotPasswordRequest, ResetPasswordAttempt,
+        auth_endpoints::{
+            EmailVerificationResponse, ForgotPasswordRequest, ResetPasswordAttempt,
         },
+        user_endpoints::{ChangeEmailRequest, DeleteAccountRequest},
     },
 };
 use pluralsync_base::{

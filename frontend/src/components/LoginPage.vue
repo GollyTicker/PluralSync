@@ -19,9 +19,7 @@
       </p>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
-    <p style="margin: 1em">
-      ℹ️ Fronting History Statuses were recently added.
-    </p>
+    <p style="margin: 1em">ℹ️ Fronting History Statuses were recently added.</p>
     <p style="margin: 1em">
       ℹ️ Please ensure your address can receive emails. If not, then please change it to be able to
       receive emails.

@@ -3,7 +3,9 @@
     <h1 id="status-page-title">Updaters Status</h1>
     <p v-if="fronting_status?.inner">
       Example fronting status:
-      <span id="fronting-status-example" class="fronting-status-text">{{ fronting_status?.inner }}</span>
+      <span id="fronting-status-example" class="fronting-status-text">{{
+        fronting_status?.inner
+      }}</span>
     </p>
     <div class="status-list">
       <div v-for="(status, name) in updaters" :key="name" class="status-item">
