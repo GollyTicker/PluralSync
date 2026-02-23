@@ -1,5 +1,9 @@
 ## Steps to first public release version
 
+* fix pluralsync bridge issues:
+  * make it auto-updating
+  * make each login provide the version of the software sending the request - and only accept the current version
+  * once auto-updating, let the users know, that it's auto-updating via email
 * move to pluralsync.org for more proper version
 * DONE: accounce and get second phase test users by posting about it in more channels
   * DONE: pk server
