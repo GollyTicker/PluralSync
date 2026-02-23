@@ -59,7 +59,7 @@
 * configureable fronting order (details in discord)
 * something like this for the website view as well as the fronting link would be good probably: https://codeberg.org/fulmine/pluralkit-xyz
   * their formatting of the rich presence is also nice
-* thoughts: It seems like some users have automated updates of their system members. (e.g. every 20-30s).
+* DONE: It seems like some users have automated updates of their system members. (e.g. every 20-30s).
   * At minimum, we should consider, if the change actually changes anything in our datamodel
     and then only push the change to the other services if it actually causes a change there.
   * furthermore, we should better analyse their usecase and patterns to reduce unnecessary load
