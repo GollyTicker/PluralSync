@@ -37,6 +37,7 @@ pub async fn get_user(
             privacy_fine_grained_buckets,
             history_limit,
             history_truncate_after_days,
+            fronter_channel_wait_increment,
             '' AS simply_plural_token,
             '' AS discord_status_message_token,
             '' AS vrchat_username,
@@ -100,6 +101,7 @@ pub async fn get_user_secrets(
             privacy_fine_grained_buckets,
             history_limit,
             history_truncate_after_days,
+            fronter_channel_wait_increment,
             pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
             pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
             pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
@@ -152,7 +154,8 @@ pub async fn set_user_config_secrets(
             enable_to_pluralkit = $24,
             enc__pluralkit_token = pgp_sym_encrypt($25, $9),
             history_limit = $26,
-            history_truncate_after_days = $27
+            history_truncate_after_days = $27,
+            fronter_channel_wait_increment = $28
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -182,6 +185,7 @@ pub async fn set_user_config_secrets(
     .bind(config.pluralkit_token.map(|s| s.secret))
     .bind(config.history_limit)
     .bind(config.history_truncate_after_days)
+    .bind(config.fronter_channel_wait_increment)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;

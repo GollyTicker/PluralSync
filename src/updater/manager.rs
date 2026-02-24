@@ -204,7 +204,7 @@ impl UpdaterManager {
     ) -> Result<()> {
         let mut locked_task = self.tasks.lock().map_err(|e| anyhow!(e.to_string()))?;
 
-        let () = self.recreate_fronter_channel(user_id)?;
+        let () = self.recreate_fronter_channel(user_id, &config)?;
         let foreign_status_updater_task = self.recreate_foreign_status_channel(user_id)?;
         let () = self.recreate_updater_statuses(user_id, &config)?;
         let simply_plural_websocket_listener_task = self
@@ -270,23 +270,12 @@ impl UpdaterManager {
         Ok(())
     }
 
-    fn recreate_fronter_channel(&self, user_id: &UserId) -> Result<()> {
-        let rate_limit_config = if cfg!(debug_assertions) {
-            log::info!("recreate_fronter_channel: using debug rate limits");
-            communication::RateLimitedMostRecentSend::new(
-                format!("fronter_channel {user_id}"),
-                chrono::Duration::milliseconds(100),
-                chrono::Duration::seconds(1),
-                chrono::Duration::seconds(5),
-            )
-        } else {
-            communication::RateLimitedMostRecentSend::new(
-                format!("fronter_channel {user_id}"),
-                chrono::Duration::milliseconds(100),
-                chrono::Duration::seconds(60),
-                chrono::Duration::minutes(4),
-            )
-        };
+    fn recreate_fronter_channel(
+        &self,
+        user_id: &UserId,
+        config: &users::UserConfigForUpdater,
+    ) -> Result<()> {
+        let rate_limit_config = compute_rate_limiting_config(user_id, config);
 
         self.fronter_channel
             .lock()
@@ -465,6 +454,39 @@ impl UpdaterManager {
     }
 }
 
+fn compute_rate_limiting_config(
+    user_id: &UserId,
+    config: &users::UserConfigForUpdater,
+) -> communication::RateLimitedMostRecentSend<Vec<plurality::Fronter>> {
+    if cfg!(debug_assertions) {
+        log::info!("recreate_fronter_channel: using debug rate limits");
+        communication::RateLimitedMostRecentSend::new(
+            format!("fronter_channel {user_id}"),
+            chrono::Duration::milliseconds(100),
+            chrono::Duration::seconds(1),
+            chrono::Duration::seconds(5),
+        )
+    } else {
+        #[allow(clippy::cast_possible_wrap)]
+        let wait_increment =
+            chrono::Duration::milliseconds(config.fronter_channel_wait_increment as i64);
+        let wait_max = chrono::Duration::seconds(180).min(wait_increment * 600);
+        let duration_to_count_over = chrono::Duration::seconds(300).min(wait_increment * 2400);
+        log::info!(
+            "recreate_fronter_channel: wait_increment={}ms, wait_max={:?}, duration_to_count_over={:?}",
+            config.fronter_channel_wait_increment,
+            wait_max,
+            duration_to_count_over
+        );
+        communication::RateLimitedMostRecentSend::new(
+            format!("fronter_channel {user_id}"),
+            wait_increment,
+            wait_max,
+            duration_to_count_over,
+        )
+    }
+}
+
 fn record_status_in_metrics(user_id: &UserId, p: updater::Platform, new_status: &UpdaterStatus) {
     // By using strum's EnumVariantNames, we don't need to manually maintain a list of status strings.
     for old_status in UpdaterStatus::VARIANTS {
@@ -534,3 +556,55 @@ fn is_long_lived(active_since: chrono::DateTime<chrono::Utc>) -> bool {
 }
 
 const ONE_DAY_AS_SECONDS: u64 = 60 * 60 * 24;
+
+#[cfg(test)]
+#[allow(clippy::unwrap_used)]
+mod tests {
+    #[test]
+    fn test_wait_calculation_default() {
+        // Default: 100ms wait_increment
+        let wait_increment = chrono::Duration::milliseconds(100);
+        let wait_max = chrono::Duration::seconds(180).min(wait_increment * 600);
+        let duration_to_count_over = chrono::Duration::seconds(300).min(wait_increment * 2400);
+
+        assert_eq!(wait_increment, chrono::Duration::milliseconds(100));
+        assert_eq!(wait_max, chrono::Duration::seconds(60));
+        assert_eq!(duration_to_count_over, chrono::Duration::minutes(4));
+    }
+
+    #[test]
+    fn test_wait_calculation_500ms() {
+        // 500ms wait_increment
+        let wait_increment = chrono::Duration::milliseconds(500);
+        let wait_max = chrono::Duration::seconds(180).min(wait_increment * 600);
+        let duration_to_count_over = chrono::Duration::seconds(300).min(wait_increment * 2400);
+
+        assert_eq!(wait_increment, chrono::Duration::milliseconds(500));
+        assert_eq!(wait_max, chrono::Duration::seconds(180)); // capped at 3 minutes
+        assert_eq!(duration_to_count_over, chrono::Duration::seconds(300)); // capped at 5 minutes
+    }
+
+    #[test]
+    fn test_wait_calculation_1000ms() {
+        // 1000ms (1 second) wait_increment
+        let wait_increment = chrono::Duration::milliseconds(1000);
+        let wait_max = chrono::Duration::seconds(180).min(wait_increment * 600);
+        let duration_to_count_over = chrono::Duration::seconds(300).min(wait_increment * 2400);
+
+        assert_eq!(wait_increment, chrono::Duration::milliseconds(1000));
+        assert_eq!(wait_max, chrono::Duration::seconds(180)); // capped at 3 minutes
+        assert_eq!(duration_to_count_over, chrono::Duration::seconds(300)); // capped at 5 minutes
+    }
+
+    #[test]
+    fn test_wait_calculation_maximum() {
+        // Maximum: 180000ms (3 minutes) wait_increment
+        let wait_increment = chrono::Duration::milliseconds(180_000);
+        let wait_max = chrono::Duration::seconds(180).min(wait_increment * 600);
+        let duration_to_count_over = chrono::Duration::seconds(300).min(wait_increment * 2400);
+
+        assert_eq!(wait_increment, chrono::Duration::milliseconds(180_000));
+        assert_eq!(wait_max, chrono::Duration::seconds(180)); // capped at 3 minutes
+        assert_eq!(duration_to_count_over, chrono::Duration::seconds(300)); // capped at 5 minutes
+    }
+}

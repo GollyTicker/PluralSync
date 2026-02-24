@@ -3,7 +3,8 @@
     <h1>Fronting History</h1>
     <p class="history-description">
       View your recent fronting status changes. This history helps you track when switches occurred
-      and see the status text at that time. History retention can be configured and disabled/enabled in the settings.
+      and see the status text at that time. History retention can be configured and disabled/enabled
+      in the settings.
     </p>
     <div v-if="history.length === 0" class="history-empty">
       <p>No history entries found.</p>

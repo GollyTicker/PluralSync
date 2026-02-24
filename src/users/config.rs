@@ -59,6 +59,8 @@ where
     pub history_limit: Option<i32>,
     pub history_truncate_after_days: Option<i32>,
 
+    pub fronter_channel_wait_increment: Option<i32>,
+
     pub simply_plural_token: Option<Secret>,
     pub discord_status_message_token: Option<Secret>,
     pub vrchat_username: Option<Secret>,
@@ -112,6 +114,9 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             history_truncate_after_days: self
                 .history_truncate_after_days
                 .or(defaults.history_truncate_after_days),
+            fronter_channel_wait_increment: self
+                .fronter_channel_wait_increment
+                .or(defaults.fronter_channel_wait_increment),
             valid_constraints: self.valid_constraints.clone(), // Constraints are not defaulted
         }
     }
@@ -139,6 +144,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             website_url_name: None,
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
+            fronter_channel_wait_increment: Some(100),
             simply_plural_token: None,
             discord_status_message_token: None,
             vrchat_username: None,
@@ -241,6 +247,7 @@ pub struct UserConfigForUpdater {
 
     pub history_limit: usize,
     pub history_truncate_after_days: usize,
+    pub fronter_channel_wait_increment: usize,
 }
 
 #[derive(Clone, Deserialize, Serialize, Debug, Default)]
@@ -362,6 +369,10 @@ where
             local_config_with_defaults,
             history_truncate_after_days
         )?.try_into()?,
+        fronter_channel_wait_increment: config_value!(
+            local_config_with_defaults,
+            fronter_channel_wait_increment
+        )?.try_into()?,
     };
 
     if config.privacy_fine_grained == PrivacyFineGrained::ViaPrivacyBuckets
@@ -384,6 +395,13 @@ where
         return Err(anyhow!(
             "history_truncate_after_days must be between 0 and 30, got {}",
             config.history_truncate_after_days
+        ));
+    }
+
+    if !(100..=180_000).contains(&config.fronter_channel_wait_increment) {
+        return Err(anyhow!(
+            "fronter_channel_wait_increment must be between 100 and 180000, got {}",
+            config.fronter_channel_wait_increment
         ));
     }
 
@@ -445,6 +463,7 @@ mod tests {
             pluralkit_token: None,
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
+            fronter_channel_wait_increment: Some(100),
         };
 
         let (config_for_updater, _) =
@@ -494,6 +513,7 @@ mod tests {
             }),
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
+            fronter_channel_wait_increment: Some(100),
             valid_constraints: None,
         };
 
@@ -520,6 +540,7 @@ mod tests {
   "website_url_name": "our-system",
   "history_limit": 100,
   "history_truncate_after_days": 7,
+  "fronter_channel_wait_increment": 100,
   "simply_plural_token": {
     "secret": "sp_token_123"
   },
@@ -535,5 +556,78 @@ mod tests {
 }"#;
 
         assert_eq!(json_string, expected_json);
+    }
+
+    #[test]
+    fn test_fronter_channel_wait_increment_validation() {
+        let user_id = UserId {
+            inner: uuid::Uuid::new_v4(),
+        };
+        let unused_client = reqwest::Client::new();
+
+        // Test with valid default value (100ms)
+        let mut db_config = create_base_config();
+        db_config.fronter_channel_wait_increment = Some(100);
+        let result = create_config_with_strong_constraints(&user_id, &unused_client, &db_config);
+        assert!(result.is_ok());
+        let (config, _) = result.unwrap();
+        assert_eq!(config.fronter_channel_wait_increment, 100);
+
+        // Test with maximum valid value (180000ms = 3 minutes)
+        let mut db_config = create_base_config();
+        db_config.fronter_channel_wait_increment = Some(180_000);
+        let result = create_config_with_strong_constraints(&user_id, &unused_client, &db_config);
+        assert!(result.is_ok());
+        let (config, _) = result.unwrap();
+        assert_eq!(config.fronter_channel_wait_increment, 180_000);
+
+        // Test with value below minimum (should fail)
+        let mut db_config = create_base_config();
+        db_config.fronter_channel_wait_increment = Some(99);
+        let result = create_config_with_strong_constraints(&user_id, &unused_client, &db_config);
+        assert!(result.is_err());
+        let err_msg = result.err().unwrap().to_string();
+        assert!(err_msg.contains("fronter_channel_wait_increment must be between 100 and 180000"));
+
+        // Test with value above maximum (should fail)
+        let mut db_config = create_base_config();
+        db_config.fronter_channel_wait_increment = Some(180_001);
+        let result = create_config_with_strong_constraints(&user_id, &unused_client, &db_config);
+        assert!(result.is_err());
+        let err_msg = result.err().unwrap().to_string();
+        assert!(err_msg.contains("fronter_channel_wait_increment must be between 100 and 180000"));
+    }
+
+    fn create_base_config() -> UserConfigDbEntries<Decrypted> {
+        UserConfigDbEntries::<Decrypted> {
+            enable_website: false,
+            website_system_name: None,
+            website_url_name: None,
+            status_prefix: None,
+            status_no_fronts: None,
+            status_truncate_names_to: None,
+            show_members_non_archived: false,
+            show_members_archived: false,
+            show_custom_fronts: false,
+            respect_front_notifications_disabled: true,
+            privacy_fine_grained: PrivacyFineGrained::NoFineGrained,
+            privacy_fine_grained_buckets: None,
+            enable_discord: false,
+            enable_discord_status_message: false,
+            enable_vrchat: false,
+            enable_to_pluralkit: false,
+            simply_plural_token: Some(Decrypted {
+                secret: "sp_token_123".to_string(),
+            }),
+            discord_status_message_token: None,
+            vrchat_username: None,
+            vrchat_password: None,
+            vrchat_cookie: None,
+            pluralkit_token: None,
+            history_limit: Some(100),
+            history_truncate_after_days: Some(7),
+            fronter_channel_wait_increment: Some(100),
+            valid_constraints: None,
+        }
     }
 }
