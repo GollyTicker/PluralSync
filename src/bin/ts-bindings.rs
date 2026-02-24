@@ -69,6 +69,7 @@ fn main() -> Result<()> {
     pluralkit_token?: Decrypted;
     history_limit?: number;
     history_truncate_after_days?: number;
+    fronter_channel_wait_increment?: number;
 }".to_owned(),
         export::<PrivacyFineGrained>(conf)?,
         export::<JwtString>(conf)?,

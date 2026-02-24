@@ -51,6 +51,11 @@
   background-color: #555;
 }
 
+.config-update-status {
+  font-weight: bold;
+  font-size: 1.15em;
+}
+
 .copyable {
   cursor: pointer;
   text-decoration: underline dotted;

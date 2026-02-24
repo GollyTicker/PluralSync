@@ -95,6 +95,7 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         pluralkit_token: value.pluralkit_token.clone(),
         history_limit: value.history_limit,
         history_truncate_after_days: value.history_truncate_after_days,
+        fronter_channel_wait_increment: value.fronter_channel_wait_increment,
     }
 }
 
@@ -129,5 +130,6 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         pluralkit_token: value.pluralkit_token.clone(),
         history_limit: value.history_limit,
         history_truncate_after_days: value.history_truncate_after_days,
+        fronter_channel_wait_increment: value.fronter_channel_wait_increment,
     }
 }

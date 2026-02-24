@@ -16,11 +16,12 @@
       footer of this website)
     </p>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
-      <p id="config-update-status">{{ status }}</p>
       <div class="config-section">
         <h2>PluralSync Settings</h2>
       </div>
       <button type="submit">Save and Restart</button>
+      <p class="config-update-status">{{ status }}</p>
+      <SyncConfigPanel :config="config" :defaults="defaults" />
       <SimplyPluralConfigPanel :config="config" />
       <PluralKitConfigPanel :config="config" />
       <WebsiteConfigPanel :config="config" :defaults="defaults" />
@@ -29,7 +30,7 @@
       <VRChatConfigPanel :config="config" />
       <HistoryConfigPanel :config="config" :defaults="defaults" />
       <button type="submit">Save and Restart</button>
-      <p id="config-update-status-2">{{ status }}</p>
+      <p class="config-update-status">{{ status }}</p>
       <div class="config-section">
         <h2 style="color: #d32f2f">Account Settings</h2>
         <div class="config-grid">
@@ -98,6 +99,7 @@ import FrontingStatusTextPanel from '@/components/FrontingStatusTextPanel.vue'
 import DiscordConfigPanel from '@/components/DiscordConfigPanel.vue'
 import VRChatConfigPanel from '@/components/VRChatConfigPanel.vue'
 import HistoryConfigPanel from '@/components/HistoryConfigPanel.vue'
+import SyncConfigPanel from '@/components/SyncConfigPanel.vue'
 
 const config: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
 const defaults: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
