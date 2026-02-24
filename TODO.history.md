@@ -22,11 +22,23 @@ Rate limiting uses **hardcoded defaults** (not user-configurable).
 ## Storage Model
 
 - **Latest snapshot:** Stored to compute new deltas. Replaced on each update.
-- **History:** Only **deltas** are stored (not full snapshots).
+- **History:** Only **deltas** are stored for a long time. For full snapshots, only the latest snapshot is stored of the entire system.
 - **Per-system changelog** (not global).
 - **No backfill** when feature is first enabled—only track changes going forward.
+- Furthermore, only the last X entries and N days will be stored. The logic for storage and pruning and the configuration will be equivalent to how it's already implemented for history fronting.
 
 ## Data Handling
+
+## Delta-computation
+
+Given a stored system snapshot A and a new system snapshot B (freshly fetched),
+where the snapshot consists of a Map<MemberId, JSON> and a Map<CustomFrontId, JSON> (both extracted from the HTTP requests), then the diff is computed as follows:
+* for all MemberId/CustomFrontId where the id only appears in either A or B,
+  then mark the corresponding IDs are added/removed.
+* for all MemberId/CustomFrontId where both snaphots have JSONs,
+  then compare both JSONs (and truncate long fields) and save only the changed fields. e.g if A: {name: hello, age: 20} and B: {name: holla, age: 20}
+  then the delta is stored as {old: {name: hello}, new: {name: holla}}.
+* save the new snapshot B into the database over the old snapshot A. (for each PluralSync user, there is only a single full snapshot stored.)
 
 ### Truncation & Hashing
 - All potentially unbounded string fields must be **truncated and hashed** if they exceed a certain limit (e.g., 10,000 characters).
@@ -43,10 +55,6 @@ Lookups should happen **at fetch time** so the changelog is self-contained and d
 ## Database
 
 - **New separate table** (e.g., `system_changelog`), not merged with existing `history_status`.
-
-## Security
-
-- **TODO:** Encrypt the changelog like platform secrets/tokens (using `pgp_sym_encrypt`/`pgp_sym_decrypt` as in `user_config_queries.rs`). Currently stored as plaintext.
 
 ## Frontend Display
 
