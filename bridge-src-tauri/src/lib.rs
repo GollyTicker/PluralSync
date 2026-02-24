@@ -187,6 +187,8 @@ pub fn run() -> Result<()> {
         .app_name("PluralSync-Bridge")
         .build();
 
+    let updater_plugin = tauri_plugin_updater::Builder::new().build();
+
     let rich_presence_channel: FireAndForgetChannel<ServerToBridgeSseMessage> =
         fire_and_forget_channel();
     let updater_status_channel: FireAndForgetChannel<UpdaterStatus> = fire_and_forget_channel();
@@ -207,6 +209,7 @@ pub fn run() -> Result<()> {
 
     tauri::Builder::default()
         .plugin(autostart_plugin)
+        .plugin(updater_plugin)
         .invoke_handler(tauri::generate_handler![
             login,
             store_credentials,

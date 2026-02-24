@@ -40,9 +40,11 @@ export async function renderLoginPage() {
 
     if (email && password) {
       try {
+        const version = await invoke<string>('get_bridge_version')
         let creds: UserLoginCredentials = {
           email: { inner: email },
           password: { inner: { inner: password } },
+          client_version: version,
         }
         await invoke('store_credentials', { creds, baseUrl })
         await invoke('login_with_stored_credentials')

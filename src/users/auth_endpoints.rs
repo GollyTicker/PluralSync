@@ -174,6 +174,17 @@ pub async fn post_api_user_login(
         return Err(anyhow!("Email/Passsword cannot be empty.")).map_err(expose_internal_error)?;
     }
 
+    // Version check - immediate enforcement
+    if !is_version_acceptable(&credentials.client_version) {
+        return Err((
+            http::Status::UpgradeRequired,
+            format!(
+                "Client {} is outdated. Update required.",
+                credentials.client_version
+            ),
+        ));
+    }
+
     let user_id = database::get_user_id(db_pool, credentials.email.clone())
         .await
         .map_err(|e| (http::Status::Forbidden, e.to_string()))?;
@@ -349,4 +360,9 @@ pub async fn post_api_auth_reset_password(
     );
 
     Ok(())
+}
+
+fn is_version_acceptable(client: &str) -> bool {
+    use pluralsync_base::meta::PLURALSYNC_VERSION;
+    client >= PLURALSYNC_VERSION
 }

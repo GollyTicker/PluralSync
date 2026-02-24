@@ -21,6 +21,39 @@ fi
 
 ./steps/30-build-release.sh
 
+OUT_DIR="target/release_builds"
+
+# Sign artifacts
+if [ -n "${TAURI_SIGNING_PRIVATE_KEY:-}" ]; then
+  if [ -f "$OUT_DIR/PluralSync-Bridge-Windows-Setup.exe" ]; then
+    echo "Signing Windows installer..."
+    TAURI_SIGNING_PRIVATE_KEY="$TAURI_SIGNING_PRIVATE_KEY" \
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
+    cargo tauri signer sign \
+      "$OUT_DIR/PluralSync-Bridge-Windows-Setup.exe"
+  fi
+
+  if [ -f "$OUT_DIR/PluralSync-Bridge-Linux.AppImage" ]; then
+    echo "Signing Linux AppImage..."
+    TAURI_SIGNING_PRIVATE_KEY="$TAURI_SIGNING_PRIVATE_KEY" \
+    TAURI_SIGNING_PRIVATE_KEY_PASSWORD="$TAURI_SIGNING_PRIVATE_KEY_PASSWORD" \
+    cargo tauri signer sign \
+      "$OUT_DIR/PluralSync-Bridge-Linux.AppImage"
+  fi
+else
+  echo "Warning: TAURI_SIGNING_PRIVATE_KEY not set, artifacts not signed"
+  false
+fi
+
+# Generate latest.json
+cat > "$OUT_DIR/latest.json" << EOF
+{
+  "version": "$TAG",
+  "notes": "Release $TAG",
+  "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+}
+EOF
+
 git push
 git push --tags
 

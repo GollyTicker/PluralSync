@@ -1,43 +1,53 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "PluralSync Bridge",
-  "version": "0.1.0",
-  "identifier": "pluralsync.bridge",
-  "build": {
-    "frontendDist": "../bridge-frontend/dist",
-    "devUrl": "http://localhost:5173",
-    "beforeDevCommand": "cd ../bridge-frontend && npm run dev",
-    "beforeBuildCommand": "cd ../bridge-frontend && npm run build"
-  },
   "app": {
-    "windows": [
-      {
-        "title": "PluralSync Bridge",
-        "width": 500,
-        "height": 550,
-        "resizable": true,
-        "fullscreen": false,
-        "theme": "Light"
-      }
-    ],
     "security": {
       "csp": null
-    }
+    },
+    "windows": [
+      {
+        "fullscreen": false,
+        "height": 550,
+        "resizable": true,
+        "theme": "Light",
+        "title": "PluralSync Bridge",
+        "width": 500
+      }
+    ]
+  },
+  "build": {
+    "beforeBuildCommand": "cd ../bridge-frontend && npm run build",
+    "beforeDevCommand": "cd ../bridge-frontend && npm run dev",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../bridge-frontend/dist"
   },
   "bundle": {
     "active": true,
-    "targets": [
-      "deb",
-      "rpm",
-      "appimage",
-      "nsis"
-    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
+    ],
+    "targets": [
+      "deb",
+      "rpm",
+      "appimage",
+      "nsis"
     ]
-  }
+  },
+  "identifier": "pluralsync.bridge",
+  "plugins": {
+    "updater": {
+      "active": true,
+      "dialog": false,
+      "endpoints": [
+        "https://github.com/GollyTicker/PluralSync/releases/latest/download/latest.json"
+      ],
+      "pubkey": "<PUB_KEY_HERE>"
+    }
+  },
+  "productName": "PluralSync Bridge",
+  "version": "0.1.0"
 }

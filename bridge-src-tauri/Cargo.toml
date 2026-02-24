@@ -10,6 +10,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "*", features = [] }
+serde_json = "*"
 
 [dependencies]
 pluralsync-base = { path = "../base-src" }
@@ -19,6 +20,7 @@ log = "*"
 tokio = { version = "*", default-features = false }
 tauri = { version = "2", default-features = true, features = [] }
 tauri-plugin-log = "*"
+tauri-plugin-updater = "*"
 reqwest = { version = "*", default-features = false, features = [
     "json",
     "rustls-tls",

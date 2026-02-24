@@ -3,6 +3,7 @@ import router from '../router'
 import type { JwtString } from '../pluralsync.bindings'
 import { listen } from '@tauri-apps/api/event'
 import * as tauriAutoStartPlugin from '@tauri-apps/plugin-autostart'
+import { check } from '@tauri-apps/plugin-updater'
 
 const WEBSOCKET_RETRY_INTERVAL_MILLIS = 10 * 1000
 
@@ -14,9 +15,14 @@ const AUTOSTART_IS_DISABLED_TEXT =
 let retryTimer: NodeJS.Timeout | undefined
 
 export async function renderStatusPage() {
+  const version = await invoke<string>('get_bridge_version')
+
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <div>
-      <h1>Status</h1>
+      <h1>PluralSync Bridge</h1>
+      <div>Version: ${version}</div>
+      <button id="check-updates">Check for Updates</button>
+      <div id="updater-status"></div>
       <div id="bridge-status">Connecting to PluralSync Server and local Discord client ...</div>
       <div>
         <div class="autostart-container">
@@ -37,6 +43,22 @@ export async function renderStatusPage() {
       console.warn('Failed to stop and clear credentials', e)
     }
     router.navigate('/')
+  })
+
+  document.querySelector('#check-updates')?.addEventListener('click', async () => {
+    try {
+      const update = await check()
+      if (update) {
+        if (confirm(`Update ${update.version} available. Install now?`)) {
+          await update.downloadAndInstall()
+        }
+      } else {
+        document.querySelector('#updater-status')!.textContent = 'Up to date'
+      }
+    } catch (e) {
+      console.error(e)
+      document.querySelector('#updater-status')!.textContent = 'Update check failed'
+    }
   })
 
   await refreshAutostartSection()
