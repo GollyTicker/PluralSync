@@ -183,6 +183,21 @@ async function emailVerificationSucceededForChange() {
     await expect($('.status-message')).toHaveText('Your email address has been successfully changed.');
 }
 
+async function takeMobileScreenshot(name: string): Promise<void> {
+    const mobileSize = { width: 393, height: 851 };
+    const originalSize = await browser.getWindowSize();
+
+    await browser.setWindowSize(mobileSize.width, mobileSize.height);
+    await browser.execute(() => {
+        document.getElementById('variant-info').style.visibility = 'hidden';
+    });
+    await browser.saveScreenshot(`screenshots/${name}.png`);
+    
+    await browser.execute(() => {
+        document.getElementById('variant-info').style.visibility = 'inherit';
+    });
+    await browser.setWindowSize(originalSize.width, originalSize.height);
+}
 
 describe('PluralSync registration logic', () => {
 
@@ -381,6 +396,7 @@ describe('PluralSync login logic', () => {
 describe('PluralSync updater status and config save and restarts', () => {
     it('should show the correct updater status', async () => {
         await browser.url(env.PLURALSYNC_BASE_URL!);
+        await takeMobileScreenshot("login")
         await login()
         await loggedInAndOnStatusPage()
 
@@ -408,6 +424,8 @@ describe('PluralSync updater status and config save and restarts', () => {
 
         await expect($('#simply_plural_token')).toHaveValue(process.env.SPS_API_TOKEN!);
         await expect($('#discord_status_message_token')).toHaveValue(process.env.DISCORD_STATUS_MESSAGE_TOKEN!);
+    
+        await takeMobileScreenshot("settings")
     });
 
     it('should be able to disable discord and pluralkit', async () => {
@@ -438,6 +456,7 @@ describe('PluralSync updater status and config save and restarts', () => {
 
         await navigateToStatus();
         await loggedInAndOnStatusPage();
+        await takeMobileScreenshot("status")
 
         await expect($('#VRChat-status')).toHaveText('Disabled');
         await expect($('#ToPluralKit-status')).toHaveText('Running');
@@ -493,6 +512,8 @@ describe('PluralSync history tab', () => {
         await navigateToHistory();
         await loggedInAndOnHistoryPage();
         await expect($('.history-status-text')).toHaveText("F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First");
+    
+        await takeMobileScreenshot("history-fronting")    
     });
 
     it('should show no history entries when history limit is set to 0', async () => {

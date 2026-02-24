@@ -14,6 +14,7 @@ export PRIVACY_FINE_GRAINED=ViaPrivacyBuckets
 export PRIVACY_FINE_GRAINED_BUCKETS="[\"68e23553d3877cbeb6000000\"]"
 export HISTORY_LIMIT=100
 export HISTORY_TRUNCATE_AFTER_DAYS=7
+export FRONTER_CHANNEL_WAIT_INCREMENT=100
 
 source docker/source.sh # await
 
@@ -71,6 +72,7 @@ get_user_config_json() {
         \"privacy_fine_grained_buckets\": ${PRIVACY_FINE_GRAINED_BUCKETS},
         \"history_limit\": ${HISTORY_LIMIT},
         \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
+        \"fronter_channel_wait_increment\": ${FRONTER_CHANNEL_WAIT_INCREMENT},
         $SIMPLY_PLURAL_TOKEN_LINE
         $DISCORD_STATUS_MESSAGE_TOKEN_LINE
         $VRCHAT_USERNAME_LINE

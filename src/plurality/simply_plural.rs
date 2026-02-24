@@ -397,6 +397,7 @@ mod tests {
             pluralkit_token: Default::default(),
             history_limit: Default::default(),
             history_truncate_after_days: Default::default(),
+            fronter_channel_wait_increment: Default::default(),
         }
     }
 

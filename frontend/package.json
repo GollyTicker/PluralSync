@@ -11,7 +11,7 @@
     "build": "run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "e2e:note": "YOU MUST START the backend in the tests folder with the frontend built beofre running this test.",
-    "e2e": "wdio run ./wdio.conf.ts",
+    "e2e": "rm -f screenshots/*.png; wdio run ./wdio.conf.ts",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint src --fix",

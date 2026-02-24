@@ -3,7 +3,8 @@
     <h1>Fronting History</h1>
     <p class="history-description">
       View your recent fronting status changes. This history helps you track when switches occurred
-      and see the status text at that time.
+      and see the status text at that time. History retention can be configured and disabled/enabled
+      in the settings.
     </p>
     <div v-if="history.length === 0" class="history-empty">
       <p>No history entries found.</p>
@@ -15,8 +16,9 @@
       <div v-for="entry in history" :key="entry.id" class="history-item">
         <div class="history-header">
           <span class="history-status-text">{{ entry.status_text }}</span>
-          <span class="history-timestamp" :title="formatFullDate(entry.created_at)">
-            {{ formatRelativeTime(entry.created_at) }}
+          <span class="history-timestamp">
+            <span>{{ formatRelativeTime(entry.created_at) }}</span>
+            <span class="history-timezone">{{ new Date(entry.created_at).toLocaleString() }}</span>
           </span>
         </div>
       </div>
@@ -51,11 +53,6 @@ function formatRelativeTime(dateString: string): string {
   } else {
     return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`
   }
-}
-
-function formatFullDate(dateString: string): string {
-  const date = new Date(dateString)
-  return date.toLocaleString()
 }
 
 const fetchHistory = async () => {

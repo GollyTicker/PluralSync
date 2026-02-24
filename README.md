@@ -20,3 +20,14 @@ Developed with ❤️ by [Ayake](https://github.com/GollyTicker)\*.
 Disclaimer: This software was written with AI-assistance to speedup and improve development. The code is reviewed equally to hand-written code to ensure good quality, safe and reliable software.
 
 PluralSync was formerly named SP2Any
+
+## How It Looks Like
+
+![](frontend/screenshots/status.png)
+
+![](frontend/screenshots/history-fronting.png)
+
+![](frontend/screenshots/settings.png)
+
+![](frontend/screenshots/login.png)
+

@@ -1,5 +1,9 @@
 ## Steps to first public release version
 
+* fix pluralsync bridge issues:
+  * make it auto-updating
+  * make each login provide the version of the software sending the request - and only accept the current version
+  * once auto-updating, let the users know, that it's auto-updating via email
 * move to pluralsync.org for more proper version
 * DONE: accounce and get second phase test users by posting about it in more channels
   * DONE: pk server
@@ -55,7 +59,7 @@
 * configureable fronting order (details in discord)
 * something like this for the website view as well as the fronting link would be good probably: https://codeberg.org/fulmine/pluralkit-xyz
   * their formatting of the rich presence is also nice
-* thoughts: It seems like some users have automated updates of their system members. (e.g. every 20-30s).
+* DONE: It seems like some users have automated updates of their system members. (e.g. every 20-30s).
   * At minimum, we should consider, if the change actually changes anything in our datamodel
     and then only push the change to the other services if it actually causes a change there.
   * furthermore, we should better analyse their usecase and patterns to reduce unnecessary load

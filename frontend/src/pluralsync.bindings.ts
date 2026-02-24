@@ -32,6 +32,7 @@ export type UserConfigDbEntries = {
     pluralkit_token?: Decrypted;
     history_limit?: number;
     history_truncate_after_days?: number;
+    fronter_channel_wait_increment?: number;
 };
 export type PrivacyFineGrained = "NoFineGrained" | "ViaFriend" | "ViaPrivacyBuckets";
 export type JwtString = { inner: string };

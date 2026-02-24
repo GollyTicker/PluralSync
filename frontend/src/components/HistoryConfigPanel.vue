@@ -31,7 +31,7 @@
         <label for="history-days">History Retention Days</label>
         <p class="config-description">
           Maximum age of history entries in days. Entries older than this will be automatically
-          deleted. Set to 0 to disable age-based pruning. Range: 0 to 30.
+          deleted. Set to 0 disable history retention. Range: 0 to 30.
         </p>
         <input
           id="history-days"
