@@ -197,6 +197,9 @@ PluralSync includes comprehensive account management features built on email ver
     *   Good: `use anyhow::{anyhow, Error, Result}`
     *   Bad: the above imports on separate lines/statements for each imported object
 *   Rust import statements should use separate lines for imports from different modules originating from this project.
+*   In general, avoid excessive Debug and fmt::Display traits. Only add them, if printing to logs if useful. And then prefer Display over Debug.
+*   **Security: Never add `#[derive(Debug)]` or `#[derive(Display)]` to structs containing sensitive fields** (passwords, tokens, API keys, cookies, secrets). If debugging output is needed, implement `fmt::Display` or `fmt::Debug` manually and redact all sensitive values (e.g., show only first 5 chars or `<field_name>`).
+    *   Affected structs include: `UserConfigDbEntries`, `VRChatCredentials`, `VRChatCredentialsWithCookie`, `VRChatCredentialsWithTwoFactorAuth`, `UserLoginCredentials`, `SmtpConfig`, `ApplicationConfig`, and any struct with fields named `password`, `token`, `secret`, `cookie`, `api_key`, `credentials`. Check them for examples
 
 ## Development Workflows
 
