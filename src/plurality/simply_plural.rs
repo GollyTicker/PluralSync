@@ -44,7 +44,7 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fr
     let frontables =
         get_members_and_custom_fronters_by_privacy_rules(system_id, vrcsn_field_id, config).await?;
 
-    let fronters = filter_frontables_by_front_entries(front_entries, frontables);
+    let fronters = filter_frontables_by_front_entries(front_entries.as_ref(), frontables.as_ref());
 
     for f in &fronters {
         log::debug!("# | fetch_fronts | {user_id} | fronter[*] {f:?}");
@@ -158,10 +158,9 @@ async fn filter_frontables_by_fine_grained_privacy(
     Ok(privacy_bucket_filtered)
 }
 
-#[allow(clippy::needless_pass_by_value)]
 fn filter_frontables_by_front_entries(
-    front_entries: Vec<FrontEntry>,
-    frontables: Vec<Fronter>,
+    front_entries: &[FrontEntry],
+    frontables: &[Fronter],
 ) -> Vec<Fronter> {
     let fronters: Vec<Fronter> = frontables
         .iter()

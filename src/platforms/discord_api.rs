@@ -16,7 +16,6 @@ use rocket_ws;
 
 /// This websocket stream sends text messages of the type `ServerToBridgeSseMessage` and
 /// receives messages of the type `BridgeToServerSseMessage`.
-#[allow(clippy::needless_pass_by_value)]
 #[get("/api/user/platform/discord/bridge-events")]
 pub async fn get_api_user_platform_discord_bridge_events(
     jwt: users::Jwt,
@@ -130,7 +129,7 @@ fn send_initial_discord_rich_presence_message(
 ) -> Option<rocket_ws::Message> {
     let initial_discord_rich_presence_message = initial_fronters
         .ok_or_else(|| anyhow!("No initial fronters found!"))
-        .and_then(|f| discord::render_fronts_to_discord_rich_presence(f, config))
+        .and_then(|f| discord::render_fronts_to_discord_rich_presence(f.as_ref(), config))
         .map(|rp| communication::ServerToBridgeSseMessage {
             discord_rich_presence: Some(rp),
         })
@@ -165,7 +164,7 @@ fn process_message_from_fronting_channel(
     log::info!("# | fronters_chan <-> WS | {user_id} | fronters received");
     if let Some(fronters) = fronters_msg {
         let rich_presence_result =
-            discord::render_fronts_to_discord_rich_presence(fronters, config);
+            discord::render_fronts_to_discord_rich_presence(fronters.as_ref(), config);
         match rich_presence_result {
             Ok(rich_presence) => {
                 let message = communication::ServerToBridgeSseMessage {

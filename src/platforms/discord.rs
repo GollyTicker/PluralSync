@@ -41,9 +41,8 @@ impl DiscordUpdater {
     }
 }
 
-#[allow(clippy::needless_pass_by_value)]
 pub fn render_fronts_to_discord_rich_presence(
-    fronters: Vec<plurality::Fronter>,
+    fronters: &[plurality::Fronter],
     config: &users::UserConfigForUpdater,
 ) -> Result<DiscordRichPresence> {
     let short_format = plurality::FrontingFormat {
@@ -53,13 +52,13 @@ pub fn render_fronts_to_discord_rich_presence(
         status_if_no_fronters: config.status_no_fronts.clone(),
         truncate_names_to_length_if_status_too_long: config.status_truncate_names_to,
     };
-    let short_fronters_string = plurality::format_fronting_status(&short_format, &fronters);
+    let short_fronters_string = plurality::format_fronting_status(&short_format, fronters);
 
     let long_format = plurality::FrontingFormat {
         max_length: Some(50), // seems to fit often enough without '...' truncation
         ..short_format
     };
-    let long_fronters_string = plurality::format_fronting_status(&long_format, &fronters);
+    let long_fronters_string = plurality::format_fronting_status(&long_format, fronters);
 
     let most_recent_fronting_change: Option<i64> = fronters
         .iter()
