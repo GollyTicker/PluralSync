@@ -9,7 +9,7 @@ pub const PLURALSYNC_VERSION: &str = env!("PLURALSYNC_VERSION");
 pub const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: &str =
     "https://github.com/GollyTicker/PluralSync/releases";
 
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, specta::Type)]
 pub struct PluralSyncVariantInfo {
     pub version: String,
     pub variant: String,

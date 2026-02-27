@@ -17,7 +17,7 @@ use serde::Deserialize;
 use serde::Serialize;
 use sqlx::PgPool;
 
-#[derive(Debug, Deserialize, specta::Type)]
+#[derive(Deserialize, specta::Type)]
 pub struct ChangeEmailRequest {
     pub new_email: Email,
 }

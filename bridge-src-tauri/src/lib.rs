@@ -133,7 +133,7 @@ async fn login_anyhow(creds: UserLoginCredentials) -> Result<JwtString> {
     let base_url = local_storage::get_base_url()?;
     let login_url = format!("{}{}", base_url, "/api/user/login");
 
-    log::info!("Attempting login: {login_url} with {:?}", &creds.email);
+    log::info!("Attempting login: {login_url} with {}", &creds.email);
 
     let jwt_string = client
         .post(login_url)
@@ -144,7 +144,7 @@ async fn login_anyhow(creds: UserLoginCredentials) -> Result<JwtString> {
         .json::<JwtString>()
         .await?;
 
-    log::info!("Login successful for {:?}", &creds.email);
+    log::info!("Login successful for {}", &creds.email);
 
     Ok(jwt_string)
 }

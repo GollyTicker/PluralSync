@@ -1,7 +1,7 @@
 use anyhow::Result;
+use pluralsync::{plurality, setup};
 use serde::Deserialize;
 use serde_json::{self};
-use pluralsync::{plurality, setup};
 use std::env;
 use tokio_tungstenite::tungstenite;
 
@@ -9,13 +9,13 @@ use tokio_tungstenite::tungstenite;
  *
  * We use &str to make the code for parsing look better and simpler by being able to match against &str literals.
 */
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize, Debug)]
 struct Event<'a> {
     msg: &'a str,
     title: Option<&'a str>,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Clone, Deserialize)]
 struct FriendRequest {
     #[serde(rename = "id")]
     from_user_id: String,
@@ -42,7 +42,10 @@ async fn main() -> Result<()> {
 
 async fn process_event(token: &str, json_string: tungstenite::Utf8Bytes) -> Result<()> {
     let event = serde_json::from_str::<Event>(&json_string).inspect_err(|e| {
-        log::warn!("# | process_event | {e} | input: {}", json_string.chars().take(500).collect::<String>());
+        log::warn!(
+            "# | process_event | {e} | input: {}",
+            json_string.chars().take(500).collect::<String>()
+        );
     })?;
 
     match event {
@@ -76,8 +79,12 @@ async fn accept_all_friend_requests(token: &str) -> Result<()> {
         .text()
         .await?;
 
-    let friend_requests: Vec<FriendRequest> = serde_json::from_str(&response)
-        .inspect_err(|e| log::warn!("# | accept_all_friend_requests | {e} | input: {}", response.chars().take(500).collect::<String>()))?;
+    let friend_requests: Vec<FriendRequest> = serde_json::from_str(&response).inspect_err(|e| {
+        log::warn!(
+            "# | accept_all_friend_requests | {e} | input: {}",
+            response.chars().take(500).collect::<String>()
+        );
+    })?;
 
     for friend_request in &friend_requests {
         let url = format!(

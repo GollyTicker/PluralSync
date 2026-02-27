@@ -1,13 +1,14 @@
 use crate::{plurality, record_if_error, users};
 use anyhow::Result;
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone, Display)]
 struct User {
     custom_status: Status,
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Clone, Display)]
 struct Status {
     text: String,
 }
@@ -104,7 +105,7 @@ async fn set_discord_status(
     })?;
 
     log::debug!(
-        "# | set_discord_status | {} | {status_string} | result {result_user:?}",
+        "# | set_discord_status | {} | {status_string} | result {result_user}",
         config.user_id
     );
 

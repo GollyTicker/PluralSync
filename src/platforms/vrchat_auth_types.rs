@@ -1,45 +1,33 @@
-use std::{fmt::Display, sync::Arc};
+use std::sync::Arc;
 
 use crate::users;
 
+use derive_more::Display;
 use serde::{Deserialize, Serialize};
 use specta;
 use strum_macros;
 use vrchatapi::models::{RequiresTwoFactorAuth, TwoFactorAuthType};
 
-#[derive(Clone, Deserialize, Serialize, Debug)]
+#[derive(Clone, Deserialize, Serialize, Display)]
 pub struct VRChatUserId {
     pub inner: String,
 }
 
 pub type Cookies = Arc<reqwest_cookie_store::CookieStoreMutex>;
 
-#[derive(Clone, Deserialize, Serialize, Debug, specta::Type)]
+#[derive(Clone, Deserialize, Serialize, specta::Type, Display)]
+#[display("VRChatCredentials({username},<password>)")]
 pub struct VRChatCredentials {
     pub username: String,
+    #[display(skip)]
     pub password: String,
 }
 
-impl Display for VRChatCredentials {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "VRChatCredentials({}, <password>)", self.username)
-    }
-}
-
-#[derive(Clone, Serialize, Debug, specta::Type)]
+#[derive(Clone, Serialize, specta::Type, Display)]
+#[display("VRChatCredentialsWithCookie({creds},<cookie>)")]
 pub struct VRChatCredentialsWithCookie {
     pub creds: VRChatCredentials,
     pub cookie: String,
-}
-
-impl Display for VRChatCredentialsWithCookie {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "VRChatCredentialsWithCookie({}, <password>, <cookie>)",
-            self.creds.username
-        )
-    }
 }
 
 impl VRChatCredentialsWithCookie {
@@ -65,23 +53,14 @@ impl VRChatCredentialsWithCookie {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, specta::Type, Display)]
+#[display("TwoFactorCodeRequiredResponse({method},<tmp_cookie>)")]
 pub struct TwoFactorCodeRequiredResponse {
     pub method: TwoFactorAuthMethod,
     pub tmp_cookie: String,
 }
 
-impl Display for TwoFactorCodeRequiredResponse {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "TwoFactorCodeRequiredResponse({}, <tmp_cookie>)",
-            self.method
-        )
-    }
-}
-
-#[derive(Clone, Serialize, Deserialize, strum_macros::Display, Debug, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, strum_macros::Display, specta::Type)]
 pub enum TwoFactorAuthMethod {
     TwoFactorAuthMethodEmail,
     TwoFactorAuthMethodApp,
@@ -102,15 +81,9 @@ impl TwoFactorAuthMethod {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, specta::Type, Display)]
 pub struct TwoFactorAuthCode {
     inner: String,
-}
-
-impl Display for TwoFactorAuthCode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "TwoFactorAuthCode({})", self.inner)
-    }
 }
 
 impl From<TwoFactorAuthCode> for String {
@@ -119,20 +92,11 @@ impl From<TwoFactorAuthCode> for String {
     }
 }
 
-#[derive(Clone, Serialize, Deserialize, Debug, specta::Type)]
+#[derive(Clone, Serialize, Deserialize, specta::Type, Display)]
+#[display("VRChatCredentialsWithTwoFactorAuth({creds}, {method}, {code}, <tmp_cookie>)")]
 pub struct VRChatCredentialsWithTwoFactorAuth {
     pub creds: VRChatCredentials,
     pub method: TwoFactorAuthMethod,
     pub code: TwoFactorAuthCode,
     pub tmp_cookie: String,
-}
-
-impl Display for VRChatCredentialsWithTwoFactorAuth {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "VRChatCredentialsWithTwoFactorAuth({}, {}, {}, <tmp_cookie>)",
-            self.creds, self.method, self.code
-        )
-    }
 }

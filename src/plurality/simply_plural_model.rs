@@ -1,6 +1,7 @@
 use std::string::ToString;
 
 use anyhow::Result;
+use derive_more::Debug;
 use serde::Deserialize;
 use serde::Deserializer;
 use tokio_tungstenite::tungstenite;
@@ -10,12 +11,12 @@ pub const GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID: &str =
 
 pub const SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME: &str = "VRChat Status Name";
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct FrontEntry {
     pub content: FrontEntryContent,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct FrontEntryContent {
     /** Can be a member ID OR a custom front ID */
     #[serde(rename = "member")]
@@ -51,7 +52,7 @@ where
     Ok(non_empty_str_option)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
 pub struct Fronter {
     pub fronter_id: String,
     pub name: String,
@@ -69,14 +70,14 @@ impl Fronter {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct CustomFront {
     pub content: CustomFrontContent,
     #[serde(rename = "id")]
     pub custom_front_id: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct CustomFrontContent {
     pub name: String,
 
@@ -103,14 +104,14 @@ impl From<CustomFront> for Fronter {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct Member {
     pub content: MemberContent,
     #[serde(rename = "id")]
     pub member_id: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct MemberContent {
     pub name: String,
 
@@ -169,23 +170,23 @@ impl From<Member> for Fronter {
     }
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct CustomField {
     pub id: String, // custom field id
     pub content: CustomFieldContent,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct CustomFieldContent {
     pub name: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct Friend {
     pub content: FriendContent,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Deserialize, Clone)]
 pub struct FriendContent {
     #[serde(rename = "frienduid")]
     pub friend_user_id: String,

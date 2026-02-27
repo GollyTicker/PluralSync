@@ -1,10 +1,19 @@
-use std::fmt::Display;
+use std::fmt;
 
+use derive_more;
 use serde::{Deserialize, Serialize};
 use specta;
 
 #[derive(
-    Debug, Serialize, Deserialize, Clone, sqlx::FromRow, sqlx::Type, specta::Type, PartialEq, Eq,
+    derive_more::Display,
+    Serialize,
+    Deserialize,
+    Clone,
+    sqlx::FromRow,
+    sqlx::Type,
+    specta::Type,
+    PartialEq,
+    Eq,
 )]
 pub struct Email {
     pub inner: String,
@@ -13,12 +22,6 @@ pub struct Email {
 impl From<String> for Email {
     fn from(val: String) -> Self {
         Self { inner: val }
-    }
-}
-
-impl Display for Email {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Email({})", self.inner)
     }
 }
 
@@ -60,7 +63,7 @@ pub struct JwtString {
     pub inner: String,
 }
 
-impl Display for JwtString {
+impl fmt::Display for JwtString {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s: String = self.inner.chars().take(5).collect();
         write!(f, "JwtString({s}...)")

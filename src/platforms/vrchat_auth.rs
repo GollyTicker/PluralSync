@@ -33,22 +33,21 @@ pub async fn authenticate_vrchat_with_cookie(
         new_vrchat_config_with_basic_auth_and_optional_cookie(Either::Right(&creds))?;
 
     let () = match authentication_api::get_current_user(&vrchat_config).await? {
-        vrc::EitherUserOrTwoFactor::CurrentUser(_me) => {
-            log::info!(
-                "# | authenticate_vrchat_with_cookie | {} | cookie_valid",
-                config.user_id
-            );
-            Ok(())
-        }
+        vrc::EitherUserOrTwoFactor::CurrentUser(_me) => Ok(()),
         vrc::EitherUserOrTwoFactor::RequiresTwoFactorAuth(_) => {
             Err(anyhow!("authenticate_vrchat_with_cookie: Login failed"))
         }
     }?;
 
+    log::info!(
+        "# | authenticate_vrchat_with_cookie | {} | cookie_valid",
+        config.user_id
+    );
+
     let vrc_user_id = get_vrchat_user_id(config, &vrchat_config).await?;
 
     log::info!(
-        "# | authenticate_vrchat_with_cookie | {} | cookie_valid | vrc_user_id {vrc_user_id:?}",
+        "# | authenticate_vrchat_with_cookie | {} | cookie_valid | vrc_user_id {vrc_user_id}",
         config.user_id
     );
 

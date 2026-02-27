@@ -14,7 +14,7 @@ use sqlx::FromRow;
 
 use crate::{database, users::jwt};
 
-#[derive(Debug, Serialize, Deserialize, FromRow, sqlx::Type)]
+#[derive(Serialize, Deserialize, FromRow, sqlx::Type)]
 pub struct SecretHashString {
     pub inner: String,
 }

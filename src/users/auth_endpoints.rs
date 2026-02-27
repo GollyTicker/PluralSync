@@ -204,7 +204,7 @@ pub async fn post_api_user_login(
     Ok(Json(jwt_string))
 }
 
-#[derive(Debug, Deserialize, specta::Type)]
+#[derive(Deserialize, specta::Type)]
 pub struct ForgotPasswordRequest {
     pub email: Email,
 }

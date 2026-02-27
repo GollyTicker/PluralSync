@@ -1,4 +1,5 @@
 use anyhow::{Result, anyhow};
+use derive_more::Display;
 use sqlx::FromRow;
 use std::time::Duration;
 
@@ -12,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use specta;
 
 #[derive(
-    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
+    Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
 )]
 #[specta(export)]
 #[sqlx(type_name = "privacy_fine_grained_enum")]
@@ -24,7 +25,7 @@ pub enum PrivacyFineGrained {
 }
 
 #[allow(clippy::struct_excessive_bools)]
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq, Eq)]
+#[derive(Clone, Serialize, Deserialize, FromRow, PartialEq, Eq)]
 pub struct UserConfigDbEntries<Secret, Constraints = database::InvalidConstraints>
 where
     Secret: database::SecretType,
@@ -182,10 +183,7 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
             user_config.respect_front_notifications_disabled,
         ),
         (
-            format!(
-                "privacy_fine_grained_{:?}",
-                user_config.privacy_fine_grained
-            ),
+            format!("privacy_fine_grained_{}", user_config.privacy_fine_grained),
             true,
         ),
         (
@@ -250,7 +248,7 @@ pub struct UserConfigForUpdater {
     pub fronter_channel_wait_increment: usize,
 }
 
-#[derive(Clone, Deserialize, Serialize, Debug, Default)]
+#[derive(Clone, Deserialize, Serialize, Default)]
 pub struct WaitSeconds {
     pub inner: Duration,
 }
@@ -379,7 +377,7 @@ where
         && config.privacy_fine_grained_buckets.is_none()
     {
         return Err(anyhow!(
-            "privacy_fine_grained_buckets must be set, because privacy_fine_grained is {:?}",
+            "privacy_fine_grained_buckets must be set, because privacy_fine_grained is {}",
             PrivacyFineGrained::ViaPrivacyBuckets
         ));
     }

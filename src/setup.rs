@@ -123,7 +123,7 @@ pub fn make_client() -> Result<reqwest::Client> {
     Ok(client)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct SmtpConfig {
     pub host: String,
     pub port: u16,
@@ -134,7 +134,7 @@ pub struct SmtpConfig {
     pub dangerous_local_dev_mode_print_tokens_instead_of_send_email: bool,
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Clone, Default)]
 pub struct ApplicationConfig {
     pub database_url: String,
     pub request_timeout: u64,

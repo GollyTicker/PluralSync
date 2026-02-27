@@ -1,5 +1,4 @@
 use std::{
-    fmt::Debug,
     sync::{self},
     time,
 };
@@ -32,7 +31,7 @@ where
 
 /// Variation of the `tokio::sync::broadcast` channel, where the sender doesn't
 /// care if any receiver is listening. Useful to ensure, that all receivers get only the latest value.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FireAndForgetChannel<T, C = DefaultAlwaysImmediateSend<T>>
 where
     C: SendBehavior,
@@ -302,7 +301,6 @@ impl<T: Clone + 'static + Send> FireAndForgetChannel<T, RateLimitedMostRecentSen
 
 /// Variation of the `tokio::sync::broadcast` receiver, where we don't care if we miss out
 /// on intermediate messages.
-#[derive(Debug)]
 pub struct LatestReceiver<T> {
     inner: broadcast::Receiver<T>,
 }

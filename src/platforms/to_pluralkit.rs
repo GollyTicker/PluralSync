@@ -199,7 +199,7 @@ fn measure_rate_limits(config: &UserConfigForUpdater, response: &reqwest::Respon
     );
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Clone, Deserialize, Serialize)]
 struct PluralKitSwitch {
     members: Vec<String>,
 }

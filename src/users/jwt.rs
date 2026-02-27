@@ -16,7 +16,7 @@ pub struct ApplicationJwtSecret {
     pub inner: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Jwt {
     pub claims: Claims,
 }
@@ -27,7 +27,7 @@ impl Jwt {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Claims {
     /// `PluralSync` `user_id`
     pub sub: String,

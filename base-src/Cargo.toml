@@ -7,6 +7,7 @@ rust-version = "1.90.0"
 [lib]
 
 [dependencies]
+derive_more = { version = "*", features = ["display"] }
 serde = { version = "*", default-features = false, features = ["derive"] }
 chrono = "*"
 tokio = { version = "*", default-features = false, features = ["time"] }

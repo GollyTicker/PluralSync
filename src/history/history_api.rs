@@ -10,7 +10,7 @@ use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
 use crate::users::Jwt;
 
-#[derive(Debug, Clone, Serialize, Deserialize, FromRow, Type)]
+#[derive(Clone, Serialize, Deserialize, FromRow, Type)]
 pub struct HistoryEntry {
     pub id: String,
     pub user_id: UserId,

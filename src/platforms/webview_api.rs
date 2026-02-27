@@ -10,7 +10,7 @@ use rocket::{State, response::content::RawHtml};
 use serde::Serialize;
 use sqlx::PgPool;
 
-#[derive(Debug, Clone, Serialize, specta::Type)]
+#[derive(Clone, Serialize, specta::Type)]
 pub struct GenericFrontingStatus {
     inner: String,
 }

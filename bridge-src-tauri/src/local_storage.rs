@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::{env, fs};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct Config {
     pub base_url: String,
 }
@@ -81,7 +81,7 @@ pub fn get_user_credentials() -> Result<for_discord_bridge::UserLoginCredentials
     let path = get_credentials_path()?;
     let json = fs::read_to_string(path)?;
     let creds: for_discord_bridge::UserLoginCredentials = serde_json::from_str(&json)?;
-    log::info!("Retrieved credentials for {:?}", &creds.email);
+    log::info!("Retrieved credentials for {}", &creds.email);
     Ok(creds)
 }
 
@@ -89,7 +89,7 @@ pub fn set_user_credentials(creds: &for_discord_bridge::UserLoginCredentials) ->
     let path = get_credentials_path()?;
     let json = serde_json::to_string(creds)?;
     fs::write(path, json)?;
-    log::info!("Stored credentials for {:?}", &creds.email);
+    log::info!("Stored credentials for {}", &creds.email);
     Ok(())
 }
 

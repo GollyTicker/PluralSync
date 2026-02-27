@@ -17,6 +17,7 @@ name = "pluralsync-global-manager"
 path = "src/bin/pluralsync-global-manager.rs"
 
 [dependencies]
+derive_more = { version = "*", features = ["debug","display"] }
 lettre = { version = "*", default-features = false, features = [
     "builder",
     "hostname",
