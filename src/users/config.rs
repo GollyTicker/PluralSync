@@ -68,6 +68,7 @@ where
     pub vrchat_password: Option<Secret>,
     pub vrchat_cookie: Option<Secret>,
     pub pluralkit_token: Option<Secret>,
+    // When adding new config values, don't forget to also add metrics for them in metrics_config_values
 }
 
 impl<S: SecretType> UserConfigDbEntries<S> {
@@ -158,6 +159,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
 
 #[must_use]
 pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Vec<(String, bool)> {
+    let defaults = UserConfigDbEntries::<Encrypted>::default();
     vec![
         ("enable_discord".to_owned(), user_config.enable_discord),
         ("enable_vrchat".to_owned(), user_config.enable_vrchat),
@@ -165,6 +167,10 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
         (
             "enable_discord_status_message".to_owned(),
             user_config.enable_discord_status_message,
+        ),
+        (
+            "enable_to_pluralkit".to_owned(),
+            user_config.enable_to_pluralkit,
         ),
         (
             "show_members_non_archived".to_owned(),
@@ -201,6 +207,17 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
         (
             "status_truncate_names_to_set".to_owned(),
             user_config.status_truncate_names_to.is_some(),
+        ),
+        (
+            "history_enabled".to_owned(),
+            user_config.history_limit.is_some_and(|limit| limit != 0)
+                && user_config
+                    .history_truncate_after_days
+                    .is_some_and(|days| days != 0),
+        ),
+        (
+            "fronter_channel_wait_increment_configured".to_owned(),
+            user_config.fronter_channel_wait_increment != defaults.fronter_channel_wait_increment,
         ),
     ]
 }
