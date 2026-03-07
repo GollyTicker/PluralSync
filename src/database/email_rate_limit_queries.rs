@@ -26,7 +26,7 @@ pub async fn try_acquire_email_slot(db_pool: &PgPool, limit: u32) -> Result<()> 
     }
 
     // Check if we've already reached the limit
-    if row.count >= limit as i32 {
+    if row.count >= limit.cast_signed() {
         return Err(anyhow!(
             "Email rate limit exceeded: {} emails sent today, limit is {}",
             row.count,

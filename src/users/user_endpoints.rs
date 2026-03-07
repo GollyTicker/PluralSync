@@ -181,7 +181,9 @@ pub async fn delete_api_user(
         .await
         .map_err(expose_internal_error)?;
 
-    if let Err(e) = email::send_account_deletion_notification(db_pool, smtp_config, &user_info.email).await {
+    if let Err(e) =
+        email::send_account_deletion_notification(db_pool, smtp_config, &user_info.email).await
+    {
         log::warn!(
             "# | DELETE /api/user | {user_id} | Failed to send deletion notification email: {e}"
         );
