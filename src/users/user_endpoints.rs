@@ -74,6 +74,7 @@ pub async fn post_api_user_email_change(
 
     let new_email = request.new_email.clone();
     email::send_email_change_confirmation_link_to_new_email(
+        db_pool,
         smtp_config,
         &new_email.clone(),
         &email_verification_token,
@@ -84,6 +85,7 @@ pub async fn post_api_user_email_change(
     log::info!("# | post_api_user_me_email_change | Email change confirmation sent to {new_email}");
 
     let _ = email::send_email_change_notification_to_old_email(
+        db_pool,
         smtp_config,
         &old_email,
         &request.new_email,
@@ -179,7 +181,7 @@ pub async fn delete_api_user(
         .await
         .map_err(expose_internal_error)?;
 
-    if let Err(e) = email::send_account_deletion_notification(smtp_config, &user_info.email).await {
+    if let Err(e) = email::send_account_deletion_notification(db_pool, smtp_config, &user_info.email).await {
         log::warn!(
             "# | DELETE /api/user | {user_id} | Failed to send deletion notification email: {e}"
         );

@@ -149,7 +149,7 @@ pub async fn post_api_user_register(
     .await
     .map_err(expose_internal_error)?;
 
-    email::send_verification_email(smtp_config, &email, &email_verification_token)
+    email::send_verification_email(db_pool, smtp_config, &email, &email_verification_token)
         .await
         .map_err(expose_internal_error)?;
 
@@ -269,9 +269,10 @@ async fn create_password_reset_request_and_send_email(
 
     // Asynchronously send the reset email
     let email = request.email.clone();
+    let db_pool = db_pool.inner().clone();
     let smtp_config = smtp_config.inner().clone();
     tokio::spawn(async move {
-        email::send_reset_email(&smtp_config, &email, &token_secret).await
+        email::send_reset_email(&db_pool, &smtp_config, &email, &token_secret).await
             .map(|()| log::info!("# | create_password_reset_request_and_send_email | Email sent to {email}"))
             .map_err(|e| log::warn!("# | create_password_reset_request_and_send_email | Failed to send email to {email}: {e:?}"))
     });

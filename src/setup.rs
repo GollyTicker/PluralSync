@@ -100,6 +100,7 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
         frontend_base_url: cli_args.frontend_base_url.clone(),
         dangerous_local_dev_mode_print_tokens_instead_of_send_email: cli_args
             .dangerous_local_dev_mode_print_tokens_instead_of_send_email,
+        email_rate_limit_per_day: cli_args.email_rate_limit_per_day,
     };
 
     Ok(ApplicationSetup {
@@ -132,6 +133,7 @@ pub struct SmtpConfig {
     pub from_email: String,
     pub frontend_base_url: String,
     pub dangerous_local_dev_mode_print_tokens_instead_of_send_email: bool,
+    pub email_rate_limit_per_day: u32,
 }
 
 #[derive(Clone, Default)]
@@ -151,6 +153,7 @@ pub struct ApplicationConfig {
     pub smtp_from_email: String,
     pub frontend_base_url: String,
     pub dangerous_local_dev_mode_print_tokens_instead_of_send_email: bool,
+    pub email_rate_limit_per_day: u32,
 }
 
 impl ApplicationConfig {
@@ -183,6 +186,9 @@ impl ApplicationConfig {
             )
             .unwrap_or_else(|_| "false".to_string())
             .parse()?,
+            email_rate_limit_per_day: env::var("SMTP_EMAIL_RATE_LIMIT_PER_DAY")
+                .unwrap_or_else(|_| "300".to_string())
+                .parse()?,
         })
     }
 }
