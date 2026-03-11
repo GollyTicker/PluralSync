@@ -476,3 +476,65 @@ pub struct UserInfo {
 - [ ] **Additional user fields**: Fetch `UserConfigDbEntries` for `system_name` personalization if needed
 - [ ] **Metrics**: Track announcement email success/failure rates
 - [ ] **Admin dashboard**: View pending/sent announcement emails (future UI feature)
+
+---
+
+## Test Plan
+
+### Unit Tests (White-Box)
+
+#### `ensure_announcement_email_definitions`
+- [ ] **Idempotency**: Running twice doesn't create duplicate definitions or pending entries
+- [ ] **User eligibility boundary**: Users registered **before** email creation get pending entries; users registered **after** don't
+- [ ] **`last_attempt` initialization**: New pending entries have `last_attempt` set to past (`NOW() - 1 year`), making them immediately eligible
+
+#### `get_pending_announcement_emails`
+- [ ] **Retry delay filter**: Entries within retry window are excluded; entries outside are included
+- [ ] **Empty result**: Returns empty `Vec` when nothing is pending
+- [ ] **Random ordering for load distribution**: Fetch the list 10 times with a large dataset; verify orderings differ (statistical check, not cryptographic randomness)
+
+#### `record_announcement_email_success` / `record_announcement_email_failure`
+- [ ] **Success removes entry**: Entry is deleted from `pending_emails`
+- [ ] **Failure updates timestamp**: `last_attempt` is set to current time
+
+#### `try_acquire_email_slot` (threshold variant)
+- [ ] **Threshold at 80%**: With limit=10 and threshold=0.8, fails at 8 emails
+- [ ] **Threshold at 100%**: `None` or `Some(1.0)` allows full limit
+- [ ] **Boundary: exactly at threshold**: `count == threshold` fails, `count == threshold - 1` succeeds
+- [ ] **Day rollover**: When `current_day` is yesterday, count resets to 0
+
+---
+
+### Integration Tests
+
+#### `send_pending_announcement_emails`
+- [ ] **Rate limit threshold stops sending**: With threshold=0.8 and limit=5, only 4 emails sent before breaking
+- [ ] **Success removes from pending**: Running sender twice doesn't send duplicate emails
+- [ ] **Failure updates retry time**: Failed emails remain pending with updated `last_attempt`
+- [ ] **Unknown email_id handling**: Gracefully skips unknown email IDs (logs warning, continues)
+- [ ] **Empty pending queue**: Completes without error when no emails to send
+
+#### Edge Cases
+- [ ] **User registers after email deployment**: New users don't receive emails created before their registration
+- [ ] **SMTP failure recovery**: Failed send → retry on next cron run after delay
+- [ ] **Threshold calculation**: Verify integer truncation behavior (e.g., limit=7, threshold=0.8 → 5 emails)
+
+#### End-to-End Flow
+- [ ] **Happy path**: 3 pre-deployment users receive email, 1 post-deployment user excluded, threshold respected
+- [ ] **Retry after failure**: First run fails & records attempt; second run (after delay) retries & succeeds
+
+---
+
+### Test File Structure
+
+```
+test/
+├── announcement-email.integration-tests.sh    # Main integration test (modeled after email-rate-limit.integration-tests.sh)
+```
+
+```rust
+// Unit tests inline in source files:
+// - src/database/announcement_email_queries.rs (#[cfg(test)] module)
+// - src/database/email_rate_limit_queries.rs (#[cfg(test)] module)
+// - src/users/announcement_email.rs (#[cfg(test)] module)
+```

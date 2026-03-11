@@ -23,7 +23,7 @@ rm -v .sqlx/*.json || true
 
 ./steps/12-backend-cargo-build.sh
 
-cargo sqlx prepare
+cargo sqlx prepare -- --lib --tests
 
 ./docker/stop.sh local
 

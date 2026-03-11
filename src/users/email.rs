@@ -125,8 +125,24 @@ pub async fn send_email(
     subject: &str,
     body: String,
 ) -> Result<()> {
-    // Check rate limit before sending
-    database::try_acquire_email_slot(db_pool, smtp_config.email_rate_limit_per_day, None).await?;
+    send_email_with_threshold(db_pool, smtp_config, to, subject, body, 1.0).await
+}
+
+pub async fn send_email_with_threshold(
+    db_pool: &PgPool,
+    smtp_config: &setup::SmtpConfig,
+    to: &Email,
+    subject: &str,
+    body: String,
+    rate_limit_threshold: f64,
+) -> Result<()> {
+    // Check rate limit with threshold before sending
+    database::try_acquire_email_slot(
+        db_pool,
+        smtp_config.email_rate_limit_per_day,
+        Some(rate_limit_threshold),
+    )
+    .await?;
 
     if smtp_config.dangerous_local_dev_mode_print_tokens_instead_of_send_email {
         log::info!("[DEV MODE - EMAIL NOT SENT] To: {}", to.inner);
