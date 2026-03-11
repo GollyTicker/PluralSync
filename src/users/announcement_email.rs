@@ -17,17 +17,17 @@ pub struct AnnouncementEmail {
 
 /// Example: Welcome announcement email
 #[must_use]
-pub fn welcome_announcement_march_2026() -> AnnouncementEmail {
+pub fn email_announcements_activated() -> AnnouncementEmail {
     AnnouncementEmail {
-        email_id: "welcome-announcement-march-2026",
-        subject_fn: |_user| "Welcome to PluralSync! 🎉".to_string(),
-        body_fn: |user| {
-            format!(
-                "Hi there,\n\n\
-                Welcome to PluralSync! You registered on {}.\n\n\
-                Kinds, PluralSync",
-                user.created_at.format("%B %Y")
-            )
+        email_id: "2026-03-email-announcements-activated",
+        subject_fn: |_user| "PluralSync 🔄 Email Announcements to All Users Activated".to_string(),
+        body_fn: |_user| {
+            "Dear PluralSync Users,\n\n\
+            As of today, PluralSync will start sending essential announcement emails concerning the service and the users usage.\n\n\
+            These emails cannot be deactivated because they're essential.\n\n\
+            Any additional information or discussion can be had in the corresponding community spaces (see website footer for discord link).\n\n\
+            Thank you for using PluralSync. We kindly appreciate and wish you a pleasent and useful time with it.\n\n\
+            Kinds, PluralSync".to_owned()
         },
     }
 }
@@ -36,7 +36,7 @@ pub fn welcome_announcement_march_2026() -> AnnouncementEmail {
 /// Add new emails here when deploying
 #[must_use]
 pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
-    vec![welcome_announcement_march_2026()]
+    vec![email_announcements_activated()]
 }
 
 /// Main entry point: send pending announcement emails
@@ -139,7 +139,7 @@ mod tests {
     use super::*;
 
     // === Test Constants ===
-    const TEST_EMAIL_ID: &str = "welcome-announcement-march-2026";
+    const TEST_EMAIL_ID: &str = "2026-03-email-announcements-activated";
     const DEFAULT_RETRY_DELAY_HOURS: i64 = 4;
     const DEFAULT_RATE_THRESHOLD: f64 = 0.8;
     const FULL_RATE_THRESHOLD: f64 = 1.0;
