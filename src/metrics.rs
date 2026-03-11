@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync};
 use anyhow::Result;
 use sqlx::PgPool;
 
-use crate::{database, platforms, plurality, updater, users};
+use crate::{database, platforms, plurality, setup, updater, users};
 
 macro_rules! register_metrics {
     ($pm:ident, $($metric:expr),*) => {
@@ -138,6 +138,7 @@ pub async fn collect_user_metrics(
     db_pool: PgPool,
     _: updater::UpdaterManager,
     _: database::ApplicationUserSecrets,
+    _: setup::SmtpConfig,
 ) -> Result<()> {
     log::debug!("# | run_user_metrics_job");
 

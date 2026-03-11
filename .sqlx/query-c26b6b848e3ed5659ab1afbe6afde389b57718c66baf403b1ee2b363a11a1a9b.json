@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT p.user_id, p.email_id\n        FROM pending_emails p\n        WHERE p.last_attempt < NOW() - ($1 || ' hours')::INTERVAL\n        ORDER BY RANDOM()\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "email_id",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "c26b6b848e3ed5659ab1afbe6afde389b57718c66baf403b1ee2b363a11a1a9b"
+}

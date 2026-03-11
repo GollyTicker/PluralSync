@@ -33,6 +33,7 @@ async fn main() -> Result<()> {
         &app_setup.db_pool,
         &app_setup.shared_updaters,
         &app_setup.application_user_secrets,
+        &app_setup.smtp_config,
         "user-metrics",
         setup::EVERY_5_MINUTES,
         metrics::collect_user_metrics,
@@ -43,9 +44,29 @@ async fn main() -> Result<()> {
         &app_setup.db_pool,
         &app_setup.shared_updaters,
         &app_setup.application_user_secrets,
+        &app_setup.smtp_config,
         "restart-long-living-updaters",
         setup::EVERY_MINUTE,
         updater::restart_first_long_living_updater,
+    )
+    .await?;
+
+    let () = setup::start_cron_job(
+        &app_setup.db_pool,
+        &app_setup.shared_updaters,
+        &app_setup.application_user_secrets,
+        &app_setup.smtp_config,
+        "announcement-email-sender",
+        setup::EVERY_5_MINUTES,
+        |db_pool, _, _, smtp_config| async move {
+            users::announcement_email::send_pending_announcement_emails(
+                &db_pool,
+                &smtp_config,
+                0.8,
+                4,
+            )
+            .await
+        },
     )
     .await?;
 

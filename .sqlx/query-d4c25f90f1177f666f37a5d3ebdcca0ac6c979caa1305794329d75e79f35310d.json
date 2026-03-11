@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "INSERT INTO announcement_email_definitions (email_id)\n             VALUES ($1)\n             ON CONFLICT (email_id) DO NOTHING",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "d4c25f90f1177f666f37a5d3ebdcca0ac6c979caa1305794329d75e79f35310d"
+}

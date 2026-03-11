@@ -1,0 +1,14 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO pending_emails (user_id, email_id, last_attempt)\n            SELECT u.id, email_defs.email_id, NOW() - INTERVAL '1 year'\n            FROM users u\n            CROSS JOIN (SELECT $1::VARCHAR AS email_id) AS email_defs\n            WHERE u.created_at < (\n                SELECT created_at FROM announcement_email_definitions WHERE email_id = email_defs.email_id\n            )\n            ON CONFLICT (user_id, email_id) DO NOTHING\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "6e90f1c5fd1950925db2b1b12220e0b6d36ea8e94164ab66f2c47508fb3737ab"
+}

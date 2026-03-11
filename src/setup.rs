@@ -212,9 +212,15 @@ pub async fn start_cron_job<F>(
     db_pool: &sqlx::PgPool,
     shared_updaters: &updater::UpdaterManager,
     application_user_secrets: &database::ApplicationUserSecrets,
+    smtp_config: &SmtpConfig,
     name: &str,
     schedule: &str,
-    task: impl (Fn(sqlx::PgPool, updater::UpdaterManager, database::ApplicationUserSecrets) -> F)
+    task: impl (Fn(
+        sqlx::PgPool,
+        updater::UpdaterManager,
+        database::ApplicationUserSecrets,
+        SmtpConfig,
+    ) -> F)
     + Send
     + Sync
     + 'static
@@ -227,15 +233,24 @@ where
     let db_pool = db_pool.clone();
     let shared_updaters = shared_updaters.clone();
     let application_user_secrets = application_user_secrets.clone();
+    let smtp_config = smtp_config.clone();
     let name = name.to_string();
     let job = tokio_cron_scheduler::Job::new(schedule, move |_, _| {
         let db_pool = db_pool.clone();
         let shared_updaters = shared_updaters.clone();
         let application_user_secrets = application_user_secrets.clone();
+        let smtp_config = smtp_config.clone();
         let task = task.clone();
         let name = name.clone();
         tokio::spawn(async move {
-            if let Err(e) = task(db_pool, shared_updaters, application_user_secrets).await {
+            if let Err(e) = task(
+                db_pool,
+                shared_updaters,
+                application_user_secrets,
+                smtp_config,
+            )
+            .await
+            {
                 log::error!("Failed to run '{}' job: {e}", &name);
             }
         });

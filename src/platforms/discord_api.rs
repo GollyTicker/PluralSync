@@ -3,10 +3,10 @@ use crate::platforms::discord;
 use crate::updater::Platform;
 use crate::users::UserId;
 use crate::{database, plurality, updater, users};
-use LoopStreamControl::{Break, Continue, Yield};
 use anyhow::{Result, anyhow};
 use futures::never;
 use pluralsync_base::communication::{self, FireAndForgetChannel, LatestReceiver};
+use pluralsync_base::controlflow::LoopStreamControl::{self, Break, Continue, Yield};
 use pluralsync_base::updater::UpdaterStatus;
 use rocket::futures::StreamExt;
 use rocket::{State, response};
@@ -275,12 +275,6 @@ fn process_message_from_bridge(
             Break
         } // client disconnected
     }
-}
-
-enum LoopStreamControl<Yielded> {
-    Break,
-    Continue,
-    Yield(Yielded),
 }
 
 const fn is_closed(x: &Result<rocket_ws::Message, rocket_ws::result::Error>) -> bool {

@@ -1,3 +1,4 @@
+pub mod announcement_email;
 mod auth;
 pub mod auth_endpoints;
 mod config;

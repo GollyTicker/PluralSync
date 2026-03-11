@@ -118,7 +118,7 @@ pub async fn send_account_deletion_notification(
     Ok(())
 }
 
-async fn send_email(
+pub async fn send_email(
     db_pool: &PgPool,
     smtp_config: &setup::SmtpConfig,
     to: &Email,
@@ -126,7 +126,7 @@ async fn send_email(
     body: String,
 ) -> Result<()> {
     // Check rate limit before sending
-    database::try_acquire_email_slot(db_pool, smtp_config.email_rate_limit_per_day).await?;
+    database::try_acquire_email_slot(db_pool, smtp_config.email_rate_limit_per_day, None).await?;
 
     if smtp_config.dangerous_local_dev_mode_print_tokens_instead_of_send_email {
         log::info!("[DEV MODE - EMAIL NOT SENT] To: {}", to.inner);

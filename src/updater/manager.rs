@@ -510,6 +510,7 @@ pub async fn restart_first_long_living_updater(
     db_pool: sqlx::PgPool,
     shared_updaters: UpdaterManager,
     application_user_secrets: database::ApplicationUserSecrets,
+    _: setup::SmtpConfig,
 ) -> Result<()> {
     log::debug!("restart_first_long_living_updater");
 
