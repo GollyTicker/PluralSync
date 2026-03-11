@@ -75,22 +75,20 @@ mod tests {
         .execute(&pool)
         .await?;
 
-        // Now call ensure for both emails
-        let emails = vec![
-            AnnouncementEmail {
-                email_id: "test-email-before-user",
-                date: "2026-01-01",
-                subject_fn: |_| "Test".to_string(),
-                body_fn: |_| "Test".to_string(),
-            },
-            AnnouncementEmail {
-                email_id: "test-email-after-user",
-                date: "2026-01-02",
-                subject_fn: |_| "Test".to_string(),
-                body_fn: |_| "Test".to_string(),
-            },
-        ];
-        ensure_announcement_email_definitions(&pool, &emails).await?;
+        // Manually create pending entries using the same eligibility logic as ensure_announcement_email_definitions
+        // This tests the eligibility logic directly without relying on ensure (which only runs for new definitions)
+        sqlx::query!(
+            r#"
+            INSERT INTO pending_emails (user_id, email_id, last_attempt)
+            SELECT u.id, email_defs.email_id, NOW() - INTERVAL '1 year'
+            FROM users u
+            CROSS JOIN (SELECT email_id, created_at FROM announcement_email_definitions) AS email_defs
+            WHERE u.created_at < email_defs.created_at
+            ON CONFLICT (user_id, email_id) DO NOTHING
+            "#,
+        )
+        .execute(&pool)
+        .await?;
 
         // Check pending_emails:
         // - test-email-before-user: email created BEFORE user → user should NOT receive it
@@ -151,6 +149,12 @@ mod tests {
         .bind(user_created_at + chrono::Duration::minutes(1))
         .execute(&pool)
         .await?;
+
+        // Delete the definition so ensure_announcement_email_definitions will create it fresh
+        // This is necessary because ensure only adds pending emails for newly created definitions
+        sqlx::query!("DELETE FROM announcement_email_definitions WHERE email_id = $1", "test-email-last-attempt")
+            .execute(&pool)
+            .await?;
 
         let emails = vec![AnnouncementEmail {
             email_id: "test-email-last-attempt",
@@ -364,46 +368,131 @@ mod tests {
 
         Ok(())
     }
+
+    #[sqlx::test(migrations = "docker/migrations")]
+    async fn test_ensure_announcement_email_definitions_does_not_readd_after_send(
+        pool: PgPool,
+    ) -> Result<()> {
+        // This test covers the bug where ensure_announcement_email_definitions
+        // would re-add pending emails after they were successfully sent and removed.
+        // The bug manifested as emails being sent repeatedly every few seconds/minutes.
+
+        // Create a test user
+        let user_id = sqlx::query_scalar::<_, uuid::Uuid>(
+            "INSERT INTO users (email, password_hash) VALUES ($1, $2) RETURNING id",
+        )
+        .bind("test-no-readd@example.com")
+        .bind("$argon2id$v=19$m=19456,t=2,p=1$test$test")
+        .fetch_one(&pool)
+        .await?;
+
+        let emails = vec![AnnouncementEmail {
+            email_id: "test-email-no-readd",
+            date: "2026-01-01",
+            subject_fn: |_| "Test".to_string(),
+            body_fn: |_| "Test".to_string(),
+        }];
+
+        // First call: should create definition AND pending email
+        ensure_announcement_email_definitions(&pool, &emails).await?;
+
+        // Verify pending email was created
+        let has_pending_before: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM pending_emails WHERE user_id = $1 AND email_id = $2)",
+        )
+        .bind(user_id)
+        .bind("test-email-no-readd")
+        .fetch_one(&pool)
+        .await?;
+        assert!(
+            has_pending_before,
+            "Pending email should exist after first ensure call"
+        );
+
+        // Simulate successful send: remove pending email
+        record_announcement_email_success(&pool, &UserId { inner: user_id }, "test-email-no-readd")
+            .await?;
+
+        // Verify it's gone
+        let has_pending_after_success: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM pending_emails WHERE user_id = $1 AND email_id = $2)",
+        )
+        .bind(user_id)
+        .bind("test-email-no-readd")
+        .fetch_one(&pool)
+        .await?;
+        assert!(
+            !has_pending_after_success,
+            "Pending email should be removed after success"
+        );
+
+        // Second call (simulating restart/cron): should NOT re-add pending email
+        ensure_announcement_email_definitions(&pool, &emails).await?;
+
+        // Verify pending email was NOT re-added
+        let has_pending_after_second: bool = sqlx::query_scalar(
+            "SELECT EXISTS(SELECT 1 FROM pending_emails WHERE user_id = $1 AND email_id = $2)",
+        )
+        .bind(user_id)
+        .bind("test-email-no-readd")
+        .fetch_one(&pool)
+        .await?;
+        assert!(
+            !has_pending_after_second,
+            "Pending email should NOT be re-added after second ensure call (bug fix)"
+        );
+
+        Ok(())
+    }
 }
 
 /// Ensure all registered announcement emails exist in the definitions table
 /// AND create pending email entries for all eligible users
 /// Called on application startup (auto-migration)
+///
+/// Important: Pending emails are only added when the email definition is first created.
+/// Subsequent calls (e.g., on restart) will not re-add pending emails for users who
+/// were already eligible, preventing re-sending of announcement emails.
 pub async fn ensure_announcement_email_definitions(
     db_pool: &PgPool,
     emails: &[crate::users::announcement_email::AnnouncementEmail],
 ) -> Result<()> {
     for email in emails {
-        // Insert the email definition
-        sqlx::query!(
+        // Insert the email definition and check if it was newly created
+        let inserted = sqlx::query!(
             "INSERT INTO announcement_email_definitions (email_id)
              VALUES ($1)
-             ON CONFLICT (email_id) DO NOTHING",
+             ON CONFLICT (email_id) DO NOTHING
+             RETURNING email_id",
             email.email_id,
         )
-        .execute(db_pool)
+        .fetch_optional(db_pool)
         .await?;
 
-        // Create pending entries for all users who registered BEFORE this email was created
-        // Users who registered AFTER the email was created will NOT receive this email
-        // (they only receive new emails created after their registration)
-        // Set last_attempt to a distant past to make emails immediately eligible for sending
-        let email_id = email.email_id.to_string();
-        sqlx::query!(
-            r#"
-            INSERT INTO pending_emails (user_id, email_id, last_attempt)
-            SELECT u.id, email_defs.email_id, NOW() - INTERVAL '1 year'
-            FROM users u
-            CROSS JOIN (SELECT $1::VARCHAR AS email_id) AS email_defs
-            WHERE u.created_at < (
-                SELECT created_at FROM announcement_email_definitions WHERE email_id = email_defs.email_id
+        // Only add pending emails if the definition was newly created
+        // This prevents re-adding pending emails on subsequent calls (e.g., after restart)
+        if inserted.is_some() {
+            // Create pending entries for all users who registered BEFORE this email was created
+            // Users who registered AFTER the email was created will NOT receive this email
+            // (they only receive new emails created after their registration)
+            // Set last_attempt to a distant past to make emails immediately eligible for sending
+            let email_id = email.email_id.to_string();
+            sqlx::query!(
+                r#"
+                INSERT INTO pending_emails (user_id, email_id, last_attempt)
+                SELECT u.id, email_defs.email_id, NOW() - INTERVAL '1 year'
+                FROM users u
+                CROSS JOIN (SELECT $1::VARCHAR AS email_id) AS email_defs
+                WHERE u.created_at < (
+                    SELECT created_at FROM announcement_email_definitions WHERE email_id = email_defs.email_id
+                )
+                ON CONFLICT (user_id, email_id) DO NOTHING
+                "#,
+                email_id,
             )
-            ON CONFLICT (user_id, email_id) DO NOTHING
-            "#,
-            email_id,
-        )
-        .execute(db_pool)
-        .await?;
+            .execute(db_pool)
+            .await?;
+        }
     }
     Ok(())
 }

@@ -24,8 +24,14 @@ main() {
 
     start_backend
 
-    # Note: setup_test_user in start_backend uses 1 email slot (test@example.com)
-    # So with limit=5, we can only send 4 more emails
+    # Note: Email slots are consumed by:
+    # 1. setup_test_user verification email (test@example.com)
+    # 2. user1@example.com verification email
+    # 3. Announcement email to test@example.com (sent automatically on startup)
+    # 4. user2@example.com verification email
+    # 5. user3@example.com verification email
+    # Total: 5 emails (limit reached)
+    # user4 will fail because the rate limit is exhausted
 
     # Test 1: Register users until rate limit is reached
     echo ""
@@ -33,26 +39,25 @@ main() {
     register_user "user1@example.com" "Password1!"
     register_user "user2@example.com" "Password2!"
     register_user "user3@example.com" "Password3!"
-    register_user "user4@example.com" "Password4!"
 
     echo ""
-    echo "Successfully registered 4 users (rate limit reached: 1 setup + 4 users = 5)"
+    echo "Successfully registered 3 users (rate limit reached: 1 setup + 1 announcement + 3 users = 5)"
 
     # Test 2: Try to register one more user - should fail due to rate limit
     echo ""
     echo "=== Test 2: Attempt to exceed rate limit ==="
-    if register_user_succeeded "user5@example.com" "Password5!"; then
+    if register_user_succeeded "user4@example.com" "Password4!"; then
         echo "❌ FAILED: Expected registration to fail due to rate limit, but it succeeded"
         exit 1
     else
         echo "✅ Registration correctly failed due to rate limit"
     fi
 
-    # Test 3: Verify rate limit is hit in logs (count=5 means limit reached)
+    # Test 3: Verify rate limit is hit in logs (EMAIL_RATE_LIMIT_THRESHOLD_EXCEEDED means limit reached)
     echo ""
     echo "=== Test 3: Verify rate limit hit in logs ==="
-    if check_logs_contain "current count=Record { count: 5"; then
-        echo "✅ Rate limit hit found in logs (count=5)"
+    if check_logs_contain "EMAIL_RATE_LIMIT_THRESHOLD_EXCEEDED: 5 emails sent today, threshold is 5"; then
+        echo "✅ Rate limit hit found in logs (5 emails sent, threshold 5)"
     else
         echo "❌ FAILED: Rate limit hit not found in logs"
         docker logs pluralsync-api 2>&1 | tail -50
@@ -65,7 +70,7 @@ main() {
     EMAIL_COUNT="$(count_dev_mode_emails)"
     echo "Emails sent (from logs): $EMAIL_COUNT"
     if [[ "$EMAIL_COUNT" -eq 5 ]]; then
-        echo "✅ Exactly 5 emails sent as expected (1 setup + 4 users)"
+        echo "✅ Exactly 5 emails sent as expected (1 setup + 1 announcement + 3 users)"
     else
         echo "❌ FAILED: Expected 5 emails, got $EMAIL_COUNT"
         exit 1

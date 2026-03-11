@@ -213,6 +213,15 @@ mod tests {
         .execute(pool)
         .await?;
 
+        // Delete the definition so ensure_announcement_email_definitions will create it fresh
+        // This is necessary because ensure only adds pending emails for newly created definitions
+        sqlx::query!(
+            "DELETE FROM announcement_email_definitions WHERE email_id = $1",
+            TEST_EMAIL_ID
+        )
+        .execute(pool)
+        .await?;
+
         // Create pending entries for eligible users
         let emails = get_all_announcement_emails();
         database::ensure_announcement_email_definitions(pool, emails.as_slice()).await?;

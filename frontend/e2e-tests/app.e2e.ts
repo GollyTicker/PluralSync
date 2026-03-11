@@ -44,11 +44,11 @@ async function navigateToConfig() {
 }
 
 async function configUpdateAndRestartSucceeded() {
-    await expect($('#config-update-status')).toHaveText('Config saved successfully and restarted updaters!');
+    await expect($('.config-update-status')).toHaveText('Config saved successfully and restarted updaters!');
 }
 
 // async function configUpdateFailed() {
-//     await expect($('#config-update-status')).toHaveText('Failed to save config and restart updaters.');
+//     await expect($('.config-update-status')).toHaveText('Failed to save config and restart updaters.');
 // }
 
 async function navigateToHistory() {
@@ -441,7 +441,9 @@ describe('PluralSync updater status and config save and restarts', () => {
         await expect($('#VRChat-status')).toHaveText('Disabled');
         await expect($('#ToPluralKit-status')).toHaveText('Disabled');
         await expect($('#Discord-status')).toHaveText('Disabled');
-        await expect($('#fronting-status-example')).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
+        const status = await $('.fronting-status-text');
+        await status.waitForExist({timeout: 7000})
+        await expect(status).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
     });
 
     it('should be able to re-enable discord and to-pluralkit', async () => {
@@ -456,12 +458,15 @@ describe('PluralSync updater status and config save and restarts', () => {
 
         await navigateToStatus();
         await loggedInAndOnStatusPage();
-        await takeMobileScreenshot("status")
 
         await expect($('#VRChat-status')).toHaveText('Disabled');
         await expect($('#ToPluralKit-status')).toHaveText('Running');
         await expect($('#Discord-status')).toHaveText('Starting');
-        await expect($('#fronting-status-example')).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
+        const status = await $('.fronting-status-text');
+        await status.waitForExist({timeout: 7000})
+        await expect(status).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
+        
+        await takeMobileScreenshot("status")
     });
 
     // todo. fix test. when running manually in browser, the field is correctly emptied and an error happens.
