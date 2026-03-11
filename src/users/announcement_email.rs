@@ -17,7 +17,6 @@ pub struct AnnouncementEmail {
     pub body_fn: fn(&database::UserInfo) -> String,
 }
 
-/// Example: Welcome announcement email
 #[must_use]
 pub fn email_announcements_activated() -> AnnouncementEmail {
     AnnouncementEmail {
@@ -35,11 +34,61 @@ pub fn email_announcements_activated() -> AnnouncementEmail {
     }
 }
 
+#[must_use]
+pub fn smiply_plural_discontinuation_1() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-03-simply_plural_discontinuation",
+        date: "2026-03-12",
+        subject_fn: |_user| {
+            "PluralSync 🔄 - Regarding the Discontinuation of SimplyPlural".to_string()
+        },
+        body_fn: |_user| {
+            "Dear PluralSync Users,\n\
+            \n\
+            Unfortunately, recently it was announced that SimplyPlural will be discontinued ( https://apparyllis.com/simply-plural-will-be-discontinued/ ).\n\
+            We're very sad to hear that and we have deep empathy with the developer(s) - as we're aware of the complexities of maintaining an open source project used by many many people.\n\
+            We're deeply thankful for the existence of SimplyPlural since that's a core reason PluralSync was created in the first place.\n\
+            \n\
+            At the same time, we're aware, that many PluralSync users deeply depend on SimplyPlural. In that regards, we want to clarify,\n\
+            how PluralSync will move in future given the recent announcement.\n\
+            \n\
+            As the developers of PluralSync, we're watching how the situation will develop.\n\
+            Perhaps someone will take over and continue the server maintenance for SimplyPlural.\n\
+            Perhaps the community will move to one or two main alternatives. Or maybe SimplyPlural will become self-hosted by many.\n\
+            \n\
+            Either way PluralSync will keep on functioning and add integrations so that syncing will keep on working.\n\
+            Only SimplyPlural-related functionality in PluralSync will stop working once the SP servers are shutdown. \n\
+            Since the situation is new and fresh, things might change so this is not a 100% statement on what will happen.\n\
+            But we can tell you that we're *planning* to continue PluralSync in this way. The new integrations will be whatever the community at large decided to use.\n\
+            The software behind PluralSync is currently focused on SimplyPlural - but we are planning to separate that. When that will happen depends on our time and energy and we don't make any promises currently.\n\
+            \n\
+            As developers of PluralSync, we've also taken note of how the community has reacted towards the sudden announcement.\n\
+            While it's a stressful situation for many, we'd like to remind everybody, that the SimplyPlural developers have poured their heart and soul and money\n\
+            and stress over a long time for this - and this is also true for the other developers (PluralKit, Octocon, etc.).\n\
+            Please be kind to such developers. They do these things, because of love - and earn nothing to little from these projects\n\
+            while taking responsibilities and risks. Please be kind to them and absolutely avoid demanding things - because\n\
+            at the end of the day, there is no reason for others to expect anything, when developers offer the software and service for FREE (for most users).\n\
+            A kinder atmosphere will make it easier for software to be further developed - but a harsh atmosphere will move developers away.\n\
+            Finally, please keep rumors and gossip away from such discussions. Online these days, it's easy to take quick conclusions based on limited data.\n\
+            Please don't jump to conclusions. It's better to simply note things and be less confident of other peoples malice. Ignorance or genuine misunderstandings are far more commonly the actual cause.\n\
+            \n\
+            \n\
+            Thanks you and deep respect and gratitude to the developer(s) of SimplyPlural for everything they've done for this community! ❤️
+            \n\
+            \n\
+            Kinds, PluralSync".to_owned()
+        },
+    }
+}
+
 /// Registry of all announcement emails
 /// Add new emails here when deploying
 #[must_use]
 pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
-    vec![email_announcements_activated()]
+    vec![
+        email_announcements_activated(),
+        smiply_plural_discontinuation_1(),
+    ]
 }
 
 /// Main entry point: send pending announcement emails
