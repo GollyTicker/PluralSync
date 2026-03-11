@@ -3,6 +3,8 @@
     <p class="license-short">
       Community & Feedback: <a href="https://discord.gg/nHmNKxbv8v" target="_blank">Discord</a>
       |
+      <router-link to="/announcements">Announcements</router-link>
+      |
       <a href="https://github.com/GollyTicker/PluralSync" target="_blank">Code</a>
       |
       <a href="https://ko-fi.com/ayake_ayake#" target="_blank">Support us 💖</a>

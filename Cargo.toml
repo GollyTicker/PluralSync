@@ -16,6 +16,10 @@ path = "src/bin/ts-bindings.rs"
 name = "pluralsync-global-manager"
 path = "src/bin/pluralsync-global-manager.rs"
 
+[[bin]]
+name = "announcement-archive-generator"
+path = "src/bin/announcement-archive-generator.rs"
+
 [dependencies]
 derive_more = { version = "*", features = ["debug","display"] }
 lettre = { version = "*", default-features = false, features = [

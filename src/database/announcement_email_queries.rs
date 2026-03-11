@@ -12,6 +12,7 @@ mod tests {
     async fn test_ensure_announcement_email_definitions_idempotency(pool: PgPool) -> Result<()> {
         let emails = vec![AnnouncementEmail {
             email_id: "test-email-idempotent",
+            date: "2026-01-01",
             subject_fn: |_| "Test Subject".to_string(),
             body_fn: |_| "Test Body".to_string(),
         }];
@@ -78,11 +79,13 @@ mod tests {
         let emails = vec![
             AnnouncementEmail {
                 email_id: "test-email-before-user",
+                date: "2026-01-01",
                 subject_fn: |_| "Test".to_string(),
                 body_fn: |_| "Test".to_string(),
             },
             AnnouncementEmail {
                 email_id: "test-email-after-user",
+                date: "2026-01-02",
                 subject_fn: |_| "Test".to_string(),
                 body_fn: |_| "Test".to_string(),
             },
@@ -151,6 +154,7 @@ mod tests {
 
         let emails = vec![AnnouncementEmail {
             email_id: "test-email-last-attempt",
+            date: "2026-01-01",
             subject_fn: |_| "Test".to_string(),
             body_fn: |_| "Test".to_string(),
         }];

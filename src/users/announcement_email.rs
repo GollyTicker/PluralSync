@@ -11,6 +11,8 @@ use sqlx::PgPool;
 pub struct AnnouncementEmail {
     /// Stable, globally unique identifier (e.g., "welcome-announcement-march-2026")
     pub email_id: &'static str,
+    /// Date of the announcement in ISO format (YYYY-MM-DD), set by the coder
+    pub date: &'static str,
     pub subject_fn: fn(&database::UserInfo) -> String,
     pub body_fn: fn(&database::UserInfo) -> String,
 }
@@ -20,10 +22,11 @@ pub struct AnnouncementEmail {
 pub fn email_announcements_activated() -> AnnouncementEmail {
     AnnouncementEmail {
         email_id: "2026-03-email-announcements-activated",
+        date: "2026-03-11",
         subject_fn: |_user| "PluralSync 🔄 Email Announcements to All Users Activated".to_string(),
         body_fn: |_user| {
             "Dear PluralSync Users,\n\n\
-            As of today, PluralSync will start sending essential announcement emails concerning the service and the users usage.\n\n\
+            As of today (2026-03-11), PluralSync will start sending essential announcement emails concerning the service and the users usage.\n\n\
             These emails cannot be deactivated because they're essential.\n\n\
             Any additional information or discussion can be had in the corresponding community spaces (see website footer for discord link).\n\n\
             Thank you for using PluralSync. We kindly appreciate and wish you a pleasent and useful time with it.\n\n\
