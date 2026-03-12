@@ -11,7 +11,7 @@ use std::env;
 use std::time::Duration;
 
 pub const EVERY_MINUTE: &str = "0 * * * * *";
-pub const EVERY_5_MINUTES: &str = "*/5 * * * * *";
+pub const EVERY_5_MINUTES: &str = "0 */5 * * * *";
 
 const REQUEST_TIMEOUT: u64 = 10;
 
