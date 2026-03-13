@@ -1,3 +1,7 @@
+use crate::metrics::{
+    EMAIL_RATE_LIMIT_CURRENT_COUNT, EMAIL_RATE_LIMIT_EXCEEDED_TOTAL, EMAIL_SEND_FAILURE_TOTAL,
+    EMAIL_SEND_SUCCESS_TOTAL, EMAILS_SENT_TOTAL,
+};
 use crate::{database, setup};
 use anyhow::Result;
 use chrono::Utc;
@@ -7,6 +11,17 @@ use lettre::{
 };
 use pluralsync_base::users::{Email, EmailVerificationToken, PasswordResetToken};
 use sqlx::PgPool;
+use strum::Display;
+
+#[derive(Display)]
+pub enum EmailType {
+    Verification,
+    PasswordReset,
+    EmailChangeConfirmation,
+    EmailChangeNotification,
+    AccountDeletion,
+    Announcement,
+}
 
 pub async fn send_reset_email(
     db_pool: &PgPool,
@@ -19,14 +34,22 @@ pub async fn send_reset_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(db_pool, smtp_config, to, "PluralSync 🔄 Password Reset", format!(
-        "Dear PluralSync Users,\n\n\
+    send_email(
+        db_pool,
+        smtp_config,
+        to,
+        "PluralSync 🔄 Password Reset",
+        format!(
+            "Dear PluralSync Users,\n\n\
         You have requested to reset your password. Please copy and paste the link below into your browser to reset it:\n\n\
         {reset_link}\n\n\
         If you did not request this, please ignore this email.\n\n\
         This link will expire in 1 hour.\n\n\
         Kinds, PluralSync"
-    )).await?;
+        ),
+        EmailType::PasswordReset,
+    )
+    .await?;
 
     Ok(())
 }
@@ -42,13 +65,21 @@ pub async fn send_verification_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(db_pool, smtp_config, to, "Welcome to PluralSync 🔄 ❤️ - Verify Your Email", format!(
-        "Dear PluralSync Users,\n\n\
+    send_email(
+        db_pool,
+        smtp_config,
+        to,
+        "Welcome to PluralSync 🔄 ❤️ - Verify Your Email",
+        format!(
+            "Dear PluralSync Users,\n\n\
         Thank you for registering with PluralSync. Please click on the link below to verify your email address:\n\n\
         {verification_link}\n\n\
         This link will expire in 1 hour.\n\n\
         Kinds, PluralSync"
-    )).await?;
+        ),
+        EmailType::Verification,
+    )
+    .await?;
 
     Ok(())
 }
@@ -64,15 +95,23 @@ pub async fn send_email_change_confirmation_link_to_new_email(
         smtp_config.frontend_base_url, token.inner.inner
     );
 
-    send_email(db_pool, smtp_config, to, "Confirm Your New PluralSync 🔄 Email", format!(
-        "Dear PluralSync Users,\n\n\
+    send_email(
+        db_pool,
+        smtp_config,
+        to,
+        "Confirm Your New PluralSync 🔄 Email",
+        format!(
+            "Dear PluralSync Users,\n\n\
         You have requested to change your email address to {}. Please click on the link below to confirm this change:\n\n\
         {confirmation_link}\n\n\
         This link will expire in 1 hour.\n\n\
         If you did not request this change, please ignore this email.\n\n\
         Kinds, PluralSync",
-        to.inner
-    )).await?;
+            to.inner
+        ),
+        EmailType::EmailChangeConfirmation,
+    )
+    .await?;
 
     Ok(())
 }
@@ -83,12 +122,20 @@ pub async fn send_email_change_notification_to_old_email(
     to: &Email,
     new_email: &Email,
 ) -> Result<()> {
-    send_email(db_pool, smtp_config, to, "Your PluralSync 🔄 Email Was Requested To Be Changed", format!(
-        "Dear PluralSync Users,\n\n\
+    send_email(
+        db_pool,
+        smtp_config,
+        to,
+        "Your PluralSync 🔄 Email Was Requested To Be Changed",
+        format!(
+            "Dear PluralSync Users,\n\n\
         This is a notification that your PluralSync account email address has been requested to change from {} to {}.\n\n\
         Kinds, PluralSync",
-        to.inner, new_email.inner
-    )).await?;
+            to.inner, new_email.inner
+        ),
+        EmailType::EmailChangeNotification,
+    )
+    .await?;
 
     Ok(())
 }
@@ -112,6 +159,7 @@ pub async fn send_account_deletion_notification(
             have been removed from our servers. Your account cannot be recovered.\n\n\
             Kinds, PluralSync"
         ),
+        EmailType::AccountDeletion,
     )
     .await?;
 
@@ -124,8 +172,9 @@ pub async fn send_email(
     to: &Email,
     subject: &str,
     body: String,
+    email_type: EmailType,
 ) -> Result<()> {
-    send_email_with_threshold(db_pool, smtp_config, to, subject, body, 1.0).await
+    send_email_with_threshold(db_pool, smtp_config, to, subject, body, 1.0, email_type).await
 }
 
 pub async fn send_email_with_threshold(
@@ -135,7 +184,15 @@ pub async fn send_email_with_threshold(
     subject: &str,
     body: String,
     rate_limit_threshold: f64,
+    email_type: EmailType,
 ) -> Result<()> {
+    let email_type_str = email_type.to_string();
+
+    // Increment emails sent counter
+    EMAILS_SENT_TOTAL
+        .with_label_values(&[&email_type_str])
+        .inc();
+
     // Check rate limit with threshold before sending
     match database::try_acquire_email_slot(
         db_pool,
@@ -144,17 +201,34 @@ pub async fn send_email_with_threshold(
     )
     .await
     {
-        Ok(_) => {}
+        Ok(()) => {}
         Err(e) => {
             log::warn!("Email rate limit exceeded for {}: {}", to.inner, e);
+            EMAIL_RATE_LIMIT_EXCEEDED_TOTAL.with_label_values(&[]).inc();
+            EMAIL_SEND_FAILURE_TOTAL
+                .with_label_values(&[&email_type_str, "rate_limit"])
+                .inc();
             return Err(e);
         }
     }
+
+    // Update rate limit current count gauge
+    let current_count: i64 = sqlx::query_scalar("SELECT count FROM email_rate_limit WHERE id = 1")
+        .fetch_optional(db_pool)
+        .await
+        .unwrap_or(Some(0))
+        .unwrap_or(0);
+    EMAIL_RATE_LIMIT_CURRENT_COUNT
+        .with_label_values(&[])
+        .set(current_count);
 
     if smtp_config.dangerous_local_dev_mode_print_tokens_instead_of_send_email {
         log::info!("[DEV MODE - EMAIL NOT SENT] To: {}", to.inner);
         log::info!("[DEV MODE - EMAIL SUBJECT] {subject}");
         log::info!("[DEV MODE - EMAIL BODY]\n{body}");
+        EMAIL_SEND_SUCCESS_TOTAL
+            .with_label_values(&[&email_type_str])
+            .inc();
         return Ok(());
     }
 
@@ -172,7 +246,20 @@ pub async fn send_email_with_threshold(
         .port(smtp_config.port)
         .build();
 
-    mailer.send(email).await?;
+    match mailer.send(email).await {
+        Ok(_) => {
+            EMAIL_SEND_SUCCESS_TOTAL
+                .with_label_values(&[&email_type_str])
+                .inc();
+        }
+        Err(e) => {
+            let error_reason = e.to_string();
+            EMAIL_SEND_FAILURE_TOTAL
+                .with_label_values(&[&email_type_str, &error_reason])
+                .inc();
+            return Err(e.into());
+        }
+    }
 
     Ok(())
 }

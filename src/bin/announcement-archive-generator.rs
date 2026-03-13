@@ -29,8 +29,7 @@ impl Default for TestUser {
     fn default() -> Self {
         Self {
             email: "test-user@pluralsync.example.com",
-            created_at: chrono::DateTime::from_timestamp(1704067200, 0) // 2025-01-01 00:00:00 UTC
-                .expect("Valid timestamp"),
+            created_at: chrono::DateTime::from_timestamp_nanos(0),
         }
     }
 }

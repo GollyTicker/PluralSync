@@ -163,6 +163,7 @@ async fn send_pending_email(
         &subject,
         body,
         rate_limit_threshold,
+        users::email::EmailType::Announcement,
     )
     .await
     {

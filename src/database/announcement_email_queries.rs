@@ -152,9 +152,12 @@ mod tests {
 
         // Delete the definition so ensure_announcement_email_definitions will create it fresh
         // This is necessary because ensure only adds pending emails for newly created definitions
-        sqlx::query!("DELETE FROM announcement_email_definitions WHERE email_id = $1", "test-email-last-attempt")
-            .execute(&pool)
-            .await?;
+        sqlx::query!(
+            "DELETE FROM announcement_email_definitions WHERE email_id = $1",
+            "test-email-last-attempt"
+        )
+        .execute(&pool)
+        .await?;
 
         let emails = vec![AnnouncementEmail {
             email_id: "test-email-last-attempt",

@@ -84,6 +84,41 @@ metric!(
     &["type"]
 );
 
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    EMAILS_SENT_TOTAL,
+    "emails_sent_total",
+    &["type"]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    EMAIL_SEND_SUCCESS_TOTAL,
+    "email_send_success_total",
+    &["type"]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    EMAIL_SEND_FAILURE_TOTAL,
+    "email_send_failure_total",
+    &["type", "reason"]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntGaugeVec,
+    EMAIL_RATE_LIMIT_CURRENT_COUNT,
+    "email_rate_limit_current_count",
+    &[]
+);
+
+metric!(
+    rocket_prometheus::prometheus::IntCounterVec,
+    EMAIL_RATE_LIMIT_EXCEEDED_TOTAL,
+    "email_rate_limit_exceeded_total",
+    &[]
+);
+
 pub static PROM_METRICS: sync::LazyLock<rocket_prometheus::PrometheusMetrics> =
     sync::LazyLock::new(|| {
         let promtheus_metrics = rocket_prometheus::PrometheusMetrics::new();
@@ -114,7 +149,12 @@ pub static PROM_METRICS: sync::LazyLock<rocket_prometheus::PrometheusMetrics> =
             SHOULDNT_HAPPEN_BUT_IT_DID,
             PASSWORD_RESET_REQUESTS_TOTAL,
             PASSWORD_RESET_SUCCESS_TOTAL,
-            PASSWORD_RESET_FAILURE_TOTAL
+            PASSWORD_RESET_FAILURE_TOTAL,
+            EMAILS_SENT_TOTAL,
+            EMAIL_SEND_SUCCESS_TOTAL,
+            EMAIL_SEND_FAILURE_TOTAL,
+            EMAIL_RATE_LIMIT_CURRENT_COUNT,
+            EMAIL_RATE_LIMIT_EXCEEDED_TOTAL
         );
 
         promtheus_metrics
