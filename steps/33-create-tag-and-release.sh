@@ -52,4 +52,5 @@ git tag "$NEW_TAG"
 echo "Tag $NEW_TAG created successfully."
 
 # Run the publish release script
-# ./steps/32-publish-release.sh
+./steps/32-publish-release.sh
+
