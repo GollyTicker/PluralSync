@@ -21,6 +21,45 @@ is stored encrypted and at industry-standard security. Self hosting is possible 
 
 Only do the tasks described when explicitly requested to.
 
+## Using Project Scripts (IMPORTANT)
+
+**This project provides comprehensive shell scripts in `./steps/` and `./test/` directories. AI agents should strongly prefer using these scripts over writing custom bash commands.**
+
+### Why Use the Scripts?
+
+1. **Consistency**: Scripts ensure the same commands are executed the same way every time
+2. **Maintainability**: Changes to build/test processes only need to be made in one place
+3. **Correctness**: Scripts encode the correct sequence of operations and dependencies
+4. **Time-saving**: No need to remember complex command sequences or environment variables
+
+### When to Use Scripts vs Custom Commands
+
+**Use scripts for:**
+- Building any component (backend, frontend, bridge)
+- Running tests (unit, integration, e2e)
+- Linting and formatting code
+- Security audits
+- Database migrations
+- Running services (dev servers, global manager)
+- Cleaning build artifacts
+- Updating dependencies
+- Release builds and publishing
+
+**Custom bash commands are appropriate only for:**
+- One-off file operations (reading, editing, creating files)
+- Git operations (status, diff, commit, log)
+- Exploring the codebase (finding files, searching content)
+- Quick inspections that don't affect build state
+- Commands that need to be modified from the standard script behavior
+
+### Script Discovery
+
+If you're unsure which script to use:
+1. Check `./steps/` for build, run, and maintenance operations
+2. Check `./test/` for testing operations
+3. Look at the script contents to understand what they do before invoking them
+4. Scripts are numbered for logical ordering (01-clean, 02-install, 10-lint, 12-build, etc.)
+
 ## Project Overview
 PluralSync is a cloud service designed to synchronize the "fronting" status of plural systems across various platforms. It is built as a multi-component application with a Rust backend, a main web frontend (Vue.js/Vite), and a desktop bridge frontend (Tauri/Vite). It uses PostgreSQL for data persistence and Docker/Nginx for deployment/local development. The project emphasizes data security and privacy.
 
@@ -203,6 +242,8 @@ PluralSync includes comprehensive account management features built on email ver
 
 ## Development Workflows
 
+> **Reminder**: For all operations below, prefer the provided scripts in `./steps/` and `./test/` directories over writing custom bash commands. The scripts handle environment setup, error handling, and correct command sequences.
+
 ### Prerequisites
 *   Rust toolchain (installation via `rustup` is recommended)
 *   Node.js (v20.19.0 or >=22.12.0) + npm
@@ -277,15 +318,17 @@ Before running the backend, initialize the database with migrations:
 
 ### Testing
 
+> **Always use the test scripts in `./test/` directory.** These scripts handle proper setup, teardown, environment variables, and error checking.
+
 #### Unit Tests
 To run Rust unit tests:
 ```bash
-./test/unit-tests.sh
+./test/rust-tests.sh
 ```
 This executes `cargo test` for both the `base-src` and the root Rust projects.
 
 #### Integration Tests
-Multiple integration tests are available for different components:
+Multiple integration tests are available for different components. **Always run these via their scripts**:
 *   **Manager Integration Tests:** `./test/manager.integration-tests.sh` - Tests the global manager's synchronization logic (requires `SPS_API_TOKEN`, `SPS_API_WRITE_TOKEN`, and optionally `PLURAL_SYSTEM_MEMBER_TO_TEST`)
 *   **VRChat Integration Tests:** `./test/vrchat.integration-tests.sh` - Tests VRChat status synchronization (requires `VRCHAT_USERNAME`, `VRCHAT_PASSWORD`, and `VRCHAT_COOKIE`)
 *   **Web Frontend Integration Tests:** `./test/frontend.needs-backend.integration-tests.sh` - Requires backend running separately
@@ -293,10 +336,13 @@ Multiple integration tests are available for different components:
 *   **Webserver Integration Tests:** `./test/webserver.integration-tests.sh` - Tests website sync functionality
 *   **Updater Integration Tests:** `./test/updater.integration-tests.sh` - Tests the update mechanism
 *   **Restarts Integration Tests:** `./test/restarts.integration-tests.sh` - Tests behavior during restarts
+*   **History Integration Tests:** `./test/history.integration-tests.sh` - Tests fronting history functionality
+*   **Email Rate Limit Tests:** `./test/email-rate-limit.integration-tests.sh` - Tests SMTP rate limiting
+*   **VRChat Cookie Setup:** `./test/ensure-vrchat-cookie-available.dev.sh` - Helper to obtain VRChat authentication cookie
 
 #### End-to-End (e2e) Tests
-*   **Web Frontend:** Refer to the `e2e` script in `frontend/package.json`. This typically requires the backend to be running separately.
-*   **Bridge Frontend:** Refer to the `e2e` script in `bridge-frontend/package.json`. This requires `bridge-src-tauri` to be built and the backend to be running.
+*   **Web Frontend:** Refer to the `e2e` script in `frontend/package.json`. This typically requires the backend to be running separately. Use `./test/frontend.needs-backend.integration-tests.sh` which wraps this.
+*   **Bridge Frontend:** Refer to the `e2e` script in `bridge-frontend/package.json`. This requires `bridge-src-tauri` to be built and the backend to be running. Use `./test/bridge.needs-backend.integration-tests.sh` which wraps this.
 
 ### Linting and Formatting
 To lint and format the codebase:
@@ -321,6 +367,8 @@ This script verifies the current Git revision has a tag (e.g., `v2.10`), ensures
 
 ## Utility Scripts
 
+> **Tip**: Scripts are numbered for logical ordering. Use them as your first choice for common operations.
+
 ### Cleanup
 To clean build artifacts and dependencies:
 ```bash
@@ -342,6 +390,12 @@ For troubleshooting and monitoring production instances:
 *   `./steps/40-get-sp-events.sh` - Retrieves SimplyPlural webhook events from production logs (SSH access required)
 *   `./steps/41-process-sp-events.sh` - Processes and parses SP events into structured JSON format
 
+### Additional Test Utilities
+The `./test/` directory contains helper scripts for testing:
+*   `./test/plural_system_to_test.sh` - Defines test member IDs and front configuration helpers
+*   `./test/source.sh` - Common test setup functions (user creation, config management)
+*   `./test/start-backend-for-bridge-frontend.sh` - Starts backend for bridge frontend testing
+
 ## Binary Targets
 
 The project includes multiple Rust binary targets in the main crate:
@@ -357,3 +411,32 @@ The project includes patches for external dependencies:
 *   `discord-rich-presence.discord_ipc.rs.patch` - Patch for Discord IPC communication
 
 These patches are applied automatically during dependency installation via `./steps/02-install-dependencies.sh`.
+
+---
+
+## Finding Available Scripts
+
+Rather than maintaining a static list here (which would quickly become outdated), **discover available scripts by exploring the directories**:
+
+```bash
+ls steps/    # Build, run, and maintenance scripts
+ls test/     # Test scripts and helpers
+```
+
+**When you need to find a script:**
+1. List the relevant directory (`steps/` or `test/`)
+2. Read the script to understand its purpose and usage
+3. Scripts are numbered for logical ordering (01-clean, 02-install, 10-lint, 12-build, etc.)
+
+**Script naming conventions:**
+* `01-clean.sh` - Cleanup operations
+* `02-install-dependencies.sh` - Dependency installation
+* `03-audit.sh` - Security audits
+* `10-lint.sh` - Linting and formatting
+* `11-prepare-sqlx.sh` - Database preparation
+* `12-backend-cargo-build.sh` - Backend builds
+* `13-*` to `17-*` - Running and building frontends
+* `20-*` to `22-*` - Tauri/bridge operations
+* `30-*` to `33-*` - Release operations
+* `40-*` to `41-*` - Production monitoring
+* `90-*` to `92-*` - Analysis and maintenance
