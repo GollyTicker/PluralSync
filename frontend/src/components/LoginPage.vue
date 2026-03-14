@@ -19,12 +19,7 @@
       </p>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
-    <p style="margin: 1em">ℹ️ Fronting History Statuses were recently added.</p>
-    <p style="margin: 1em">
-      ℹ️ Please ensure your address can receive emails. If not, then please change it to be able to
-      receive emails.
-    </p>
-    <p style="margin: 1em">ℹ️ PluralSync was formerly named SP2Any.</p>
+    <p style="margin: 1em">❗ Please read this post by the local system manager (Ampersand) developer: <a href="https://ampersand.moe/blog/rumors.html">Clearing up rumors (no, I won't be nice)</a></p>
   </div>
 </template>
 
