@@ -23,14 +23,14 @@
     </nav>
     <router-view class="content" />
     <footer>
-      <LicenseInfo />
+      <FooterDisplay />
     </footer>
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import LicenseInfo from './components/LicenseInfo.vue'
+import FooterDisplay from './components/FooterDisplay.vue'
 import { pluralsync_api } from './pluralsync_api'
 import type { PluralSyncVariantInfo } from './pluralsync.bindings'
 import { loggedIn } from './jwt'
@@ -158,8 +158,7 @@ footer {
   }
 
   #app-container {
-    /* 60px for header + ~60px for nav links */
-    padding-top: 120px;
+    padding-top: 80px;
   }
 
   #app-header {

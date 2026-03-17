@@ -35,6 +35,14 @@ async function navigateToStatus() {
     await $('a[href="/status"]').click();
 }
 
+async function navigateToAbout() {
+    await $('a[href="/about"]').click();
+}
+
+async function navigateToAnnouncements() {
+    await $('a[href="/announcements"]').click();
+}
+
 async function loggedInAndOnConfigPage() {
     await expect($('.config-container h1')).toHaveText('Settings');
 }
@@ -87,7 +95,7 @@ async function registrationFailed() {
 }
 
 async function navigateToForgotPassword() {
-    const forgotPasswordLink = await $('a.forgot-password-link')
+    const forgotPasswordLink = await $('.forgot-password a')
     await forgotPasswordLink.click();
 }
 
@@ -227,6 +235,20 @@ describe('PluralSync registration logic', () => {
         await browser.url(env.PLURALSYNC_BASE_URL!);
         await register(account_test_email);
         await registrationFailed();
+    });
+});
+
+describe('More screenshots', () => {
+    it('about page', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await navigateToAbout();
+        await takeMobileScreenshot("about")
+    });
+
+    it('announcements page', async () => {
+        await browser.url(env.PLURALSYNC_BASE_URL!);
+        await navigateToAnnouncements();
+        await takeMobileScreenshot("announcements")
     });
 });
 

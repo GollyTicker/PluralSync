@@ -11,6 +11,7 @@ import ResetPassword from './components/ResetPassword.vue'
 import VerifyEmail from './components/VerifyEmail.vue'
 import HistoryTab from './components/HistoryTab.vue'
 import AnnouncementArchive from './components/AnnouncementArchive.vue'
+import AboutPage from './components/AboutPage.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: StartPage },
@@ -24,6 +25,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/reset-password', component: ResetPassword },
   { path: '/verify-email', component: VerifyEmail },
   { path: '/announcements', component: AnnouncementArchive },
+  { path: '/about', component: AboutPage },
 ]
 
 const router = createRouter({

@@ -10,8 +10,15 @@
     </div>
 
     <div v-else class="announcements-list">
-      <div v-for="announcement in announcements" :key="announcement.email_id" class="announcement">
-        <h2>{{ announcement.subject }}</h2>
+      <div
+        v-for="announcement in announcements"
+        :key="announcement.email_id"
+        :id="announcement.email_id"
+        class="announcement"
+      >
+        <h2>
+          <a :href="`#${announcement.email_id}`" class="anchor-link">{{ announcement.subject }}</a>
+        </h2>
         <p class="date">{{ formatDate(announcement.date) }}</p>
         <div class="body">
           <pre>{{ announcement.body }}</pre>
@@ -66,7 +73,6 @@ onMounted(async () => {
 }
 
 h1 {
-  color: var(--color-primary);
   margin-bottom: 1rem;
 }
 
@@ -93,6 +99,7 @@ h1 {
   border: 1px solid #dee2e6;
   border-radius: 0.5em;
   padding: 1.5rem;
+  scroll-margin-top: 2rem;
 }
 
 .announcement h2 {
@@ -100,6 +107,16 @@ h1 {
   margin-top: 0;
   margin-bottom: 0.5rem;
   font-size: 1.4em;
+}
+
+.announcement h2 .anchor-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.announcement h2 .anchor-link:hover {
+  color: var(--color-primary);
+  text-decoration: underline;
 }
 
 .date {
