@@ -50,7 +50,7 @@ Only these events trigger a full fetch:
 ## Database Schema
 
 ```sql
-ALTER TABLE user_config ADD COLUMN pluralkit_webhook_enabled BOOLEAN DEFAULT FALSE;
+ALTER TABLE user_config ADD COLUMN enable_from_pluralkit BOOLEAN DEFAULT FALSE;
 ALTER TABLE user_config ADD COLUMN pluralkit_webhook_signing_token_hash BYTEA DEFAULT NULL;
 ALTER TABLE user_config ADD COLUMN pluralkit_webhook_signing_token_salt BYTEA DEFAULT NULL;
 ALTER TABLE user_config ADD COLUMN pluralkit_webhook_last_ping_received_at TIMESTAMPTZ DEFAULT NULL;

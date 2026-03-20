@@ -386,6 +386,7 @@ mod tests {
             enable_discord_status_message: false,
             enable_vrchat: false,
             enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
             website_url_name: "".to_string(),
             website_system_name: "".to_string(),
             simply_plural_token: Default::default(),
@@ -397,6 +398,7 @@ mod tests {
             history_limit: Default::default(),
             history_truncate_after_days: Default::default(),
             fronter_channel_wait_increment: Default::default(),
+            from_pluralkit_webhook_signing_token: Default::default(),
         }
     }
 

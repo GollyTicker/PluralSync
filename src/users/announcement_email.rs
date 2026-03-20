@@ -405,7 +405,7 @@ mod tests {
         let total_remaining: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM pending_emails")
             .fetch_one(&pool)
             .await?;
-        
+
         assert_eq!(
             total_remaining, 1,
             "Should stop sending after rate limit is reached, leaving exactly 1 email pending"
