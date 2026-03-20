@@ -56,6 +56,7 @@ where
 pub struct Fronter {
     pub fronter_id: String,
     pub name: String,
+    pub pronouns: Option<String>,
     pub avatar_url: String,
     pub vrchat_status_name: Option<String>,
     pub pluralkit_id: Option<String>,
@@ -95,6 +96,7 @@ impl From<CustomFront> for Fronter {
         Self {
             fronter_id: cf.custom_front_id,
             name: cf.content.name,
+            pronouns: None,
             avatar_url: cf.content.avatar_url,
             vrchat_status_name: None,
             pluralkit_id: None,
@@ -161,6 +163,7 @@ impl From<Member> for Fronter {
         Self {
             fronter_id: m.member_id,
             name: m.content.name,
+            pronouns: None,
             avatar_url: m.content.avatar_url,
             vrchat_status_name,
             pluralkit_id: m.content.pluralkit_id,

@@ -53,6 +53,7 @@ where
     pub enable_discord_status_message: bool,
     pub enable_vrchat: bool,
     pub enable_to_pluralkit: bool,
+    pub enable_from_pluralkit: bool,
 
     pub website_system_name: Option<String>,
     pub website_url_name: Option<String>,
@@ -68,6 +69,7 @@ where
     pub vrchat_password: Option<Secret>,
     pub vrchat_cookie: Option<Secret>,
     pub pluralkit_token: Option<Secret>,
+    pub from_pluralkit_webhook_signing_token: Option<Secret>,
     // When adding new config values, don't forget to also add metrics for them in metrics_config_values
 }
 
@@ -100,6 +102,7 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             enable_discord_status_message: self.enable_discord_status_message,
             enable_vrchat: self.enable_vrchat,
             enable_to_pluralkit: self.enable_to_pluralkit,
+            enable_from_pluralkit: self.enable_from_pluralkit,
             simply_plural_token: self
                 .simply_plural_token
                 .clone()
@@ -112,6 +115,10 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             vrchat_password: self.vrchat_password.clone().or(defaults.vrchat_password),
             vrchat_cookie: self.vrchat_cookie.clone().or(defaults.vrchat_cookie),
             pluralkit_token: self.pluralkit_token.clone().or(defaults.pluralkit_token),
+            from_pluralkit_webhook_signing_token: self
+                .from_pluralkit_webhook_signing_token
+                .clone()
+                .or(defaults.from_pluralkit_webhook_signing_token),
             history_limit: self.history_limit.or(defaults.history_limit),
             history_truncate_after_days: self
                 .history_truncate_after_days
@@ -141,6 +148,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             enable_discord_status_message: false,
             enable_vrchat: false,
             enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
             valid_constraints: None,
             website_system_name: None,
             website_url_name: None,
@@ -153,6 +161,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             vrchat_password: None,
             vrchat_cookie: None,
             pluralkit_token: None,
+            from_pluralkit_webhook_signing_token: None,
         }
     }
 }
@@ -171,6 +180,10 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
         (
             "enable_to_pluralkit".to_owned(),
             user_config.enable_to_pluralkit,
+        ),
+        (
+            "enable_from_pluralkit".to_owned(),
+            user_config.enable_from_pluralkit,
         ),
         (
             "show_members_non_archived".to_owned(),
@@ -249,6 +262,7 @@ pub struct UserConfigForUpdater {
     pub enable_discord_status_message: bool,
     pub enable_vrchat: bool,
     pub enable_to_pluralkit: bool,
+    pub enable_from_pluralkit: bool,
 
     pub website_url_name: String,
     pub website_system_name: String,
@@ -259,6 +273,7 @@ pub struct UserConfigForUpdater {
     pub vrchat_password: database::Decrypted,
     pub vrchat_cookie: database::Decrypted,
     pub pluralkit_token: database::Decrypted,
+    pub from_pluralkit_webhook_signing_token: database::Decrypted,
 
     pub history_limit: usize,
     pub history_truncate_after_days: usize,
@@ -311,6 +326,7 @@ where
     let enable_vrchat = local_config_with_defaults.enable_vrchat;
     let enable_website = local_config_with_defaults.enable_website;
     let enable_to_pluralkit = local_config_with_defaults.enable_to_pluralkit;
+    let enable_from_pluralkit = local_config_with_defaults.enable_from_pluralkit;
 
     let config = UserConfigForUpdater {
         user_id: user_id.clone(),
@@ -338,6 +354,7 @@ where
         enable_discord_status_message,
         enable_vrchat,
         enable_to_pluralkit,
+        enable_from_pluralkit,
         website_url_name: config_value_if!(
             enable_website,
             local_config_with_defaults,
@@ -376,6 +393,7 @@ where
             local_config_with_defaults,
             pluralkit_token
         )?,
+        from_pluralkit_webhook_signing_token: config_value_if!(enable_from_pluralkit,local_config_with_defaults,from_pluralkit_webhook_signing_token)?,
         history_limit: config_value!(
             local_config_with_defaults,
             history_limit
@@ -467,6 +485,7 @@ mod tests {
             enable_discord_status_message: false,
             enable_vrchat: false,
             enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),
@@ -476,6 +495,7 @@ mod tests {
             vrchat_cookie: None,
             valid_constraints: None,
             pluralkit_token: None,
+            from_pluralkit_webhook_signing_token: None,
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
             fronter_channel_wait_increment: Some(100),
@@ -514,6 +534,7 @@ mod tests {
             enable_discord_status_message: true,
             enable_vrchat: false,
             enable_to_pluralkit: true,
+            enable_from_pluralkit: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),
@@ -525,6 +546,9 @@ mod tests {
             vrchat_cookie: None,
             pluralkit_token: Some(Decrypted {
                 secret: "pk_token_123".to_string(),
+            }),
+            from_pluralkit_webhook_signing_token: Some(Decrypted {
+                secret: "pk_webhook_signing_token_abc".to_string(),
             }),
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
@@ -551,6 +575,7 @@ mod tests {
   "enable_discord_status_message": true,
   "enable_vrchat": false,
   "enable_to_pluralkit": true,
+  "enable_from_pluralkit": false,
   "website_system_name": "Our System",
   "website_url_name": "our-system",
   "history_limit": 100,
@@ -567,6 +592,9 @@ mod tests {
   "vrchat_cookie": null,
   "pluralkit_token": {
     "secret": "pk_token_123"
+  },
+  "from_pluralkit_webhook_signing_token": {
+    "secret": "pk_webhook_signing_token_abc"
   }
 }"#;
 
@@ -631,6 +659,7 @@ mod tests {
             enable_discord_status_message: false,
             enable_vrchat: false,
             enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),
@@ -639,6 +668,7 @@ mod tests {
             vrchat_password: None,
             vrchat_cookie: None,
             pluralkit_token: None,
+            from_pluralkit_webhook_signing_token: None,
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
             fronter_channel_wait_increment: Some(100),

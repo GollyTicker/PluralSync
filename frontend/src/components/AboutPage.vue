@@ -110,7 +110,7 @@ export interface Screenshot {
       <h2>Screenshots</h2>
       <div class="screenshot-grid">
         <div v-for="screenshot in screenshots" :key="screenshot.filename" class="screenshot-item">
-          <img :src="screenshot.path"/>
+          <img :src="screenshot.path" />
         </div>
       </div>
     </div>

@@ -33,6 +33,7 @@ pub async fn get_user(
             enable_vrchat,
             enable_website,
             enable_to_pluralkit,
+            enable_from_pluralkit,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
             history_limit,
@@ -44,6 +45,7 @@ pub async fn get_user(
             '' AS vrchat_password,
             '' AS vrchat_cookie,
             '' AS pluralkit_token,
+            '' AS from_pluralkit_webhook_signing_token,
             false AS valid_constraints
             FROM users WHERE id = $1",
     )
@@ -97,6 +99,7 @@ pub async fn get_user_secrets(
             enable_discord_status_message,
             enable_vrchat,
             enable_to_pluralkit,
+            enable_from_pluralkit,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
             history_limit,
@@ -108,6 +111,7 @@ pub async fn get_user_secrets(
             pgp_sym_decrypt(enc__vrchat_password, $2) AS vrchat_password,
             pgp_sym_decrypt(enc__vrchat_cookie, $2) AS vrchat_cookie,
             pgp_sym_decrypt(enc__pluralkit_token, $2) AS pluralkit_token,
+            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS from_pluralkit_webhook_signing_token,
             true AS valid_constraints
             FROM users WHERE id = $1",
     )
@@ -155,7 +159,9 @@ pub async fn set_user_config_secrets(
             enc__pluralkit_token = pgp_sym_encrypt($25, $9),
             history_limit = $26,
             history_truncate_after_days = $27,
-            fronter_channel_wait_increment = $28
+            fronter_channel_wait_increment = $28,
+            enable_from_pluralkit = $29,
+            enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9)
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -186,6 +192,12 @@ pub async fn set_user_config_secrets(
     .bind(config.history_limit)
     .bind(config.history_truncate_after_days)
     .bind(config.fronter_channel_wait_increment)
+    .bind(config.enable_from_pluralkit)
+    .bind(
+        config
+            .from_pluralkit_webhook_signing_token
+            .map(|s| s.secret),
+    )
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;

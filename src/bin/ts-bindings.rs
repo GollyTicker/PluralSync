@@ -61,12 +61,14 @@ fn main() -> Result<()> {
     enable_discord_status_message?: boolean;
     enable_vrchat?: boolean;
     enable_to_pluralkit?: boolean;
+    enable_from_pluralkit?: boolean;
     simply_plural_token?: Decrypted;
     discord_status_message_token?: Decrypted;
     vrchat_username?: Decrypted;
     vrchat_password?: Decrypted;
     vrchat_cookie?: Decrypted;
     pluralkit_token?: Decrypted;
+    from_pluralkit_webhook_signing_token?: Decrypted;
     history_limit?: number;
     history_truncate_after_days?: number;
     fronter_channel_wait_increment?: number;

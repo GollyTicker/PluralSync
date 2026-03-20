@@ -193,6 +193,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "<script>alert('XSS')</script>".to_string(),
+            pronouns: None,
             avatar_url: "https://example.com/avatar.png".to_string(),
             vrchat_status_name: None,
             start_time: None,
@@ -228,6 +229,7 @@ mod tests {
             Fronter {
                 fronter_id: "id1".to_string(),
                 name: "Fronter 1".to_string(),
+                pronouns: None,
                 avatar_url: "https://example.com/avatar1.png".to_string(),
                 vrchat_status_name: None,
                 start_time: None,
@@ -237,6 +239,7 @@ mod tests {
             Fronter {
                 fronter_id: "id2".to_string(),
                 name: "Fronter 2".to_string(),
+                pronouns: None,
                 avatar_url: "https://example.com/avatar2.png".to_string(),
                 vrchat_status_name: None,
                 start_time: None,
@@ -258,6 +261,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "Dangerous".to_string(),
+            pronouns: None,
             avatar_url: "https://example.com/\" onerror=\"alert('oops')".to_string(),
             vrchat_status_name: None,
             start_time: None,
@@ -275,6 +279,7 @@ mod tests {
         let fronters = vec![Fronter {
             fronter_id: "some-id".to_string(),
             name: "Hacker".to_string(),
+            pronouns: None,
             avatar_url: "\"><script>alert('xss')</script>".to_string(),
             vrchat_status_name: None,
             start_time: None,
