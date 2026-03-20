@@ -314,14 +314,6 @@ mod tests {
         assert!(!exists, "{message}");
     }
 
-    /// Count remaining pending emails for a given email_id
-    async fn count_pending_emails(pool: &PgPool, email_id: &str) -> Result<i64, sqlx::Error> {
-        sqlx::query_scalar("SELECT COUNT(*) FROM pending_emails WHERE email_id = $1")
-            .bind(email_id)
-            .fetch_one(pool)
-            .await
-    }
-
     // === Tests ===
 
     #[test]
@@ -384,8 +376,17 @@ mod tests {
         let user_created_at = get_user_created_at(&pool, &user1_id).await?;
         setup_announcement_email_for_users(&pool, user_created_at).await?;
 
-        // Set a very low rate limit (2 emails)
-        let smtp_config = rate_limited_smtp_config(2);
+        // Get all announcement email IDs to calculate total pending emails
+        let all_emails = get_all_announcement_emails();
+        let num_email_types = all_emails.len();
+        let total_users = 3;
+        let total_pending_emails = total_users * num_email_types;
+
+        // Set rate limit to allow sending exactly (total_pending_emails - 1) emails
+        // This ensures exactly 1 email remains pending after rate limiting stops sending
+        // Note: We need to account for all email types, not just TEST_EMAIL_ID
+        let rate_limit = (total_pending_emails - 1) as u32;
+        let smtp_config = rate_limited_smtp_config(rate_limit);
 
         // === Act ===
         send_pending_announcement_emails(
@@ -397,13 +398,17 @@ mod tests {
         .await?;
 
         // === Assert ===
-        let remaining_pending = count_pending_emails(&pool, TEST_EMAIL_ID).await?;
-
-        // Should have sent 2 emails (rate limit) and stopped
-        // So 1 should remain pending (3 users - 2 sent = 1 remaining)
+        // Should have sent (total_pending_emails - 1) emails and stopped
+        // So exactly 1 email should remain pending across all types
+        // Since emails are processed in random order, we can't guarantee which type remains
+        // But we know exactly 1 email total remains pending
+        let total_remaining: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM pending_emails")
+            .fetch_one(&pool)
+            .await?;
+        
         assert_eq!(
-            remaining_pending, 1,
-            "Should stop sending after rate limit is reached"
+            total_remaining, 1,
+            "Should stop sending after rate limit is reached, leaving exactly 1 email pending"
         );
 
         Ok(())

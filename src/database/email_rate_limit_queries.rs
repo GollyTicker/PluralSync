@@ -25,7 +25,7 @@ pub async fn try_acquire_email_slot(
         VALUES (1, CURRENT_DATE, 0)
         ON CONFLICT (id) DO UPDATE
         SET current_day = CURRENT_DATE,
-            count = CASE 
+            count = CASE
                 WHEN email_rate_limit.current_day != CURRENT_DATE THEN 0
                 ELSE email_rate_limit.count
             END
