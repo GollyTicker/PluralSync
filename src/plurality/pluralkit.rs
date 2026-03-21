@@ -71,11 +71,6 @@ pub struct PluralKitWebhookPayload {
     #[serde(rename = "type")]
     pub event_type: PluralKitWebhookEvent,
     pub signing_token: String,
-    pub system_id: String,
-    #[serde(default)]
-    pub id: Option<String>,
-    #[serde(default)]
-    pub data: Option<serde_json::Value>,
 }
 
 #[cfg(test)]
@@ -105,9 +100,7 @@ mod tests {
             payload.event_type,
             PluralKitWebhookEvent::CreateSwitch
         ));
-        assert_eq!(payload.system_id, "sys_abc123");
         assert_eq!(payload.signing_token, "test-secret-token");
-        assert!(payload.data.is_some());
     }
 
     #[test]
@@ -120,10 +113,7 @@ mod tests {
 
         let payload: PluralKitWebhookPayload = serde_json::from_str(json).unwrap();
         assert!(matches!(payload.event_type, PluralKitWebhookEvent::Ping));
-        assert_eq!(payload.system_id, "sys_abc123");
         assert_eq!(payload.signing_token, "test-secret-token");
-        assert!(payload.data.is_none());
-        assert!(payload.id.is_none());
     }
 
     #[test]
@@ -144,7 +134,5 @@ mod tests {
             payload.event_type,
             PluralKitWebhookEvent::UpdateMember
         ));
-        assert_eq!(payload.id, Some("mem_def456".to_string()));
-        assert!(payload.data.is_some());
     }
 }
