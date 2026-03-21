@@ -22,7 +22,7 @@ pub async fn handle_pluralkit_webhook(
     user_id: &str,
     body: String,
     db_pool: &State<PgPool>,
-    _updater_manager: &State<UpdaterManager>,
+    updater_manager: &State<UpdaterManager>,
     application_user_secrets: &State<database::ApplicationUserSecrets>,
     client: &State<reqwest::Client>,
 ) -> Result<Status, Status> {
@@ -88,45 +88,27 @@ pub async fn handle_pluralkit_webhook(
         .with_label_values(&[&user_id.to_string()])
         .inc();
 
-    // todo. fetch and update fronters asynchronously now
-    // match fetch_and_update_fronters(&user_id, db_pool, updater_manager).await {
-    //     Ok(()) => {
-    //         PLURALKIT_WEBHOOK_FETCH_TRIGGERED_TOTAL
-    //             .with_label_values(&[&user_id.to_string()])
-    //             .inc();
-    //         log::info!("# | handle_pluralkit_webhook | {user_id} | fetch triggered successfully");
-    //         Ok("updated".to_string())
-    //     }
-    //     Err(e) => {
-    //         log::warn!("# | handle_pluralkit_webhook | {user_id} | fetch failed: {e}");
-    //         Err(Status::InternalServerError)
-    //     }
-    // }
+    // asynchronously initiate the fetching and updating of fronters and members
+    let user_id = user_id.clone();
+    let db_pool: PgPool = db_pool.inner().clone();
+    let updater_manager: UpdaterManager = updater_manager.inner().clone();
+    tokio::spawn(async move {
+        match plurality::fetch_and_update_fronters(&user_id, &db_pool, &updater_manager).await {
+            Ok(()) => {
+                PLURALKIT_WEBHOOK_FETCH_TRIGGERED_TOTAL
+                    .with_label_values(&[&user_id.to_string()])
+                    .inc();
+                log::info!(
+                    "# | handle_pluralkit_webhook | {user_id} | fetch triggered successfully"
+                );
+            }
+            Err(e) => {
+                log::warn!("# | handle_pluralkit_webhook | {user_id} | fetch failed: {e}");
+            }
+        }
+    });
 
     Ok(Status::Ok)
-}
-
-/// Fetch fronters from `PluralKit` and send to the fronter channel.
-///
-/// This is a basic implementation that logs the event.
-/// TODO: Implement full fetch and update logic when webhook registration is added.
-async fn fetch_and_update_fronters(
-    user_id: &UserId,
-    _db_pool: &PgPool,
-    _updater_manager: &UpdaterManager,
-) -> Result<()> {
-    log::info!(
-        "# | fetch_and_update_fronters | {user_id} | PluralKit webhook event received (TODO: implement full fetch)"
-    );
-
-    // TODO: Implement full fetch logic:
-    // 1. Get user config with PluralKit token from database
-    // 2. Fetch latest switch from PluralKit API
-    // 3. Fetch members from PluralKit API
-    // 4. Convert to Fronter structs
-    // 5. Send to fronter channel to trigger updaters
-
-    Ok(())
 }
 
 #[cfg(test)]
