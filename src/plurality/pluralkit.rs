@@ -5,9 +5,9 @@ use sqlx;
 use crate::{updater, users::UserId};
 
 pub async fn fetch_and_update_fronters(
-    user_id: &UserId,
-    db_pool: &sqlx::PgPool,
-    updater_manager: &updater::UpdaterManager,
+    _user_id: &UserId,
+    _db_pool: &sqlx::PgPool,
+    _updater_manager: &updater::UpdaterManager,
 ) -> Result<()> {
     Err(anyhow!("not implemented"))?
 }

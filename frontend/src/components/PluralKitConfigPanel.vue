@@ -135,10 +135,10 @@ const copyButtonLabel = ref('Copy')
 const userId = ref<string>('')
 pluralsync_api
   .get_user_info()
-  .then(userInfo => {
+  .then((userInfo) => {
     userId.value = (userInfo.id as UserId).inner
   })
-  .catch(e => {
+  .catch((e) => {
     console.warn('Failed to fetch user info for webhook URL:', e)
   })
 
