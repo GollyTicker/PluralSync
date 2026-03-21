@@ -417,6 +417,12 @@ where
         ));
     }
 
+    if enable_to_pluralkit && enable_from_pluralkit {
+        return Err(anyhow!(
+            "PluralKit cannot be used as a source and target at the same time"
+        ));
+    }
+
     if !(0..=1000).contains(&config.history_limit) {
         return Err(anyhow!(
             "history_limit must be between 0 and 1000, got {}",

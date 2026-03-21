@@ -1,4 +1,16 @@
+use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
+use sqlx;
+
+use crate::{updater, users::UserId};
+
+pub async fn fetch_and_update_fronters(
+    user_id: &UserId,
+    db_pool: &sqlx::PgPool,
+    updater_manager: &updater::UpdaterManager,
+) -> Result<()> {
+    Err(anyhow!("not implemented"))?
+}
 
 /// See: <https://pluralkit.me/api/dispatch>/
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

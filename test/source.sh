@@ -15,6 +15,7 @@ export PRIVACY_FINE_GRAINED_BUCKETS="[\"68e23553d3877cbeb6000000\"]"
 export HISTORY_LIMIT=100
 export HISTORY_TRUNCATE_AFTER_DAYS=7
 export FRONTER_CHANNEL_WAIT_INCREMENT=100
+export ENABLE_FROM_PLURALKIT=false
 
 source docker/source.sh # await
 
@@ -56,12 +57,19 @@ get_user_config_json() {
         PLURALKIT_TOKEN_LINE=""
     fi
 
+    if [ -v PLURALKIT_WEBHOOK_SIGNING_TOKEN ] ; then
+        PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE="\"from_pluralkit_webhook_signing_token\": { \"secret\": \"${PLURALKIT_WEBHOOK_SIGNING_TOKEN}\" },"
+    else
+        PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE=""
+    fi
+
     echo "{
         \"enable_discord_status_message\": ${ENABLE_DISCORD_STATUS_MESSAGE},
         \"enable_vrchat\": ${ENABLE_VRCHAT},
         \"enable_discord\": ${ENABLE_DISCORD},
         \"enable_website\": ${ENABLE_WEBSITE},
         \"enable_to_pluralkit\": ${ENABLE_TO_PLURALKIT},
+        \"enable_from_pluralkit\": ${ENABLE_FROM_PLURALKIT},
         \"website_url_name\": \"${WEBSITE_URL_NAME}\",
         \"discord_user_id\": { \"secret\": \"invalid\" },
         \"show_members_non_archived\": ${SHOW_MEMBERS_NON_ARCHIVED},
@@ -73,6 +81,7 @@ get_user_config_json() {
         \"history_limit\": ${HISTORY_LIMIT},
         \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
         \"fronter_channel_wait_increment\": ${FRONTER_CHANNEL_WAIT_INCREMENT},
+        $PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE
         $SIMPLY_PLURAL_TOKEN_LINE
         $DISCORD_STATUS_MESSAGE_TOKEN_LINE
         $VRCHAT_USERNAME_LINE
