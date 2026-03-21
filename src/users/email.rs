@@ -11,7 +11,7 @@ use lettre::{
 };
 use pluralsync_base::users::{Email, EmailVerificationToken, PasswordResetToken};
 use sqlx::PgPool;
-use strum::Display;
+use strum_macros::Display;
 
 #[derive(Display)]
 pub enum EmailType {
