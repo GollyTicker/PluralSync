@@ -43,6 +43,8 @@ pub async fn post_api_webhook_pluralkit_user_id(
     let payload_str = &body;
     let expected_signing_token = user_config.from_pluralkit_webhook_signing_token;
 
+    log::info!("payload: {}", payload_str);
+
     // Parse the webhook payload
     let webhook_payload: plurality::PluralKitWebhookPayload = serde_json::from_str(payload_str)
         .map_err(|e| {
