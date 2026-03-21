@@ -17,8 +17,8 @@ int_counter_metric!(PLURALKIT_WEBHOOK_FETCH_TRIGGERED_TOTAL);
 ///
 /// The webhook signature is verified using the stored signing token.
 /// On relevant events (switch changes), a full system fetch is triggered.
-#[post("/webhook/pluralkit/<user_id>", data = "<body>")]
-pub async fn handle_pluralkit_webhook(
+#[post("/api/webhook/pluralkit/<user_id>", data = "<body>")]
+pub async fn post_api_webhook_pluralkit_user_id(
     user_id: &str,
     body: String,
     db_pool: &State<PgPool>,

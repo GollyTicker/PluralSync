@@ -120,7 +120,7 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
                 platforms::discord_api::get_api_user_platform_discord_bridge_events,
                 history::get_api_user_history_fronting,
                 meta_api::get_api_meta_pluralsync_variant,
-                pluralsync::plurality::handle_pluralkit_webhook,
+                pluralsync::plurality::post_api_webhook_pluralkit_user_id,
             ],
         )
         .mount("/metrics", metrics::PROM_METRICS.clone())
