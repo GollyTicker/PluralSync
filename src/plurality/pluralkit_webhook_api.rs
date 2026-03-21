@@ -122,9 +122,6 @@ mod tests {
         PluralKitWebhookPayload {
             event_type: event,
             signing_token: "test-token".to_string(),
-            system_id: "test_sys".to_string(),
-            id: None,
-            data: None,
         }
     }
 
@@ -134,7 +131,6 @@ mod tests {
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"type\":\"PING\""));
         assert!(json.contains("\"signing_token\""));
-        assert!(json.contains("\"system_id\""));
     }
 
     #[test]
@@ -143,7 +139,6 @@ mod tests {
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"type\":\"CREATE_SWITCH\""));
         assert!(json.contains("\"signing_token\""));
-        assert!(json.contains("\"system_id\""));
     }
 
     #[test]
@@ -163,9 +158,7 @@ mod tests {
             payload.event_type,
             PluralKitWebhookEvent::CreateSwitch
         ));
-        assert_eq!(payload.system_id, "sys123");
         assert_eq!(payload.signing_token, "test-secret");
-        assert!(payload.data.is_some());
     }
 
     #[test]
