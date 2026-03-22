@@ -1,25 +1,8 @@
 use std::collections::HashSet;
 
-use crate::{
-    int_counter_metric, metric, plurality, record_if_error, users, users::UserConfigForUpdater,
-};
+use crate::{plurality, record_if_error, users, users::UserConfigForUpdater};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-
-int_counter_metric!(PLURALKIT_API_REQUESTS_TOTAL);
-metric!(
-    rocket_prometheus::prometheus::IntGaugeVec,
-    PLURALKIT_API_RATELIMIT_REMAINING,
-    "pluralkit_api_ratelimit_remaining",
-    &["user_id", "scope"]
-);
-
-const TO_PLURALKIT_UPDATER_USER_AGENT: &str = concat!(
-    "PluralSync/",
-    env!("CARGO_PKG_VERSION"),
-    " Discord: ",
-    env!("USER_AGENT_DISCORD_USERNAME")
-);
 
 pub struct ToPluralKitUpdater {
     pub last_operation_error: Option<String>,
@@ -68,7 +51,7 @@ async fn update_to_pluralkit(
         .get("https://api.pluralkit.me/v2/systems/@me/switches?limit=1")
         .header("Authorization", &config.pluralkit_token.secret)
         .header("Content-Type", "application/json")
-        .header("User-Agent", TO_PLURALKIT_UPDATER_USER_AGENT)
+        .header("User-Agent", plurality::PLURALKIT_USER_AGENT)
         .send()
         .await?
         .error_for_status()?
@@ -114,7 +97,7 @@ async fn update_to_pluralkit(
         return Ok(());
     }
 
-    PLURALKIT_API_REQUESTS_TOTAL
+    plurality::PLURALKIT_API_REQUESTS_TOTAL
         .with_label_values(&[&config.user_id.to_string()])
         .inc();
 
@@ -123,14 +106,14 @@ async fn update_to_pluralkit(
         .post("https://api.pluralkit.me/v2/systems/@me/switches")
         .header("Authorization", &config.pluralkit_token.secret)
         .header("Content-Type", "application/json")
-        .header("User-Agent", TO_PLURALKIT_UPDATER_USER_AGENT)
+        .header("User-Agent", plurality::PLURALKIT_USER_AGENT)
         .json(&PluralKitSwitch {
             members: new_switch_members.clone(),
         })
         .send()
         .await?;
 
-    measure_rate_limits(config, &response);
+    plurality::measure_rate_limits(&config.user_id, &response);
 
     response.error_for_status()?;
 
@@ -166,37 +149,6 @@ fn customization_preserving_members_list_for_new_switch(
         .cloned() // keep only those which are also new members
         .chain(strictly_new_members) // append new members at the end
         .collect()
-}
-
-fn measure_rate_limits(config: &UserConfigForUpdater, response: &reqwest::Response) {
-    let headers = response.headers();
-    let rate_limit_limit = headers
-        .get("X-RateLimit-Limit")
-        .and_then(|v| v.to_str().ok());
-    let rate_limit_remaining = headers
-        .get("X-RateLimit-Remaining")
-        .and_then(|v| v.to_str().ok().and_then(|s| s.parse().ok()));
-    let rate_limit_reset = headers
-        .get("X-RateLimit-Reset")
-        .and_then(|v| v.to_str().ok());
-    let rate_limit_scope = headers
-        .get("X-RateLimit-Scope")
-        .and_then(|v| v.to_str().ok());
-
-    if let (Some(remaining), Some(scope)) = (rate_limit_remaining, rate_limit_scope) {
-        PLURALKIT_API_RATELIMIT_REMAINING
-            .with_label_values(&[&config.user_id.to_string(), scope])
-            .set(remaining);
-    }
-
-    log::info!(
-        "# | update_to_pluralkit | {} | updated | rate limit: limit={:?}, remaining={:?}, reset={:?}, scope={:?}",
-        config.user_id,
-        rate_limit_limit,
-        rate_limit_remaining,
-        rate_limit_reset,
-        rate_limit_scope
-    );
 }
 
 #[derive(Clone, Deserialize, Serialize)]
