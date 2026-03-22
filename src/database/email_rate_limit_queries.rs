@@ -16,9 +16,6 @@ pub async fn try_acquire_email_slot(
     threshold_ratio: Option<f64>,
 ) -> Result<()> {
     let effective_ratio = threshold_ratio.unwrap_or(1.0);
-    log::debug!(
-        "# | db::try_acquire_email_slot | limit={limit}, threshold_ratio={effective_ratio}"
-    );
 
     let row = sqlx::query!(
         "INSERT INTO email_rate_limit (id, current_day, count)
@@ -39,6 +36,11 @@ pub async fn try_acquire_email_slot(
     if row.current_day != chrono::Utc::now().date_naive() {
         return Err(anyhow!("Email rate limit table has unexpected date"));
     }
+
+    log::debug!(
+        "# | db::try_acquire_email_slot | limit={limit}, threshold_ratio={effective_ratio}, current={}",
+        row.count
+    );
 
     let threshold = (f64::from(limit) * effective_ratio) as i32;
     if row.count >= threshold {
