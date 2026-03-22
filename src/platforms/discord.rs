@@ -70,7 +70,7 @@ pub fn render_fronts_to_discord_rich_presence(
         activity_type: DiscordActivityType::Playing,
         status_display_type: DiscordStatusDisplayType::Details,
         details: Some(short_fronters_string),
-        details_url: Some(meta::PLURALSYNC_GITHUB_REPOSITORY_URL.to_owned()), // // future: link to fronting web url
+        details_url: Some(meta::CANONICAL_PLURALSYNC_ABOUT.to_owned()), // // future: link to fronting web url
         state: Some(long_fronters_string),
         state_url: None,
         start_time: most_recent_fronting_change,
