@@ -395,7 +395,7 @@ async fn simply_plural_http_request_get_pluralsync_assigned_buckets(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::plurality::{Member, MemberContent};
+    use crate::plurality::{FrontEntryContent, Member, MemberContent};
     use crate::users::UserConfigForUpdater;
     use sqlx::types::uuid;
 
@@ -457,12 +457,34 @@ mod tests {
         }
     }
 
+    fn create_test_front_entry(fronter_id: String) -> FrontEntry {
+        FrontEntry {
+            content: FrontEntryContent {
+                fronter_id,
+                system_id: "test_system".to_string(),
+                start_time: chrono::Utc::now(),
+            },
+        }
+    }
+
+    // ============================================================================
+    // Tests for show_member_according_to_privacy_rules
+    // ============================================================================
+
     #[test]
     fn test_show_member_privacy_respect_front_notifications_disabled() {
         let config = create_test_config(true, true, true);
         let member = create_test_member(false, true);
         let result = show_member_according_to_privacy_rules(&config, &member);
         assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::FrontNotificationsDisabled)));
+    }
+
+    #[test]
+    fn test_show_member_privacy_front_notifications_disabled_ignored() {
+        let config = create_test_config(false, true, true);
+        let member = create_test_member(false, true);
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Included(_)));
     }
 
     #[test]
@@ -495,5 +517,447 @@ mod tests {
         let member = create_test_member(false, false);
         let result = show_member_according_to_privacy_rules(&config, &member);
         assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::NonArchivedMemberHidden)));
+    }
+
+    #[test]
+    fn test_show_member_all_hidden_excludes() {
+        let config = create_test_config(false, false, false);
+        let member = create_test_member(false, false);
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Excluded(_, _)));
+    }
+
+    #[test]
+    fn test_show_member_all_shown_includes() {
+        let config = create_test_config(false, true, true);
+        let member = create_test_member(false, false);
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Included(_)));
+    }
+
+    // ============================================================================
+    // Tests for filter_frontables_by_fine_grained_privacy (NoFineGrained)
+    // ============================================================================
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_no_fine_grained_keeps_all() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::NoFineGrained;
+
+        let frontables = vec![
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member1".to_string(),
+                name: "Member 1".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec!["bucket1".to_string()],
+            }),
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member2".to_string(),
+                name: "Member 2".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+        ];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 2);
+        assert!(matches!(result[0], FilteredFronter::Included(_)));
+        assert!(matches!(result[1], FilteredFronter::Included(_)));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_no_fine_grained_keeps_excluded() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::NoFineGrained;
+
+        let frontables = vec![
+            FilteredFronter::Excluded(
+                Fronter {
+                    fronter_id: "member1".to_string(),
+                    name: "Member 1".to_string(),
+                    pronouns: None,
+                    avatar_url: "".to_string(),
+                    vrchat_status_name: None,
+                    pluralkit_id: None,
+                    start_time: None,
+                    privacy_buckets: vec![],
+                },
+                ExclusionReason::ArchivedMemberHidden,
+            ),
+        ];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)
+        ));
+    }
+
+    // ============================================================================
+    // Tests for filter_frontables_by_fine_grained_privacy (ViaPrivacyBuckets)
+    // ============================================================================
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_member_in_allowed_bucket() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec!["public".to_string()]);
+
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec!["public".to_string()],
+        })];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], FilteredFronter::Included(_)));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_member_not_in_allowed_bucket() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec!["public".to_string()]);
+
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec!["private".to_string()],
+        })];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::NotInDisplayedPrivacyBuckets)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_member_in_multiple_buckets_one_matches() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec!["public".to_string()]);
+
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec!["private".to_string(), "public".to_string()],
+        })];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], FilteredFronter::Included(_)));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_preserves_existing_excluded() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec!["public".to_string()]);
+
+        let frontables = vec![FilteredFronter::Excluded(
+            Fronter {
+                fronter_id: "member1".to_string(),
+                name: "Member 1".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec!["public".to_string()],
+            },
+            ExclusionReason::ArchivedMemberHidden,
+        )];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_empty_allowed_excludes_all() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec![]);
+
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec!["public".to_string()],
+        })];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::NotInDisplayedPrivacyBuckets)
+        ));
+    }
+
+    #[tokio::test]
+    async fn test_fine_grained_privacy_buckets_member_with_no_buckets_excluded() {
+        let mut config = create_test_config(false, true, true);
+        config.privacy_fine_grained = PrivacyFineGrained::ViaPrivacyBuckets;
+        config.privacy_fine_grained_buckets = Some(vec!["public".to_string()]);
+
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec![],
+        })];
+
+        let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
+            .await
+            .unwrap();
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::NotInDisplayedPrivacyBuckets)
+        ));
+    }
+
+    // ============================================================================
+    // Tests for filter_frontables_by_front_entries
+    // ============================================================================
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_only_fronting_included() {
+        let frontables = vec![
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member1".to_string(),
+                name: "Member 1".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member2".to_string(),
+                name: "Member 2".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+        ];
+
+        let front_entries = vec![create_test_front_entry("member1".to_string())];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 1);
+        assert!(matches!(result[0], FilteredFronter::Included(_)));
+        if let FilteredFronter::Included(f) = &result[0] {
+            assert_eq!(f.fronter_id, "member1");
+            assert!(f.start_time.is_some());
+        }
+    }
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_excluded_preserved() {
+        let frontables = vec![
+            FilteredFronter::Excluded(
+                Fronter {
+                    fronter_id: "member1".to_string(),
+                    name: "Member 1".to_string(),
+                    pronouns: None,
+                    avatar_url: "".to_string(),
+                    vrchat_status_name: None,
+                    pluralkit_id: None,
+                    start_time: None,
+                    privacy_buckets: vec![],
+                },
+                ExclusionReason::ArchivedMemberHidden,
+            ),
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member2".to_string(),
+                name: "Member 2".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+        ];
+
+        let front_entries = vec![
+            create_test_front_entry("member1".to_string()),
+            create_test_front_entry("member2".to_string()),
+        ];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 2);
+        assert!(matches!(
+            result[0],
+            FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)
+        ));
+        assert!(matches!(result[1], FilteredFronter::Included(_)));
+    }
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_no_matching_entries() {
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec![],
+        })];
+
+        let front_entries = vec![create_test_front_entry("member2".to_string())];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_empty_frontables() {
+        let frontables: Vec<FilteredFronter> = vec![];
+        let front_entries = vec![create_test_front_entry("member1".to_string())];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_empty_front_entries() {
+        let frontables = vec![FilteredFronter::Included(Fronter {
+            fronter_id: "member1".to_string(),
+            name: "Member 1".to_string(),
+            pronouns: None,
+            avatar_url: "".to_string(),
+            vrchat_status_name: None,
+            pluralkit_id: None,
+            start_time: None,
+            privacy_buckets: vec![],
+        })];
+        let front_entries: Vec<FrontEntry> = vec![];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 0);
+    }
+
+    #[test]
+    fn test_filter_frontables_by_front_entries_multiple_fronters() {
+        let frontables = vec![
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member1".to_string(),
+                name: "Member 1".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member2".to_string(),
+                name: "Member 2".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+            FilteredFronter::Included(Fronter {
+                fronter_id: "member3".to_string(),
+                name: "Member 3".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                vrchat_status_name: None,
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            }),
+        ];
+
+        let front_entries = vec![
+            create_test_front_entry("member1".to_string()),
+            create_test_front_entry("member3".to_string()),
+        ];
+
+        let result = filter_frontables_by_front_entries(&front_entries, &frontables);
+
+        assert_eq!(result.len(), 2);
+        if let FilteredFronter::Included(f) = &result[0] {
+            assert_eq!(f.fronter_id, "member1");
+        }
+        if let FilteredFronter::Included(f) = &result[1] {
+            assert_eq!(f.fronter_id, "member3");
+        }
     }
 }
