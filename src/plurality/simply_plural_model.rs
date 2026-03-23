@@ -52,7 +52,7 @@ where
     Ok(non_empty_str_option)
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
 pub struct Fronter {
     pub fronter_id: String,
     pub name: String,
@@ -60,6 +60,7 @@ pub struct Fronter {
     pub avatar_url: String,
     pub vrchat_status_name: Option<String>,
     pub pluralkit_id: Option<String>,
+    #[specta(type = String)]
     pub start_time: Option<chrono::DateTime<chrono::Utc>>,
     pub privacy_buckets: Vec<String>,
 }
@@ -68,6 +69,42 @@ impl Fronter {
     #[must_use]
     pub fn preferred_vrchat_status_name(&self) -> &str {
         self.vrchat_status_name.as_ref().unwrap_or(&self.name)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
+pub enum ExclusionReason {
+    FrontNotificationsDisabled,
+    ArchivedMemberHidden,
+    NonArchivedMemberHidden,
+    CustomFrontsDisabled,
+    NotInDisplayedPrivacyBuckets,
+}
+
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
+pub struct ExcludedFronter {
+    pub fronter: Fronter,
+    pub reason: ExclusionReason,
+}
+
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
+pub enum FilteredFronter {
+    Included(Fronter),
+    Excluded(Fronter, ExclusionReason),
+}
+
+#[derive(Clone, Debug, serde::Serialize, specta::Type)]
+pub struct FilteredFronters {
+    pub fronters: Vec<Fronter>,
+    pub excluded: Vec<ExcludedFronter>,
+}
+
+impl FilteredFronter {
+    pub fn into_included(self) -> Option<Fronter> {
+        match self {
+            FilteredFronter::Included(f) => Some(f),
+            FilteredFronter::Excluded(_, _) => None,
+        }
     }
 }
 

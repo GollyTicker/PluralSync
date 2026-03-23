@@ -5,12 +5,14 @@ use anyhow::{Result, anyhow};
 use crate::{
     int_counter_metric, int_gauge_metric,
     plurality::{
-        CustomField, CustomFront, Friend, FrontEntry, Fronter,
-        GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID, Member,
+        CustomField, CustomFront, ExcludedFronter, ExclusionReason, FilteredFronter, FrontEntry, Fronter,
+        FilteredFronters, Friend, GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID, Member,
         SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME,
     },
     users::{self, PrivacyFineGrained},
 };
+
+use itertools::Itertools;
 
 int_counter_metric!(SIMPLY_PLURAL_FETCH_FRONTS_TOTAL_COUNTER);
 int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_FRONTERS_COUNT);
@@ -19,7 +21,7 @@ int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_ARCHIVED_MEMBERS_COUNT);
 int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT);
 
 #[allow(clippy::cast_possible_wrap)]
-pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fronter>> {
+pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<FilteredFronters> {
     let user_id = &config.user_id;
 
     log::info!("# | fetch_fronts | {user_id}");
@@ -34,7 +36,10 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fr
         SIMPLY_PLURAL_FETCH_FRONTS_FRONTERS_COUNT
             .with_label_values(&[&user_id.to_string()])
             .set(0);
-        return Ok(vec![]);
+        return Ok(FilteredFronters {
+            fronters: vec![],
+            excluded: vec![],
+        });
     }
 
     let system_id = &front_entries[0].content.system_id.clone();
@@ -44,7 +49,16 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fr
     let frontables =
         get_members_and_custom_fronters_by_privacy_rules(system_id, vrcsn_field_id, config).await?;
 
-    let fronters = filter_frontables_by_front_entries(front_entries.as_ref(), frontables.as_ref());
+    let fronters_filtered = filter_frontables_by_front_entries(front_entries.as_ref(), &frontables);
+
+    let (fronters, excluded): (Vec<_>, Vec<_>) = fronters_filtered
+        .into_iter()
+        .partition_map(|result| match result {
+            FilteredFronter::Included(f) => itertools::Either::Left(f),
+            FilteredFronter::Excluded(f, reason) => {
+                itertools::Either::Right(ExcludedFronter { fronter: f, reason })
+            }
+        });
 
     for f in &fronters {
         log::debug!("# | fetch_fronts | {user_id} | fronter[*] {f:?}");
@@ -54,23 +68,27 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Vec<Fr
         .with_label_values(&[&user_id.to_string()])
         .set(fronters.len() as i64);
 
-    Ok(fronters)
+    Ok(FilteredFronters { fronters, excluded })
 }
 
-const fn show_member_according_to_privacy_rules(
+fn show_member_according_to_privacy_rules(
     config: &users::UserConfigForUpdater,
     member_with_content: &Member,
-) -> bool {
+) -> FilteredFronter {
     let member: &super::MemberContent = &member_with_content.content;
+    let fronter = Fronter::from(member_with_content.clone());
 
     if config.respect_front_notifications_disabled && member.front_notifications_disabled {
-        return false;
+        return FilteredFronter::Excluded(fronter, ExclusionReason::FrontNotificationsDisabled);
     }
-    if member.archived {
-        return config.show_members_archived;
+    if member.archived && !config.show_members_archived {
+        return FilteredFronter::Excluded(fronter, ExclusionReason::ArchivedMemberHidden);
+    }
+    if !member.archived && !config.show_members_non_archived {
+        return FilteredFronter::Excluded(fronter, ExclusionReason::NonArchivedMemberHidden);
     }
 
-    config.show_members_non_archived
+    FilteredFronter::Included(fronter)
 }
 
 #[allow(clippy::cast_possible_wrap)]
@@ -78,7 +96,7 @@ async fn get_members_and_custom_fronters_by_privacy_rules(
     system_id: &str,
     vrcsn_field_id: Option<String>,
     config: &users::UserConfigForUpdater,
-) -> Result<Vec<Fronter>> {
+) -> Result<Vec<FilteredFronter>> {
     let all_members: Vec<Member> = simply_plural_http_get_members(config, system_id).await?;
 
     let active_members_count = all_members.iter().filter(|m| !m.content.archived).count() as i64;
@@ -91,34 +109,40 @@ async fn get_members_and_custom_fronters_by_privacy_rules(
         .with_label_values(&[&config.user_id.to_string()])
         .set(all_members.len() as i64 - active_members_count);
 
-    let privacy_filtered_members = all_members
+    let all_custom_fronts: Vec<CustomFront> = simply_plural_http_get_custom_fronts(config, system_id).await?;
+
+    SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT
+        .with_label_values(&[&config.user_id.to_string()])
+        .set(all_custom_fronts.len() as i64);
+
+    let members_with_vrcsn: Vec<Member> = all_members
         .into_iter()
-        .filter(|m| show_member_according_to_privacy_rules(config, m));
-
-    let all_custom_fronts: Vec<CustomFront> = if config.show_custom_fronts {
-        let custom_fronts = simply_plural_http_get_custom_fronts(config, system_id).await?;
-
-        SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT
-            .with_label_values(&[&config.user_id.to_string()])
-            .set(custom_fronts.len() as i64);
-
-        custom_fronts
-    } else {
-        vec![]
-    };
-
-    let all_frontables: Vec<Fronter> = privacy_filtered_members
-        .into_iter()
-        .map(|m| {
-            let mut enriched_member = m;
-            enriched_member
-                .content
-                .vrcsn_field_id
-                .clone_from(&vrcsn_field_id);
-            enriched_member
+        .map(|mut m| {
+            m.content.vrcsn_field_id.clone_from(&vrcsn_field_id);
+            m
         })
-        .map(Fronter::from)
-        .chain(all_custom_fronts.into_iter().map(Fronter::from))
+        .collect();
+
+    let member_results: Vec<FilteredFronter> = members_with_vrcsn
+        .iter()
+        .map(|m| show_member_according_to_privacy_rules(config, m))
+        .collect();
+
+    let custom_front_results: Vec<FilteredFronter> = all_custom_fronts
+        .into_iter()
+        .map(|cf| {
+            let fronter = Fronter::from(cf);
+            if config.show_custom_fronts {
+                FilteredFronter::Included(fronter)
+            } else {
+                FilteredFronter::Excluded(fronter, ExclusionReason::CustomFrontsDisabled)
+            }
+        })
+        .collect();
+
+    let all_frontables: Vec<FilteredFronter> = member_results
+        .into_iter()
+        .chain(custom_front_results)
         .collect();
 
     let fine_grained_filtered_frontables =
@@ -130,8 +154,8 @@ async fn get_members_and_custom_fronters_by_privacy_rules(
 async fn filter_frontables_by_fine_grained_privacy(
     system_id: &str,
     config: &users::UserConfigForUpdater,
-    all_frontables: Vec<Fronter>,
-) -> Result<Vec<Fronter>> {
+    all_frontables: Vec<FilteredFronter>,
+) -> Result<Vec<FilteredFronter>> {
     let allowed_buckets = match config.privacy_fine_grained {
         PrivacyFineGrained::NoFineGrained => return Ok(all_frontables),
         PrivacyFineGrained::ViaFriend => {
@@ -148,10 +172,17 @@ async fn filter_frontables_by_fine_grained_privacy(
 
     let privacy_bucket_filtered = all_frontables
         .into_iter()
-        .filter(|f| {
-            f.privacy_buckets
-                .iter()
-                .any(|b| allowed_buckets.contains(b))
+        .map(|result| match result {
+            FilteredFronter::Excluded(f, reason) => {
+                FilteredFronter::Excluded(f, reason)
+            }
+            FilteredFronter::Included(f) => {
+                if f.privacy_buckets.iter().any(|b| allowed_buckets.contains(b)) {
+                    FilteredFronter::Included(f)
+                } else {
+                    FilteredFronter::Excluded(f, ExclusionReason::NotInDisplayedPrivacyBuckets)
+                }
+            }
         })
         .collect();
 
@@ -160,23 +191,31 @@ async fn filter_frontables_by_fine_grained_privacy(
 
 fn filter_frontables_by_front_entries(
     front_entries: &[FrontEntry],
-    frontables: &[Fronter],
-) -> Vec<Fronter> {
-    let fronters: Vec<Fronter> = frontables
+    frontables: &[FilteredFronter],
+) -> Vec<FilteredFronter> {
+    frontables
         .iter()
         .filter_map(|f| {
+            let fronter_id = match f {
+                FilteredFronter::Included(fr) | FilteredFronter::Excluded(fr, _) => &fr.fronter_id,
+            };
             front_entries
                 .iter()
-                .find(|fe| fe.content.fronter_id == f.fronter_id)
-                .map(|fe| {
-                    let mut fronter_with_start_time = f.clone();
-                    fronter_with_start_time.start_time = Some(fe.content.start_time);
-                    fronter_with_start_time
+                .find(|fe| fe.content.fronter_id == *fronter_id)
+                .map(|fe| match f {
+                    FilteredFronter::Included(fr) => {
+                        let mut fronter = fr.clone();
+                        fronter.start_time = Some(fe.content.start_time);
+                        FilteredFronter::Included(fronter)
+                    }
+                    FilteredFronter::Excluded(fr, reason) => {
+                        let mut fronter = fr.clone();
+                        fronter.start_time = Some(fe.content.start_time);
+                        FilteredFronter::Excluded(fronter, reason.clone())
+                    }
                 })
         })
-        .collect();
-
-    fronters
+        .collect()
 }
 
 async fn simply_plural_http_request_get_fronters(
@@ -422,34 +461,39 @@ mod tests {
     fn test_show_member_privacy_respect_front_notifications_disabled() {
         let config = create_test_config(true, true, true);
         let member = create_test_member(false, true);
-        assert!(!show_member_according_to_privacy_rules(&config, &member));
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::FrontNotificationsDisabled)));
     }
 
     #[test]
     fn test_show_member_privacy_archived_shown() {
         let config = create_test_config(false, true, true);
         let member = create_test_member(true, false);
-        assert!(show_member_according_to_privacy_rules(&config, &member));
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Included(_)));
     }
 
     #[test]
     fn test_show_member_privacy_archived_hidden() {
         let config = create_test_config(false, false, true);
         let member = create_test_member(true, false);
-        assert!(!show_member_according_to_privacy_rules(&config, &member));
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)));
     }
 
     #[test]
     fn test_show_member_privacy_non_archived_shown() {
         let config = create_test_config(false, true, true);
         let member = create_test_member(false, false);
-        assert!(show_member_according_to_privacy_rules(&config, &member));
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Included(_)));
     }
 
     #[test]
     fn test_show_member_privacy_non_archived_hidden() {
         let config = create_test_config(false, true, false);
         let member = create_test_member(false, false);
-        assert!(!show_member_according_to_privacy_rules(&config, &member));
+        let result = show_member_according_to_privacy_rules(&config, &member);
+        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::NonArchivedMemberHidden)));
     }
 }

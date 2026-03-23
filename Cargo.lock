@@ -2389,6 +2389,7 @@ dependencies = [
  "env_logger",
  "futures",
  "html-escape",
+ "itertools",
  "jsonwebtoken",
  "lettre",
  "log",

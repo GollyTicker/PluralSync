@@ -23,7 +23,7 @@ pub async fn run_listener_for_changes(
     shared_updaters: manager::UpdaterManager,
     db_pool: &sqlx::PgPool,
     application_user_secrets: &database::ApplicationUserSecrets,
-    fronter_receiver: LatestReceiver<Vec<plurality::Fronter>>,
+    fronter_receiver: LatestReceiver<plurality::FilteredFronters>,
 ) -> () {
     let user_id = &config.user_id;
     log::debug!("# | updater run_loop | {user_id}");
@@ -52,7 +52,7 @@ pub async fn run_listener_for_changes(
         &config,
     );
 
-    while let Some(fronters) = fronter_receiver.recv().await {
+    while let Some(filtered_fronters) = fronter_receiver.recv().await {
         log::debug!(
             "# | updater processing change | {} | ======================= UTC {}",
             config.user_id,
@@ -64,7 +64,7 @@ pub async fn run_listener_for_changes(
 
         log_error_and_continue(
             "Updater Logic",
-            loop_logic(&config, &mut updaters, &fronters, db_pool).await,
+            loop_logic(&config, &mut updaters, &filtered_fronters.fronters, db_pool).await,
             &config,
         );
 

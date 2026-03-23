@@ -18,8 +18,8 @@ type ThreadSafePerUser<T> = SharedMutable<HashMap<UserId, T>>;
 
 type CancleableTasks = Vec<tokio::task::JoinHandle<()>>;
 type FronterChannel = communication::FireAndForgetChannel<
-    Vec<plurality::Fronter>,
-    communication::RateLimitedMostRecentSend<Vec<plurality::Fronter>>,
+    plurality::FilteredFronters,
+    communication::RateLimitedMostRecentSend<plurality::FilteredFronters>,
 >;
 type ForeignStatusChannel =
     communication::FireAndForgetChannel<Option<(updater::Platform, UpdaterStatus)>>;
@@ -60,7 +60,7 @@ impl UpdaterManager {
     pub fn subscribe_fronter_channel(
         &self,
         user_id: &UserId,
-    ) -> Result<communication::LatestReceiver<Vec<plurality::Fronter>>> {
+    ) -> Result<communication::LatestReceiver<plurality::FilteredFronters>> {
         let receiver = self
             .fronter_channel
             .lock()
@@ -80,7 +80,7 @@ impl UpdaterManager {
     pub fn fronter_channel_get_most_recent_sent_value(
         &self,
         user_id: &UserId,
-    ) -> Result<Option<Vec<plurality::Fronter>>> {
+    ) -> Result<Option<plurality::FilteredFronters>> {
         let receiver = self
             .fronter_channel
             .lock()
@@ -416,8 +416,8 @@ impl UpdaterManager {
         )
         .await?;
 
-        let fronters = plurality::fetch_fronts(&config).await?;
-        let fronters_count = fronters.len();
+        let filtered_fronters = plurality::fetch_fronts(&config).await?;
+        let fronters_count = filtered_fronters.fronters.len();
 
         log::debug!(
             "# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched"
@@ -430,7 +430,7 @@ impl UpdaterManager {
             .ok_or_else(|| {
                 anyhow!("fetch_and_update_fronters: No fronter channel found for {user_id}")
             })?
-            .send(fronters);
+            .send(filtered_fronters);
 
         log::debug!(
             "# | fetch_and_update_fronters | {user_id} | {fronters_count} fronters fetched | sent to channel."
@@ -457,7 +457,7 @@ impl UpdaterManager {
 fn compute_rate_limiting_config(
     user_id: &UserId,
     config: &users::UserConfigForUpdater,
-) -> communication::RateLimitedMostRecentSend<Vec<plurality::Fronter>> {
+) -> communication::RateLimitedMostRecentSend<plurality::FilteredFronters> {
     if cfg!(debug_assertions) {
         log::info!("recreate_fronter_channel: using debug rate limits");
         communication::RateLimitedMostRecentSend::new(

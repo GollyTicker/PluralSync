@@ -11,38 +11,41 @@ use serde::Serialize;
 use sqlx::PgPool;
 
 #[derive(Clone, Serialize, specta::Type)]
-pub struct GenericFrontingStatus {
-    inner: String,
+pub struct FrontingStatusWithExclusions {
+    pub fronters: Vec<plurality::Fronter>,
+    pub excluded: Vec<plurality::ExcludedFronter>,
+    pub status_text: String,
 }
 
 #[get("/api/fronting-status")]
 pub async fn get_api_fronting_status(
     jwt: users::Jwt,
-    db_pool: &State<PgPool>,
+    _db_pool: &State<PgPool>,
     application_user_secrets: &State<database::ApplicationUserSecrets>,
     client: &State<reqwest::Client>,
     shared_updaters: &State<updater::UpdaterManager>,
-) -> HttpResult<Json<GenericFrontingStatus>> {
+) -> HttpResult<Json<FrontingStatusWithExclusions>> {
     let user_id = jwt.user_id().map_err(expose_internal_error)?;
 
     log::debug!("# | GET /api/fronting-status/{user_id}");
 
     let config =
-        database::get_user_config_with_secrets(db_pool, &user_id, client, application_user_secrets)
+        database::get_user_config_with_secrets(_db_pool, &user_id, client, application_user_secrets)
             .await
             .map_err(expose_internal_error)?;
 
     log::debug!("# | GET /api/fronting-status/{user_id} | got_config");
 
-    let fronters = shared_updaters
+    let filtered_fronters = shared_updaters
         .fronter_channel_get_most_recent_sent_value(&user_id)
         .map_err(expose_internal_error)?
         .ok_or_else(|| anyhow!("No data from Simply Plural found (2)?"))
         .map_err(expose_internal_error)?;
 
     log::debug!(
-        "# | GET /api/fronting-status/{user_id} | got_config | {} fronts",
-        fronters.len()
+        "# | GET /api/fronting-status/{user_id} | got_config | {} fronts, {} excluded",
+        filtered_fronters.fronters.len(),
+        filtered_fronters.excluded.len()
     );
 
     let fronting_format = plurality::FrontingFormat {
@@ -53,14 +56,13 @@ pub async fn get_api_fronting_status(
         truncate_names_to_length_if_status_too_long: config.status_truncate_names_to,
     };
 
-    let as_status = plurality::format_fronting_status(&fronting_format, &fronters);
+    let status_text = plurality::format_fronting_status(&fronting_format, &filtered_fronters.fronters);
 
-    let result = GenericFrontingStatus { inner: as_status };
-
-    log::debug!(
-        "# | GET /api/fronting-status/{user_id} | got_config | {} fronts | rendered to status string",
-        fronters.len()
-    );
+    let result = FrontingStatusWithExclusions {
+        fronters: filtered_fronters.fronters,
+        excluded: filtered_fronters.excluded,
+        status_text,
+    };
 
     Ok(Json(result))
 }
@@ -89,7 +91,7 @@ pub async fn get_api_fronting_by_user_id(
 
     log::debug!("# | GET /fronting/{website_url_name} | {user_id} | got_config");
 
-    let fronts = shared_updaters
+    let filtered_fronters = shared_updaters
         .fronter_channel_get_most_recent_sent_value(&user_id)
         .map_err(expose_internal_error)?
         .ok_or_else(|| anyhow!("No data from Simply Plural found?"))
@@ -97,14 +99,14 @@ pub async fn get_api_fronting_by_user_id(
 
     log::debug!(
         "# | GET /fronting/{website_url_name} | {user_id} | got_config | {} fronts",
-        fronts.len()
+        filtered_fronters.fronters.len()
     );
 
-    let html = generate_html(&config.website_system_name, &fronts);
+    let html = generate_html(&config.website_system_name, &filtered_fronters.fronters);
 
     log::debug!(
         "# | GET /fronting/{website_url_name} | {user_id} | got_config | {} fronts | HTML generated",
-        fronts.len()
+        filtered_fronters.fronters.len()
     );
 
     Ok(RawHtml(html))

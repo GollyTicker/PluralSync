@@ -9,7 +9,7 @@ import type {
   VRChatCredentialsWithCookie,
   VRChatCredentialsWithTwoFactorAuth,
   VRChatAuthResponse,
-  GenericFrontingStatus,
+  FrontingStatusWithExclusions,
   ResetPasswordAttempt,
   ForgotPasswordRequest,
   EmailVerificationToken,
@@ -21,6 +21,8 @@ import type {
 } from './pluralsync.bindings'
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
+
+export const UNREACHABLE: never = undefined as never;
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_PLURALSYNC_BASE_URL || '' /* use relate url by default */,
@@ -103,9 +105,9 @@ export const pluralsync_api = {
       headers: { Authorization: `Bearer ${jwtString.inner}` },
     })
   },
-  get_fronting_status: async function (): Promise<GenericFrontingStatus> {
+  get_fronting_status: async function (): Promise<FrontingStatusWithExclusions> {
     const jwtString = await getJwt()
-    const response = await http.get<GenericFrontingStatus>('/api/fronting-status', {
+    const response = await http.get<FrontingStatusWithExclusions>('/api/fronting-status', {
       headers: { Authorization: `Bearer ${jwtString.inner}` },
     })
     return response.data

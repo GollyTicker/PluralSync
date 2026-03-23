@@ -5,7 +5,7 @@ use pluralsync::{
     platforms::{
         TwoFactorAuthCode, TwoFactorAuthMethod, TwoFactorCodeRequiredResponse, VRChatCredentials,
         VRChatCredentialsWithCookie, VRChatCredentialsWithTwoFactorAuth,
-        webview_api::GenericFrontingStatus,
+        webview_api::FrontingStatusWithExclusions,
     },
     updater::Platform,
     users::{
@@ -15,6 +15,7 @@ use pluralsync::{
         },
         user_endpoints::{ChangeEmailRequest, DeleteAccountRequest},
     },
+    plurality::{ExcludedFronter, ExclusionReason, FilteredFronter, FilteredFronters, Fronter},
 };
 use pluralsync_base::{
     meta::{
@@ -78,7 +79,7 @@ fn main() -> Result<()> {
         export::<Platform>(conf)?,
         "export type UpdaterStatus = \"Disabled\" | \"Running\" | { \"Error\": string } | \"Starting\"".to_owned(),
         "export type UserUpdatersStatuses = { [p in Platform]?: UpdaterStatus }".to_owned(),
-        export::<GenericFrontingStatus>(conf)?,
+        export::<FrontingStatusWithExclusions>(conf)?,
         export::<VRChatCredentials>(conf)?,
         export::<VRChatCredentialsWithCookie>(conf)?,
         export::<TwoFactorAuthMethod>(conf)?,
@@ -95,6 +96,11 @@ fn main() -> Result<()> {
         export::<DeleteAccountRequest>(conf)?,
         "export type UserInfoUI = { id: UserId, email: { inner: string }, created_at: string }".to_owned(),
         export::<HistoryEntry>(conf)?,
+        export::<Fronter>(conf)?,
+        export::<ExcludedFronter>(conf)?,
+        export::<ExclusionReason>(conf)?,
+        export::<FilteredFronter>(conf)?,
+        export::<FilteredFronters>(conf)?,
     ];
     fs::write(DESTINATION, defs.map(|s| s + ";").join("\n"))?;
     println!("Done.");

@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync};
 use anyhow::Result;
 use sqlx::PgPool;
 
-use crate::{database, platforms, plurality, setup, updater, users};
+use crate::{database, plurality, setup, updater, users};
 
 macro_rules! register_metrics {
     ($pm:ident, $($metric:expr),*) => {

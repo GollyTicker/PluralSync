@@ -67,8 +67,8 @@ fn create_bidirection_websocket_stream_to_bridge(
     ws: rocket_ws::WebSocket,
     user_id: UserId,
     config: users::UserConfigForUpdater,
-    initial_fronters: Option<Vec<plurality::Fronter>>,
-    fronting_channel: LatestReceiver<Vec<plurality::Fronter>>,
+    initial_fronters: Option<plurality::FilteredFronters>,
+    fronting_channel: LatestReceiver<plurality::FilteredFronters>,
     foreign_status_channel: FireAndForgetChannel<Option<(Platform, UpdaterStatus)>>,
 ) -> rocket_ws::Stream!['static] {
     let mut fronting_channel = fronting_channel;
@@ -122,14 +122,14 @@ fn create_bidirection_websocket_stream_to_bridge(
 }
 
 fn send_initial_discord_rich_presence_message(
-    initial_fronters: Option<Vec<plurality::Fronter>>,
+    initial_fronters: Option<plurality::FilteredFronters>,
     user_id: &UserId,
     config: &users::UserConfigForUpdater,
     mut notify: impl FnMut(UpdaterStatus) -> usize,
 ) -> Option<rocket_ws::Message> {
     let initial_discord_rich_presence_message = initial_fronters
         .ok_or_else(|| anyhow!("No initial fronters found!"))
-        .and_then(|f| discord::render_fronts_to_discord_rich_presence(f.as_ref(), config))
+        .and_then(|f| discord::render_fronts_to_discord_rich_presence(f.fronters.as_ref(), config))
         .map(|rp| communication::ServerToBridgeSseMessage {
             discord_rich_presence: Some(rp),
         })
@@ -156,15 +156,15 @@ fn send_initial_discord_rich_presence_message(
 }
 
 fn process_message_from_fronting_channel(
-    fronters_msg: Option<Vec<plurality::Fronter>>,
+    fronters_msg: Option<plurality::FilteredFronters>,
     user_id: &UserId,
     config: &users::UserConfigForUpdater,
     mut notify: impl FnMut(UpdaterStatus) -> usize,
 ) -> LoopStreamControl<rocket_ws::Message> {
     log::info!("# | fronters_chan <-> WS | {user_id} | fronters received");
-    if let Some(fronters) = fronters_msg {
+    if let Some(filtered_fronters) = fronters_msg {
         let rich_presence_result =
-            discord::render_fronts_to_discord_rich_presence(fronters.as_ref(), config);
+            discord::render_fronts_to_discord_rich_presence(filtered_fronters.fronters.as_ref(), config);
         match rich_presence_result {
             Ok(rich_presence) => {
                 let message = communication::ServerToBridgeSseMessage {
