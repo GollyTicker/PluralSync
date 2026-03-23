@@ -47,38 +47,14 @@
       </div>
       <div class="config-item">
         <label>PluralKit Webhook Setup</label>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem">
+        <div class="copyable-field">
           <input
             type="text"
             :value="pkWebhookSetupCommand"
             readonly
-            style="
-              flex: 1;
-              padding: 0.5rem;
-              border: 1px solid black;
-              border-radius: 4px;
-              font-family: monospace;
-              font-size: 0.6em;
-              background-color: lightgrey;
-            "
+            class="webhook-command-input"
           />
-          <button
-            type="button"
-            @click="copyCommand"
-            style="
-              margin-top: 0.5rem;
-              padding: 0.5rem 1rem;
-              background-color: #4caf50;
-              color: white;
-              border: none;
-              border-radius: 4px;
-              cursor: pointer;
-              font-weight: bold;
-              white-space: nowrap;
-            "
-          >
-            {{ copyButtonLabel }}
-          </button>
+          <CopyButton :text="pkWebhookSetupCommand" />
         </div>
       </div>
       <p class="config-description">Follow these steps to set up the webhook:</p>
@@ -110,10 +86,11 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { UserConfigDbEntries, Decrypted, UserId } from '@/pluralsync.bindings'
-import { pluralsync_api } from '@/pluralsync_api'
+import CopyButton from '@/components/CopyButton.vue'
 
 interface Props {
   config: UserConfigDbEntries
+  userId?: UserId // for webhook URL construction
 }
 
 const props = defineProps<Props>()
@@ -129,43 +106,32 @@ function setSecret(key: SecretKeys, event: Event) {
   }
 }
 
-const copyButtonLabel = ref('Copy')
-
-// Get user ID from API for webhook URL construction
-const userId = ref<string>('')
-pluralsync_api
-  .get_user_info()
-  .then((userInfo) => {
-    userId.value = (userInfo.id as UserId).inner
-  })
-  .catch((e) => {
-    console.warn('Failed to fetch user info for webhook URL:', e)
-  })
-
 // Construct webhook URL
 const pkWebhookSetupCommand = computed(() => {
   const baseUrl = window.location.origin
-  return `pk;system webhook ${baseUrl}/api/webhook/pluralkit/${userId.value}`
+  return `pk;system webhook ${baseUrl}/api/webhook/pluralkit/${props.userId?.inner}`
 })
-
-// Copy webhook URL to clipboard
-async function copyCommand() {
-  try {
-    await navigator.clipboard.writeText(pkWebhookSetupCommand.value)
-    copyButtonLabel.value = 'Copied!'
-    setTimeout(() => {
-      copyButtonLabel.value = 'Copy'
-    }, 2000)
-  } catch (err) {
-    console.error('Failed to copy webhook URL:', err)
-    copyButtonLabel.value = 'Copy Failed'
-    setTimeout(() => {
-      copyButtonLabel.value = 'Copy'
-    }, 2000)
-  }
-}
 </script>
 
 <style scoped>
 @import url('../assets/config.css');
+
+.copyable-field {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.copyable-field input {
+  flex: 1;
+}
+
+.webhook-command-input {
+  padding: 0.5rem;
+  border: 1px solid black;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.6em;
+  background-color: lightgrey;
+}
 </style>

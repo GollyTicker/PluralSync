@@ -13,7 +13,11 @@
       <br />
       Stuck with something and still not working despite having re-read the info again and looked
       exactly? Join the discord server and feel free to ask the community for help. (Link in the
-      footer of this website)
+      footer of this website). When contacting us, please include your user id:
+      <div class="copyable-field">
+        <input id="user-id" type="text" :value="userId?.inner" readonly />
+        <CopyButton :text="userId?.inner" />
+      </div>
     </p>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
       <div class="config-section">
@@ -23,7 +27,7 @@
       <p class="config-update-status">{{ status }}</p>
       <SyncConfigPanel :config="config" :defaults="defaults" />
       <SimplyPluralConfigPanel :config="config" />
-      <PluralKitConfigPanel :config="config" />
+      <PluralKitConfigPanel :config="config" :userId="userId" />
       <WebsiteConfigPanel :config="config" :defaults="defaults" />
       <FrontingStatusTextPanel :config="config" :defaults="defaults" />
       <DiscordConfigPanel :config="config" />
@@ -90,7 +94,7 @@
 <script setup lang="ts">
 import { ref, onMounted, type Ref } from 'vue'
 import router from '@/router'
-import type { UserConfigDbEntries } from '@/pluralsync.bindings'
+import type { UserConfigDbEntries, UserId } from '@/pluralsync.bindings'
 import { detailed_error_string, pluralsync_api } from '@/pluralsync_api'
 import SimplyPluralConfigPanel from '@/components/SimplyPluralConfigPanel.vue'
 import PluralKitConfigPanel from '@/components/PluralKitConfigPanel.vue'
@@ -100,11 +104,13 @@ import DiscordConfigPanel from '@/components/DiscordConfigPanel.vue'
 import VRChatConfigPanel from '@/components/VRChatConfigPanel.vue'
 import HistoryConfigPanel from '@/components/HistoryConfigPanel.vue'
 import SyncConfigPanel from '@/components/SyncConfigPanel.vue'
+import CopyButton from '@/components/CopyButton.vue'
 
 const config: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
 const defaults: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
 const status = ref('')
 const currentEmail = ref('')
+const userId = ref<UserId|undefined>(undefined)
 const newEmail = ref('')
 const emailChangeStatus = ref('')
 const emailChangeLoading = ref(false)
@@ -122,6 +128,7 @@ async function fetchUserInfo() {
   try {
     const userInfo = await pluralsync_api.get_user_info()
     currentEmail.value = userInfo.email?.inner || ''
+    userId.value = userInfo.id
     console.log('Received user info: ', userInfo)
   } catch (e) {
     console.warn(e)
@@ -197,4 +204,19 @@ onMounted(async () => {
 
 <style scoped>
 @import url('../assets/config.css');
+
+.copyable-field {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0px;
+}
+
+.copyable-field input {
+  flex: 1;
+  border: 1px solid black;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.6em;
+  background-color: lightgrey;
+}
 </style>

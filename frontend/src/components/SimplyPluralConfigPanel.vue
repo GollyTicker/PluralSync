@@ -85,12 +85,10 @@
           <li>Not use privacy buckets at all and only use the above "Show" toggles</li>
           <li>
             Add the
-            <span
-              style="font-weight: bold"
-              class="copyable"
-              @click="copyText('PluralSync', $event)"
-              title="Click to copy"
-              >PluralSync</span
+            <span style="font-weight: bold" class="copyable"
+              >PluralSync<span style="display: inline-block; margin-left: 0.25rem"
+                ><CopyButton text="PluralSync"
+              /></span></span
             >
             user as a friend on Simply Plural and assign that friend to your existing privacy
             buckets. PluralSync will then show any fronters which are are in privacy buckets the
@@ -142,6 +140,7 @@ import { ref, watch, type Ref } from 'vue'
 import type { UserConfigDbEntries, Decrypted } from '@/pluralsync.bindings'
 import { detailed_error_string } from '@/pluralsync_api'
 import { get_privacy_buckets, type PrivacyBucket } from '@/simply_plural_api'
+import CopyButton from '@/components/CopyButton.vue'
 
 interface Props {
   config: UserConfigDbEntries
@@ -161,19 +160,6 @@ function setSecret(key: SecretKeys, event: Event) {
   } else {
     props.config[key] = undefined
   }
-}
-
-function copyText(text: string, event: MouseEvent) {
-  navigator.clipboard
-    .writeText(text)
-    .then(() => {
-      console.log(`Copied to clipboard: ${text}`)
-      const element = event.target as HTMLElement
-      element.title = 'Copied!'
-    })
-    .catch((err) => {
-      console.error('Failed to copy text: ', err)
-    })
 }
 
 async function refreshPrivacyBuckets() {

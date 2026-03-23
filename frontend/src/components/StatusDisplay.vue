@@ -1,12 +1,15 @@
 <template>
   <div class="status-container">
     <h1 id="status-page-title">Updaters Status</h1>
-    <p v-if="fronting_status?.inner">
-      Example fronting status:
-      <span id="fronting-status-example" class="fronting-status-text">{{
-        fronting_status?.inner
-      }}</span>
-    </p>
+    <div v-if="fronting_status?.inner" class="example-status-wrapper">
+      <p style="display: inline; margin-right: 0.5rem">
+        Example fronting status:
+        <span id="fronting-status-example" class="fronting-status-text">{{
+          fronting_status?.inner
+        }}</span>
+      </p>
+      <CopyButton :text="fronting_status.inner" />
+    </div>
     <div class="status-list">
       <div v-for="(status, name) in updaters" :key="name" class="status-item">
         <span class="service-name">{{ name }}</span>
@@ -29,9 +32,10 @@ import { ref, onMounted, onUnmounted, type Ref } from 'vue'
 import type {
   GenericFrontingStatus,
   UpdaterStatus,
-  UserUpdatersStatuses,
+  UserUpdatersStatuses
 } from '@/pluralsync.bindings'
 import { pluralsync_api } from '@/pluralsync_api'
+import CopyButton from '@/components/CopyButton.vue'
 
 const updaters: Ref<UserUpdatersStatuses> = ref({})
 const fronting_status: Ref<GenericFrontingStatus | undefined> = ref(undefined)
@@ -105,5 +109,12 @@ onUnmounted(() => {
 
 .status-info {
   margin-left: 1rem;
+}
+
+.example-status-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
 }
 </style>
