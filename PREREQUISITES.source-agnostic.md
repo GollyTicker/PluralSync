@@ -19,7 +19,6 @@ pub struct Fronter {
     pub name: String,
     pub pronouns: Option<String>,  // NEW FIELD
     pub avatar_url: String,
-    pub vrchat_status_name: Option<String>,
     pub pluralkit_id: Option<String>,
     pub start_time: Option<chrono::DateTime<chrono::Utc>>,
     pub privacy_buckets: Vec<String>,
@@ -36,7 +35,7 @@ pub struct Fronter {
 ```rust
 impl From<Member> for Fronter {
     fn from(m: Member) -> Self {
-        // Extract pronouns from custom fields (similar to VRChat status name)
+        // Extract pronouns from custom fields
         let pronouns = m.content.pronouns_field_id.as_ref().and_then(|field_id| {
             m.content
                 .info
@@ -51,7 +50,6 @@ impl From<Member> for Fronter {
             name: m.content.name,
             pronouns,  // NEW
             avatar_url: m.content.avatar_url,
-            vrchat_status_name: /* ... */,
             pluralkit_id: m.content.pluralkit_id,
             start_time: None,
             privacy_buckets: m.content.privacy_buckets,
@@ -60,7 +58,7 @@ impl From<Member> for Fronter {
 }
 ```
 
-**Note:** This requires fetching the pronouns field ID similar to how `vrcsn_field_id` is fetched.
+**Note:** This requires fetching the pronouns field ID from SimplyPlural's custom fields API.
 
 #### 1.3 Update `From<CustomFront> for Fronter` implementation
 
@@ -73,7 +71,6 @@ impl From<CustomFront> for Fronter {
             name: cf.content.name,
             pronouns: None,  // Custom fronts don't have pronouns
             avatar_url: cf.content.avatar_url,
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: cf.content.privacy_buckets,
@@ -302,13 +299,13 @@ pub async fn run_listener_for_changes(
 
 ## Prerequisite 3: SimplyPlural Pronouns Field Configuration
 
-**Rationale:** SP stores pronouns in custom fields (user-configurable). Need to fetch the pronouns field ID similar to VRChat status name.
+**Rationale:** SP stores pronouns in custom fields (user-configurable). Need to fetch the pronouns field ID from SimplyPlural's custom fields API.
 
 ### 3.1 Fetch Pronouns Field ID
 
 **File:** `src/plurality/simply_plural.rs`
 
-Add function parallel to `get_vrchat_status_name_field_id`:
+Add function to fetch the pronouns field ID:
 
 ```rust
 async fn get_pronouns_field_id(
@@ -407,10 +404,10 @@ fn collect_clean_fronter_names(
         .iter()
         .map(|f| {
             let name = match fronting_format.cleaning {
-                CleanForPlatform::NoClean => f.preferred_vrchat_status_name().to_owned(),
+                CleanForPlatform::NoClean => f.name.clone(),
                 CleanForPlatform::VRChat => clean_name_for_vrchat_status(&f.name),
             };
-            
+
             if fronting_format.include_pronouns && f.pronouns.is_some() {
                 format!("{} {}", name, format_pronouns(&f.pronouns, &fronting_format.pronouns_format))
             } else {

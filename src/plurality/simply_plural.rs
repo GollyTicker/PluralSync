@@ -5,9 +5,8 @@ use anyhow::{Result, anyhow};
 use crate::{
     int_counter_metric, int_gauge_metric,
     plurality::{
-        CustomField, CustomFront, ExcludedFronter, ExclusionReason, FilteredFronter, FrontEntry, Fronter,
+        CustomFront, ExcludedFronter, ExclusionReason, FilteredFronter, FrontEntry, Fronter,
         FilteredFronters, Friend, GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID, Member,
-        SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME,
     },
     users::{self, PrivacyFineGrained},
 };
@@ -44,10 +43,8 @@ pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<Filter
 
     let system_id = &front_entries[0].content.system_id.clone();
 
-    let vrcsn_field_id = get_vrchat_status_name_field_id(config, system_id).await?;
-
     let frontables =
-        get_members_and_custom_fronters_by_privacy_rules(system_id, vrcsn_field_id, config).await?;
+        get_members_and_custom_fronters_by_privacy_rules(system_id, config).await?;
 
     let fronters_filtered = filter_frontables_by_front_entries(front_entries.as_ref(), &frontables);
 
@@ -94,7 +91,6 @@ fn show_member_according_to_privacy_rules(
 #[allow(clippy::cast_possible_wrap)]
 async fn get_members_and_custom_fronters_by_privacy_rules(
     system_id: &str,
-    vrcsn_field_id: Option<String>,
     config: &users::UserConfigForUpdater,
 ) -> Result<Vec<FilteredFronter>> {
     let all_members: Vec<Member> = simply_plural_http_get_members(config, system_id).await?;
@@ -115,15 +111,7 @@ async fn get_members_and_custom_fronters_by_privacy_rules(
         .with_label_values(&[&config.user_id.to_string()])
         .set(all_custom_fronts.len() as i64);
 
-    let members_with_vrcsn: Vec<Member> = all_members
-        .into_iter()
-        .map(|mut m| {
-            m.content.vrcsn_field_id.clone_from(&vrcsn_field_id);
-            m
-        })
-        .collect();
-
-    let member_results: Vec<FilteredFronter> = members_with_vrcsn
+    let member_results: Vec<FilteredFronter> = all_members
         .iter()
         .map(|m| show_member_according_to_privacy_rules(config, m))
         .collect();
@@ -247,49 +235,6 @@ async fn simply_plural_http_request_get_fronters(
     })?;
 
     Ok(result)
-}
-
-async fn get_vrchat_status_name_field_id(
-    config: &users::UserConfigForUpdater,
-    system_id: &String,
-) -> Result<Option<String>> {
-    log::debug!("# | get_vrchat_status_name_field_id | {}", config.user_id);
-    let custom_fields_url = format!(
-        "{}/customFields/{}",
-        &config.simply_plural_base_url, system_id
-    );
-    let response = config
-        .client
-        .get(&custom_fields_url)
-        .header("Authorization", &config.simply_plural_token.secret)
-        .send()
-        .await?
-        .error_for_status()?
-        .text()
-        .await?;
-
-    let custom_fields: Vec<CustomField> = serde_json::from_str(&response).inspect_err(|e| {
-        log::warn!(
-            "# | get_vrchat_status_name_field_id | {} | {} | input: {}",
-            config.user_id,
-            e,
-            response.chars().take(500).collect::<String>()
-        );
-    })?;
-
-    let vrchat_status_name_field = custom_fields
-        .iter()
-        .find(|field| field.content.name == SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME);
-
-    let field_id = vrchat_status_name_field.map(|field| &field.id);
-
-    log::debug!(
-        "# | get_vrchat_status_name_field_id | {} | field_id {:?}",
-        config.user_id,
-        field_id
-    );
-
-    Ok(field_id.cloned())
 }
 
 async fn simply_plural_http_get_members(
@@ -451,7 +396,6 @@ mod tests {
                 archived,
                 front_notifications_disabled,
                 privacy_buckets: vec![],
-                vrcsn_field_id: None,
                 pluralkit_id: None,
             },
         }
@@ -550,7 +494,6 @@ mod tests {
                 name: "Member 1".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec!["bucket1".to_string()],
@@ -560,7 +503,6 @@ mod tests {
                 name: "Member 2".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -588,7 +530,6 @@ mod tests {
                     name: "Member 1".to_string(),
                     pronouns: None,
                     avatar_url: "".to_string(),
-                    vrchat_status_name: None,
                     pluralkit_id: None,
                     start_time: None,
                     privacy_buckets: vec![],
@@ -623,7 +564,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec!["public".to_string()],
@@ -648,7 +588,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec!["private".to_string()],
@@ -676,7 +615,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec!["private".to_string(), "public".to_string()],
@@ -702,7 +640,6 @@ mod tests {
                 name: "Member 1".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec!["public".to_string()],
@@ -732,7 +669,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec!["public".to_string()],
@@ -760,7 +696,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec![],
@@ -789,7 +724,6 @@ mod tests {
                 name: "Member 1".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -799,7 +733,6 @@ mod tests {
                 name: "Member 2".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -827,7 +760,6 @@ mod tests {
                     name: "Member 1".to_string(),
                     pronouns: None,
                     avatar_url: "".to_string(),
-                    vrchat_status_name: None,
                     pluralkit_id: None,
                     start_time: None,
                     privacy_buckets: vec![],
@@ -839,7 +771,6 @@ mod tests {
                 name: "Member 2".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -868,7 +799,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec![],
@@ -898,7 +828,6 @@ mod tests {
             name: "Member 1".to_string(),
             pronouns: None,
             avatar_url: "".to_string(),
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: vec![],
@@ -918,7 +847,6 @@ mod tests {
                 name: "Member 1".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -928,7 +856,6 @@ mod tests {
                 name: "Member 2".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],
@@ -938,7 +865,6 @@ mod tests {
                 name: "Member 3".to_string(),
                 pronouns: None,
                 avatar_url: "".to_string(),
-                vrchat_status_name: None,
                 pluralkit_id: None,
                 start_time: None,
                 privacy_buckets: vec![],

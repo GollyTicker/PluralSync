@@ -1,5 +1,3 @@
-use std::string::ToString;
-
 use anyhow::Result;
 use derive_more::Debug;
 use serde::Deserialize;
@@ -8,8 +6,6 @@ use tokio_tungstenite::tungstenite;
 
 pub const GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID: &str =
     "eb06960e5b7fb576923f0e909947c0ce8ca46dcbe61ee5af2681f8f59404df5d";
-
-pub const SIMPLY_PLURAL_VRCHAT_STATUS_NAME_FIELD_NAME: &str = "VRChat Status Name";
 
 #[derive(Deserialize, Clone)]
 pub struct FrontEntry {
@@ -58,18 +54,10 @@ pub struct Fronter {
     pub name: String,
     pub pronouns: Option<String>,
     pub avatar_url: String,
-    pub vrchat_status_name: Option<String>,
     pub pluralkit_id: Option<String>,
     #[specta(type = String)]
     pub start_time: Option<chrono::DateTime<chrono::Utc>>,
     pub privacy_buckets: Vec<String>,
-}
-
-impl Fronter {
-    #[must_use]
-    pub fn preferred_vrchat_status_name(&self) -> &str {
-        self.vrchat_status_name.as_ref().unwrap_or(&self.name)
-    }
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
@@ -135,7 +123,6 @@ impl From<CustomFront> for Fronter {
             name: cf.content.name,
             pronouns: None,
             avatar_url: cf.content.avatar_url,
-            vrchat_status_name: None,
             pluralkit_id: None,
             start_time: None,
             privacy_buckets: cf.content.privacy_buckets,
@@ -160,8 +147,7 @@ pub struct MemberContent {
 
     #[serde(default)]
     pub info: serde_json::Value,
-    // if the user uses the custom field "VRChat Status Name" on this member, then this will be
-    // { "<vrcsn_field_id>": "<vrcsn>", ...}
+
     #[serde(default)]
     pub archived: bool,
 
@@ -181,28 +167,15 @@ pub struct MemberContent {
     #[serde(default)]
     #[serde(deserialize_with = "deserialize_non_empty_string_as_option")]
     pub pluralkit_id: Option<String>,
-
-    // this will be populated later after deserialisation
-    #[serde(default)]
-    pub vrcsn_field_id: Option<String>,
 }
 
 impl From<Member> for Fronter {
     fn from(m: Member) -> Self {
-        let vrchat_status_name = m.content.vrcsn_field_id.as_ref().and_then(|field_id| {
-            m.content
-                .info
-                .as_object()
-                .and_then(|custom_fields| custom_fields.get(field_id))
-                .and_then(|value| value.as_str())
-                .map(ToString::to_string)
-        });
         Self {
             fronter_id: m.member_id,
             name: m.content.name,
             pronouns: None,
             avatar_url: m.content.avatar_url,
-            vrchat_status_name,
             pluralkit_id: m.content.pluralkit_id,
             start_time: None,
             privacy_buckets: m.content.privacy_buckets,

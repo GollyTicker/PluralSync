@@ -56,11 +56,8 @@ fn collect_clean_fronter_names(
         fronts
             .iter()
             .map(|f| match fronting_format.cleaning {
-                CleanForPlatform::NoClean => f.preferred_vrchat_status_name().to_owned(),
-                CleanForPlatform::VRChat => f
-                    .vrchat_status_name
-                    .clone()
-                    .unwrap_or_else(|| clean_name_for_vrchat_status(&f.name)),
+                CleanForPlatform::NoClean => f.name.clone(),
+                CleanForPlatform::VRChat => clean_name_for_vrchat_status(&f.name),
             })
             .collect()
     }

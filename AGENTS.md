@@ -119,7 +119,6 @@ PluralSync synchronizes fronting status from SimplyPlural to multiple platforms:
 **1. VRChat Status Updater** (server-managed)
 *   Updates user's VRChat bio with current fronter name(s)
 *   Requires VRChat credentials and authentication cookie
-*   Integrates with custom "VRChat Status Name" field in SimplyPlural
 *   Handles special character cleaning and rate-limit management
 
 **2. Discord Rich Presence Updater** (server-managed or bridge-managed)

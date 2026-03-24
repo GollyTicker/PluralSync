@@ -35,8 +35,6 @@ pub struct FronterData {
 pub struct FronterMetadata {
     /// PluralKit member ID (for PK source or SP→PK enrichment)
     pub pluralkit_member_id: Option<String>,
-    /// SimplyPlural-specific VRChat status name
-    pub vrchat_status_name: Option<String>,
     /// Privacy buckets (SP) or field privacy flags (PK)
     pub privacy: PrivacyInfo,
 }
