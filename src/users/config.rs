@@ -54,6 +54,7 @@ where
     pub enable_vrchat: bool,
     pub enable_to_pluralkit: bool,
     pub enable_from_pluralkit: bool,
+    pub enable_from_sp: bool,
 
     pub website_system_name: Option<String>,
     pub website_url_name: Option<String>,
@@ -103,6 +104,7 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             enable_vrchat: self.enable_vrchat,
             enable_to_pluralkit: self.enable_to_pluralkit,
             enable_from_pluralkit: self.enable_from_pluralkit,
+            enable_from_sp: self.enable_from_sp,
             simply_plural_token: self
                 .simply_plural_token
                 .clone()
@@ -149,6 +151,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             enable_vrchat: false,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
+            enable_from_sp: false,
             valid_constraints: None,
             website_system_name: None,
             website_url_name: None,
@@ -185,6 +188,7 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
             "enable_from_pluralkit".to_owned(),
             user_config.enable_from_pluralkit,
         ),
+        ("enable_from_sp".to_owned(), user_config.enable_from_sp),
         (
             "show_members_non_archived".to_owned(),
             user_config.show_members_non_archived,
@@ -263,6 +267,7 @@ pub struct UserConfigForUpdater {
     pub enable_vrchat: bool,
     pub enable_to_pluralkit: bool,
     pub enable_from_pluralkit: bool,
+    pub enable_from_sp: bool,
 
     pub website_url_name: String,
     pub website_system_name: String,
@@ -327,6 +332,7 @@ where
     let enable_website = local_config_with_defaults.enable_website;
     let enable_to_pluralkit = local_config_with_defaults.enable_to_pluralkit;
     let enable_from_pluralkit = local_config_with_defaults.enable_from_pluralkit;
+    let enable_from_sp = local_config_with_defaults.enable_from_sp;
 
     let config = UserConfigForUpdater {
         user_id: user_id.clone(),
@@ -355,6 +361,7 @@ where
         enable_vrchat,
         enable_to_pluralkit,
         enable_from_pluralkit,
+        enable_from_sp,
         website_url_name: config_value_if!(
             enable_website,
             local_config_with_defaults,
@@ -490,6 +497,7 @@ mod tests {
             enable_discord: false,
             enable_discord_status_message: false,
             enable_vrchat: false,
+            enable_from_sp: true,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
             simply_plural_token: Some(Decrypted {
@@ -560,6 +568,7 @@ mod tests {
             history_truncate_after_days: Some(7),
             fronter_channel_wait_increment: Some(100),
             valid_constraints: None,
+            enable_from_sp: true,
         };
 
         let json_string = serde_json::to_string_pretty(&config).unwrap();
@@ -582,6 +591,7 @@ mod tests {
   "enable_vrchat": false,
   "enable_to_pluralkit": true,
   "enable_from_pluralkit": false,
+  "enable_from_sp": true,
   "website_system_name": "Our System",
   "website_url_name": "our-system",
   "history_limit": 100,
@@ -664,6 +674,7 @@ mod tests {
             enable_discord: false,
             enable_discord_status_message: false,
             enable_vrchat: false,
+            enable_from_sp: true,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
             simply_plural_token: Some(Decrypted {

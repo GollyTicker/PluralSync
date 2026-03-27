@@ -4,6 +4,8 @@ use serde::Deserialize;
 use serde::Deserializer;
 use tokio_tungstenite::tungstenite;
 
+use super::model::Fronter;
+
 pub const GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID: &str =
     "eb06960e5b7fb576923f0e909947c0ce8ca46dcbe61ee5af2681f8f59404df5d";
 
@@ -46,54 +48,6 @@ where
     let s: String = String::deserialize(deserializer)?;
     let non_empty_str_option = if s.is_empty() { None } else { Some(s) };
     Ok(non_empty_str_option)
-}
-
-#[derive(Clone, Debug, serde::Serialize, specta::Type)]
-pub struct Fronter {
-    pub fronter_id: String,
-    pub name: String,
-    pub pronouns: Option<String>,
-    pub avatar_url: String,
-    pub pluralkit_id: Option<String>,
-    #[specta(type = String)]
-    pub start_time: Option<chrono::DateTime<chrono::Utc>>,
-    pub privacy_buckets: Vec<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, serde::Serialize, specta::Type)]
-pub enum ExclusionReason {
-    FrontNotificationsDisabled,
-    ArchivedMemberHidden,
-    NonArchivedMemberHidden,
-    CustomFrontsDisabled,
-    NotInDisplayedPrivacyBuckets,
-}
-
-#[derive(Clone, Debug, serde::Serialize, specta::Type)]
-pub struct ExcludedFronter {
-    pub fronter: Fronter,
-    pub reason: ExclusionReason,
-}
-
-#[derive(Clone, Debug, serde::Serialize, specta::Type)]
-pub enum FilteredFronter {
-    Included(Fronter),
-    Excluded(Fronter, ExclusionReason),
-}
-
-#[derive(Clone, Debug, serde::Serialize, specta::Type)]
-pub struct FilteredFronters {
-    pub fronters: Vec<Fronter>,
-    pub excluded: Vec<ExcludedFronter>,
-}
-
-impl FilteredFronter {
-    pub fn into_included(self) -> Option<Fronter> {
-        match self {
-            FilteredFronter::Included(f) => Some(f),
-            FilteredFronter::Excluded(_, _) => None,
-        }
-    }
 }
 
 #[derive(Deserialize, Clone)]

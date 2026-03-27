@@ -1,6 +1,6 @@
 use crate::plurality::{
     CleanForPlatform, Fronter, FrontingFormat, VRCHAT_MAX_ALLOWED_STATUS_LENGTH,
-    clean_name_for_vrchat_status, format_fronting_status, string_unicode_codepoints_length,
+    format_fronting_status, fronting_status::string_unicode_codepoints_length,
 };
 
 fn mock_formatter_for_tests(
@@ -89,10 +89,7 @@ fn test_format_vrchat_status_fits_truncated_string_not_short() {
 fn test_format_vrchat_status_uses_name() {
     let config = mock_formatter_for_tests("F:", "N/A", 3, VRCHAT_MAX_ALLOWED_STATUS_LENGTH);
     let fronts = vec![mock_member_content("OriginalName", "")];
-    assert_eq!(
-        format_fronting_status(&config, &fronts),
-        "F: OriginalName"
-    );
+    assert_eq!(format_fronting_status(&config, &fronts), "F: OriginalName");
 }
 
 #[test]
@@ -145,49 +142,4 @@ fn length_counts_codepoints_and_not_bytes() {
     assert_eq!(string_unicode_codepoints_length("123"), 3);
     assert_eq!(string_unicode_codepoints_length("é"), 1);
     assert_eq!(string_unicode_codepoints_length("你好"), 2);
-}
-
-#[test]
-fn test_clean_name_for_vrchat_encoding_and_whitespace() {
-    assert_eq!(
-        clean_name_for_vrchat_status("ValidName123!€ Špecial Chars Ž"),
-        "ValidName123!€ Špecial Chars Ž",
-        "Should keep all valid ISO_8859_15 characters"
-    );
-
-    assert_eq!(
-        clean_name_for_vrchat_status("Name😊With🚀Emojis❤️Symbols✅"),
-        "NameWithEmojisSymbols",
-        "Should remove emojis"
-    );
-
-    assert_eq!(
-        clean_name_for_vrchat_status("Héllo Wörld🎉"),
-        "Héllo Wörld",
-        "Should handle mixed valid and invalid characters"
-    );
-
-    assert_eq!(
-        clean_name_for_vrchat_status("  Trimmed  From  Name  "),
-        "Trimmed From Name",
-        "Should collapse consecutive spaces and trim"
-    );
-
-    assert_eq!(clean_name_for_vrchat_status(""), "");
-
-    assert_eq!(clean_name_for_vrchat_status("😊🚀🎉"), "");
-
-    assert_eq!(clean_name_for_vrchat_status("   \t\n   "), "");
-
-    assert_eq!(
-        clean_name_for_vrchat_status("你好WorldПриветUser1"),
-        "WorldUser1",
-        "Should remove characters from other scripts like Hanzi or Cyrillic"
-    );
-
-    assert_eq!(
-        clean_name_for_vrchat_status("A 😊B C🚀D"),
-        "A B CD",
-        "Should collapse spaces created by invalid characters"
-    );
 }

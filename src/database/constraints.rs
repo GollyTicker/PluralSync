@@ -87,6 +87,8 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         enable_discord_status_message: value.enable_discord_status_message,
         enable_vrchat: value.enable_vrchat,
         enable_to_pluralkit: value.enable_to_pluralkit,
+        enable_from_pluralkit: value.enable_from_pluralkit,
+        enable_from_sp: value.enable_from_sp,
         simply_plural_token: value.simply_plural_token.clone(),
         discord_status_message_token: value.discord_status_message_token.clone(),
         vrchat_username: value.vrchat_username.clone(),
@@ -96,7 +98,6 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         history_limit: value.history_limit,
         history_truncate_after_days: value.history_truncate_after_days,
         fronter_channel_wait_increment: value.fronter_channel_wait_increment,
-        enable_from_pluralkit: value.enable_from_pluralkit,
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
     }
 }
@@ -124,6 +125,8 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         enable_discord_status_message: value.enable_discord_status_message,
         enable_vrchat: value.enable_vrchat,
         enable_to_pluralkit: value.enable_to_pluralkit,
+        enable_from_pluralkit: value.enable_from_pluralkit,
+        enable_from_sp: value.enable_from_sp,
         simply_plural_token: value.simply_plural_token.clone(),
         discord_status_message_token: value.discord_status_message_token.clone(),
         vrchat_username: value.vrchat_username.clone(),
@@ -133,7 +136,6 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         history_limit: value.history_limit,
         history_truncate_after_days: value.history_truncate_after_days,
         fronter_channel_wait_increment: value.fronter_channel_wait_increment,
-        enable_from_pluralkit: value.enable_from_pluralkit,
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
     }
 }

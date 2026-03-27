@@ -3,7 +3,7 @@ use pluralsync_base::communication::LatestReceiver;
 use pluralsync_base::updater::UpdaterStatus;
 use std::collections::HashMap;
 
-use crate::plurality::fronting_status::{CleanForPlatform, FrontingFormat, format_fronting_status};
+use crate::plurality::{CleanForPlatform, FrontingFormat, format_fronting_status};
 use crate::updater::platforms::{Platform, Updater};
 use crate::updater::{manager, platforms};
 use crate::users::UserId;

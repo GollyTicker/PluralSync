@@ -34,6 +34,7 @@ pub async fn get_user(
             enable_website,
             enable_to_pluralkit,
             enable_from_pluralkit,
+            enable_from_sp,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
             history_limit,
@@ -100,6 +101,7 @@ pub async fn get_user_secrets(
             enable_vrchat,
             enable_to_pluralkit,
             enable_from_pluralkit,
+            enable_from_sp,
             privacy_fine_grained,
             privacy_fine_grained_buckets,
             history_limit,
@@ -161,6 +163,7 @@ pub async fn set_user_config_secrets(
             history_truncate_after_days = $27,
             fronter_channel_wait_increment = $28,
             enable_from_pluralkit = $29,
+            enable_from_sp = $30,
             enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9)
         WHERE id = $1",
     )
@@ -193,6 +196,7 @@ pub async fn set_user_config_secrets(
     .bind(config.history_truncate_after_days)
     .bind(config.fronter_channel_wait_increment)
     .bind(config.enable_from_pluralkit)
+    .bind(config.enable_from_sp)
     .bind(
         config
             .from_pluralkit_webhook_signing_token

@@ -20,7 +20,7 @@ int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_ARCHIVED_MEMBERS_COUNT);
 int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT);
 
 #[allow(clippy::cast_possible_wrap)]
-pub async fn fetch_fronts(config: &users::UserConfigForUpdater) -> Result<FilteredFronters> {
+pub(crate) async fn fetch_fronts_from_simply_plural(config: &users::UserConfigForUpdater) -> Result<FilteredFronters> {
     let user_id = &config.user_id;
 
     log::info!("# | fetch_fronts | {user_id}");
@@ -383,6 +383,7 @@ mod tests {
             history_truncate_after_days: Default::default(),
             fronter_channel_wait_increment: Default::default(),
             from_pluralkit_webhook_signing_token: Default::default(),
+            enable_from_sp: true,
         }
     }
 

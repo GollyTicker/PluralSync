@@ -416,7 +416,7 @@ impl UpdaterManager {
         )
         .await?;
 
-        let filtered_fronters = plurality::fetch_fronts(&config).await?;
+        let filtered_fronters = plurality::fetch_fronters(&config).await?;
         let fronters_count = filtered_fronters.fronters.len();
 
         log::debug!(

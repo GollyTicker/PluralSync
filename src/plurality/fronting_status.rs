@@ -1,4 +1,4 @@
-use crate::{metric, metrics::SHOULDNT_HAPPEN_BUT_IT_DID, plurality::Fronter};
+use crate::{metric, metrics::SHOULDNT_HAPPEN_BUT_IT_DID, plurality::{FilteredFronters, Fronter, fetch_fronts_from_pluralkit, fetch_fronts_from_simply_plural}};
 
 use encoding_rs::ISO_8859_15;
 
@@ -25,6 +25,27 @@ pub enum CleanForPlatform {
     VRChat,
 }
 
+pub async fn fetch_fronters(
+    config: &crate::users::UserConfigForUpdater,
+) -> Result<FilteredFronters, anyhow::Error> {
+    if config.enable_from_sp {
+        log::debug!(
+            "Fetching fronters from SimplyPlural for user {}",
+            config.user_id
+        );
+        fetch_fronts_from_simply_plural(config).await
+    } else if config.enable_from_pluralkit {
+        log::debug!(
+            "Fetching fronters from PluralKit for user {}",
+            config.user_id
+        );
+        fetch_fronts_from_pluralkit(config).await
+    } else {
+        Err(anyhow::anyhow!("No source for fronts configured."))
+    }
+}
+
+
 #[must_use]
 pub fn format_fronting_status(fronting_format: &FrontingFormat, fronts: &[Fronter]) -> String {
     let cleaned_fronter_names = collect_clean_fronter_names(fronting_format, fronts);
@@ -37,7 +58,7 @@ pub fn format_fronting_status(fronting_format: &FrontingFormat, fronts: &[Fronte
         );
 
     let status =
-        pick_longest_string_within_vrchat_status_length_limit(fronting_format, &status_strings);
+        pick_longest_string_within_status_length_limit(fronting_format, &status_strings);
 
     FRONTING_STATUS_STRING
         .with_label_values(&[&status.len().to_string()])
@@ -126,7 +147,7 @@ fn compute_status_strings_of_decreasing_lengths_for_aesthetics_and_information_t
     vec![long_string, short_string, truncated_string, count_string]
 }
 
-fn pick_longest_string_within_vrchat_status_length_limit(
+fn pick_longest_string_within_status_length_limit(
     fronting_format: &FrontingFormat,
     status_strings: &[String],
 ) -> String {
