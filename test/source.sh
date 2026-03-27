@@ -79,6 +79,7 @@ get_user_config_json() {
         \"privacy_fine_grained\": \"${PRIVACY_FINE_GRAINED}\",
         \"privacy_fine_grained_buckets\": ${PRIVACY_FINE_GRAINED_BUCKETS},
         \"history_limit\": ${HISTORY_LIMIT},
+        \"enable_from_sp\": true,
         \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
         \"fronter_channel_wait_increment\": ${FRONTER_CHANNEL_WAIT_INCREMENT},
         $PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE

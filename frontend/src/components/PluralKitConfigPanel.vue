@@ -1,5 +1,5 @@
 <template>
-  <div class="config-section">
+  <div class="config-section" v-show="showPluralKitConfigInDev">
     <h2>PluralKit</h2>
     <div class="config-grid">
       <div class="config-item">
@@ -42,6 +42,9 @@
           PluralSync will listen for changes in your system and fronting from PluralKit via webhook
           and update your status on all connected platforms. This option cannot be simultanously
           activated, when pluralkit is also a sync destination.
+          <br />
+          Note, that only one system manager for fronting is supported at a time (either PluralKit
+          or SimplyPlural as source).
         </p>
         <input id="enable_from_pluralkit" type="checkbox" v-model="config.enable_from_pluralkit" />
       </div>
@@ -94,6 +97,11 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+
+// Show PluralKit config everywhere EXCEPT public-test.pluralsync.org
+const showPluralKitConfigInDev = computed(() => {
+  return !location.href.includes('public-test')
+})
 
 type SecretKeys = 'pluralkit_token' | 'from_pluralkit_webhook_signing_token'
 

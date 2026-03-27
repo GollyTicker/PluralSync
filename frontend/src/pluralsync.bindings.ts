@@ -58,8 +58,23 @@ export type EmailVerificationResponse = { message: string };
 export type DeleteAccountRequest = { password: UserProvidedPassword; confirmation: string };
 export type UserInfoUI = { id: UserId, email: { inner: string }, created_at: string };
 export type HistoryEntry = { id: string; user_id: UserId; status_text: string; created_at: string };
+/**
+ * Generic representation of a fronter from any system source (SimplyPlural, PluralKit, etc.)
+ */
 export type Fronter = { fronter_id: string; name: string; pronouns: string | null; avatar_url: string; pluralkit_id: string | null; start_time: string; privacy_buckets: string[] };
+/**
+ * A fronter that has been excluded along with the reason
+ */
 export type ExcludedFronter = { fronter: Fronter; reason: ExclusionReason };
-export type ExclusionReason = "FrontNotificationsDisabled" | "ArchivedMemberHidden" | "NonArchivedMemberHidden" | "CustomFrontsDisabled" | "NotInDisplayedPrivacyBuckets";
+/**
+ * Reasons why a fronter might be excluded from display
+ */
+export type ExclusionReason = "FrontNotificationsDisabled" | "ArchivedMemberHidden" | "NonArchivedMemberHidden" | "CustomFrontsDisabled" | "NotInDisplayedPrivacyBuckets" | "MemberPrivacyPrivate";
+/**
+ * A fronter that has been filtered, either included or excluded with a reason
+ */
 export type FilteredFronter = { Included: Fronter } | { Excluded: [Fronter, ExclusionReason] };
+/**
+ * Collection of filtered fronters, separated into included and excluded
+ */
 export type FilteredFronters = { fronters: Fronter[]; excluded: ExcludedFronter[] };

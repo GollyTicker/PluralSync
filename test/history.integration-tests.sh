@@ -62,7 +62,7 @@ test_history_records_fronting_changes() {
 
     STATUS_TEXT="$(echo "$HISTORY" | jq -r '.[0].status_text')"
     grep -q "Annalea" <<< "$STATUS_TEXT"
-    grep -q "Borgn" <<< "$STATUS_TEXT"
+    grep -q "Borgnen" <<< "$STATUS_TEXT"
     grep -q "Daenssa" <<< "$STATUS_TEXT"
 }
 
@@ -102,7 +102,7 @@ test_history_order_descending() {
     FIRST_STATUS="$(echo "$HISTORY" | jq -r '.[0].status_text')"
     THIRD_STATUS="$(echo "$HISTORY" | jq -r '.[2].status_text')"
 
-    grep -q "tš" <<< "$FIRST_STATUS"
+    grep -q "tešt" <<< "$FIRST_STATUS"
     grep -q "Annalea" <<< "$THIRD_STATUS"
 
     FIRST_TIME="$(echo "$HISTORY" | jq -r '.[0].created_at')"

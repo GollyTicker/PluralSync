@@ -1,0 +1,2 @@
+ALTER TABLE users ADD COLUMN enable_from_sp BOOLEAN NOT NULL DEFAULT true;
+ALTER TABLE users ALTER COLUMN enable_from_sp SET DEFAULT false;

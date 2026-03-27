@@ -465,7 +465,7 @@ describe('PluralSync updater status and config save and restarts', () => {
         await expect($('#Discord-status')).toHaveText('Disabled');
         const status = await $('.fronting-status-text');
         await status.waitForExist({timeout: 7000})
-        await expect(status).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
+        await expect(status).toHaveText('F: Annalea 💖 A., Borgnen 👍 B., Daenssa 📶 D., Cstm First');
     });
 
     it('should be able to re-enable discord and to-pluralkit', async () => {
@@ -486,7 +486,7 @@ describe('PluralSync updater status and config save and restarts', () => {
         await expect($('#Discord-status')).toHaveText('Starting');
         const status = await $('.fronting-status-text');
         await status.waitForExist({timeout: 7000})
-        await expect(status).toHaveText('F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First');
+        await expect(status).toHaveText('F: Annalea 💖 A., Borgnen 👍 B., Daenssa 📶 D., Cstm First');
         
         await takeMobileScreenshot("status")
     });
@@ -538,7 +538,7 @@ describe('PluralSync history tab', () => {
     it('should display history entries when history is enabled', async () => {
         await navigateToHistory();
         await loggedInAndOnHistoryPage();
-        await expect($('.history-status-text')).toHaveText("F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First");
+        await expect($('.history-status-text')).toHaveText('F: Annalea 💖 A., Borgnen 👍 B., Daenssa 📶 D., Cstm First');
     
         await takeMobileScreenshot("history-fronting")    
     });

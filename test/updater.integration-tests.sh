@@ -53,10 +53,10 @@ check_system_fronts_set() {
     echo "check_system_fronts_set '$SET'"
 
     if [[ "$SET" == "A" ]]; then
-        check_discord_status_string_equals "F: Annalea 💖 A., Borgn B., Daenssa 📶 D., Cstm First"
+        check_discord_status_string_equals "F: Annalea 💖 A., Borgnen 👍 B., Daenssa 📶 D., Cstm First"
         check_to_pluralkit_fronters_equals "$BORGNEN_ID_PK,$DAENSSA_ID_PK,$ANNALEA_ID_PK"
     elif [[ "$SET" == "B" ]]; then
-        check_discord_status_string_equals "F: tš▶️漢ク汉漢"
+        check_discord_status_string_equals "F: tešt ▶️ t. 漢字 クケ 汉字 漢字"
         check_to_pluralkit_fronters_equals "$TEST_MEMBER_ID_PK"
     elif [[ "$SET" == "C-limited-visibility" ]]; then
         check_discord_status_string_equals "F: NK notif-ok"

@@ -2,7 +2,14 @@ use anyhow::{Result, anyhow};
 use serde::{Deserialize, Serialize};
 use sqlx;
 
-use crate::{int_counter_metric, metric, updater, users::UserId};
+use crate::{
+    database::Decrypted,
+    int_counter_metric, metric, updater,
+    users::{UserConfigForUpdater, UserId},
+};
+
+use super::model::{ExcludedFronter, ExclusionReason, FilteredFronter, FilteredFronters, Fronter};
+use itertools::Itertools;
 
 int_counter_metric!(PLURALKIT_API_REQUESTS_TOTAL);
 metric!(
@@ -29,14 +36,14 @@ pub async fn fetch_and_update_fronters(
 
 pub async fn fetch_current_fronters(
     client: &reqwest::Client,
-    pluralkit_token: &str,
+    pluralkit_token: &Decrypted,
     user_id: &UserId,
 ) -> Result<PkFronters> {
     let url = "https://api.pluralkit.me/v2/systems/@me/fronters";
 
     let response = client
         .get(url)
-        .header("Authorization", pluralkit_token)
+        .header("Authorization", &pluralkit_token.secret)
         .header("User-Agent", PLURALKIT_USER_AGENT)
         .send()
         .await?;
@@ -115,6 +122,67 @@ pub fn measure_rate_limits(user_id: &UserId, response: &reqwest::Response) {
     }
 }
 
+#[allow(clippy::cast_possible_wrap)]
+pub(crate) async fn fetch_fronts_from_pluralkit(config: &UserConfigForUpdater) -> Result<FilteredFronters> {
+    let user_id = &config.user_id;
+
+    log::info!("# | pluralkit::fetch_fronts | {user_id}");
+
+    PLURALKIT_API_REQUESTS_TOTAL
+        .with_label_values(&[&user_id.to_string()])
+        .inc();
+
+    let client = reqwest::Client::new();
+    let pk_fronters = fetch_current_fronters(&client, &config.pluralkit_token, user_id).await?;
+
+    let frontables = get_pk_members_by_privacy_rules(&pk_fronters.members, config);
+
+    let (fronters, excluded): (Vec<_>, Vec<_>) =
+        frontables.into_iter().partition_map(|result| match result {
+            FilteredFronter::Included(f) => itertools::Either::Left(f),
+            FilteredFronter::Excluded(f, reason) => {
+                itertools::Either::Right(ExcludedFronter { fronter: f, reason })
+            }
+        });
+
+    for f in &fronters {
+        log::debug!("# | pluralkit::fetch_fronts | {user_id} | fronter[*] {f:?}");
+    }
+
+    Ok(FilteredFronters { fronters, excluded })
+}
+
+fn show_pk_member_according_to_privacy_rules(
+    config: &UserConfigForUpdater,
+    member: &PkMember,
+) -> FilteredFronter {
+    // Check if member visibility is private - exclude entirely
+    if let Some(privacy) = &member.privacy {
+        if privacy.visibility == PrivacyLevel::Private {
+            let fronter = Fronter::from(member.clone());
+            return FilteredFronter::Excluded(fronter, ExclusionReason::MemberPrivacyPrivate);
+        }
+    }
+
+    let fronter = Fronter::from(member.clone());
+
+    if member.is_archived && !config.show_members_archived {
+        return FilteredFronter::Excluded(fronter, ExclusionReason::ArchivedMemberHidden);
+    }
+
+    FilteredFronter::Included(fronter)
+}
+
+fn get_pk_members_by_privacy_rules(
+    members: &[PkMember],
+    config: &UserConfigForUpdater,
+) -> Vec<FilteredFronter> {
+    members
+        .iter()
+        .map(|m| show_pk_member_according_to_privacy_rules(config, m))
+        .collect()
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PkFronters {
     pub timestamp: chrono::DateTime<chrono::Utc>,
@@ -166,6 +234,48 @@ pub struct PkMemberFieldPrivacy {
     pub metadata_privacy: PrivacyLevel,
     #[serde(default)]
     pub proxy_privacy: PrivacyLevel,
+}
+
+impl From<PkMember> for Fronter {
+    fn from(m: PkMember) -> Self {
+        // Check if member visibility is private - return minimal fronter
+        if let Some(privacy) = &m.privacy {
+            if privacy.visibility == PrivacyLevel::Private {
+                return Self {
+                    fronter_id: m.id,
+                    name: m.name,
+                    pronouns: None,
+                    avatar_url: String::new(),
+                    pluralkit_id: None,
+                    start_time: None,
+                    privacy_buckets: vec![],
+                };
+            }
+        }
+
+        // Apply field-level privacy
+        let pronouns = m.pronouns.filter(|_| {
+            m.privacy
+                .as_ref()
+                .map_or(true, |p| p.pronoun_privacy == PrivacyLevel::Public)
+        });
+
+        let avatar_url = m.avatar_url.filter(|_| {
+            m.privacy
+                .as_ref()
+                .map_or(true, |p| p.avatar_privacy == PrivacyLevel::Public)
+        });
+
+        Self {
+            fronter_id: m.id,
+            name: m.name,
+            pronouns,
+            avatar_url: avatar_url.unwrap_or_default(),
+            pluralkit_id: Some(m.uuid),
+            start_time: None,
+            privacy_buckets: vec![],
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]

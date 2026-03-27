@@ -1,6 +1,6 @@
 <template>
   <div class="config-section">
-    <h2>Simply Plural</h2>
+    <h2>Sync From Simply Plural</h2>
     <div class="config-grid">
       <div class="config-item">
         <label for="simply_plural_token">Simply Plural Token</label>
@@ -9,6 +9,8 @@
           changes. To make one, open
           <a href="https://app.apparyllis.com/" target="_blank">SimplyPlural</a>, go to Settings >
           Account > Tokens, create a READ token and copy-paste it here.
+          <br />
+          Note, that only one system manager for fronting is supported at a time (either PluralKit or SimplyPlural as source).
         </p>
         <input
           id="simply_plural_token"

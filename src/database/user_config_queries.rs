@@ -163,8 +163,8 @@ pub async fn set_user_config_secrets(
             history_truncate_after_days = $27,
             fronter_channel_wait_increment = $28,
             enable_from_pluralkit = $29,
-            enable_from_sp = $30,
-            enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9)
+            enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9),
+            enable_from_sp = $31
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -196,12 +196,12 @@ pub async fn set_user_config_secrets(
     .bind(config.history_truncate_after_days)
     .bind(config.fronter_channel_wait_increment)
     .bind(config.enable_from_pluralkit)
-    .bind(config.enable_from_sp)
     .bind(
         config
             .from_pluralkit_webhook_signing_token
             .map(|s| s.secret),
     )
+    .bind(config.enable_from_sp)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;
