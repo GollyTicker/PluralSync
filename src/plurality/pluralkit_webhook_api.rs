@@ -2,7 +2,12 @@ use anyhow::Result;
 use rocket::{State, http::Status, post};
 use sqlx::PgPool;
 
-use crate::{database, int_counter_metric, plurality, updater::UpdaterManager, users::UserId};
+use crate::{
+    database::{self, ApplicationUserSecrets},
+    int_counter_metric, plurality,
+    updater::UpdaterManager,
+    users::UserId,
+};
 
 int_counter_metric!(PLURALKIT_WEBHOOK_REQUESTS_TOTAL);
 int_counter_metric!(PLURALKIT_WEBHOOK_VALIDATION_FAILURES_TOTAL);
@@ -91,20 +96,16 @@ pub async fn post_api_webhook_pluralkit_user_id(
     // asynchronously initiate the fetching and updating of fronters and members
     let user_id = user_id.clone();
     let db_pool: PgPool = db_pool.inner().clone();
+    let client: reqwest::Client = client.inner().clone();
+    let application_user_secrets: ApplicationUserSecrets = application_user_secrets.inner().clone();
     let updater_manager: UpdaterManager = updater_manager.inner().clone();
     tokio::spawn(async move {
-        match plurality::fetch_and_update_fronters(&user_id, &db_pool, &updater_manager).await {
-            Ok(()) => {
-                PLURALKIT_WEBHOOK_FETCH_TRIGGERED_TOTAL
-                    .with_label_values(&[&user_id.to_string()])
-                    .inc();
-                log::info!(
-                    "# | handle_pluralkit_webhook | {user_id} | fetch triggered successfully"
-                );
-            }
-            Err(e) => {
-                log::warn!("# | handle_pluralkit_webhook | {user_id} | fetch failed: {e}");
-            }
+        match updater_manager
+            .fetch_and_update_fronters(&user_id, &client, &db_pool, &application_user_secrets)
+            .await
+        {
+            Ok(()) => (),
+            Err(e) => log::warn!("# | handle_pluralkit_webhook | {user_id} | fetch failed: {e}"),
         }
     });
 

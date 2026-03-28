@@ -399,7 +399,7 @@ impl UpdaterManager {
         })
     }
 
-    async fn fetch_and_update_fronters(
+    pub async fn fetch_and_update_fronters(
         &self,
         user_id: &UserId,
         client: &reqwest::Client,

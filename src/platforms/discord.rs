@@ -93,7 +93,7 @@ pub fn render_fronts_to_discord_rich_presence(
         details: Some(short_fronters_string),
         details_url: url.clone(), // // future: link to fronting web url
         state: Some(long_fronters_string),
-        state_url: url.clone(),
+        state_url: url,
         start_time: most_recent_fronting_change,
         end_time: None,        // we can't predict when the fronting will stop
         large_image_url: None, // future: populate these fields.

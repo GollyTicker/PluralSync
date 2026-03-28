@@ -22,6 +22,7 @@ async function copy() {
       label.value = 'Copy'
     }, 2000)
   } catch (err) {
+    console.log(err)
     label.value = 'Failed'
     setTimeout(() => {
       label.value = 'Copy'

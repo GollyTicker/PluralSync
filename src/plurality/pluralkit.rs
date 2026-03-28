@@ -1,10 +1,9 @@
-use anyhow::{Result, anyhow};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use sqlx;
 
 use crate::{
     database::Decrypted,
-    int_counter_metric, metric, updater,
+    int_counter_metric, metric,
     users::{UserConfigForUpdater, UserId},
 };
 
@@ -26,15 +25,7 @@ pub const PLURALKIT_USER_AGENT: &str = concat!(
     env!("USER_AGENT_DISCORD_USERNAME")
 );
 
-pub async fn fetch_and_update_fronters(
-    _user_id: &UserId,
-    _db_pool: &sqlx::PgPool,
-    _updater_manager: &updater::UpdaterManager,
-) -> Result<()> {
-    Err(anyhow!("not implemented"))?
-}
-
-pub async fn fetch_current_fronters(
+async fn http_pluralkit_fronters(
     client: &reqwest::Client,
     pluralkit_token: &Decrypted,
     user_id: &UserId,
@@ -70,16 +61,16 @@ pub async fn fetch_current_fronters(
     Ok(fronters)
 }
 
-pub async fn fetch_system_members(
+async fn http_pluralkit_members(
     client: &reqwest::Client,
-    pluralkit_token: &str,
+    pluralkit_token: &Decrypted,
     user_id: &UserId,
 ) -> Result<Vec<PkMember>> {
     let url = "https://api.pluralkit.me/v2/systems/@me/members";
 
     let response = client
         .get(url)
-        .header("Authorization", pluralkit_token)
+        .header("Authorization", &pluralkit_token.secret)
         .header("User-Agent", PLURALKIT_USER_AGENT)
         .send()
         .await?
@@ -133,9 +124,16 @@ pub async fn fetch_fronts_from_pluralkit(
         .inc();
 
     let client = reqwest::Client::new();
-    let pk_fronters = fetch_current_fronters(&client, &config.pluralkit_token, user_id).await?;
+    let pk_fronters = http_pluralkit_fronters(&client, &config.pluralkit_token, user_id).await?;
 
-    let frontables = get_pk_members_by_privacy_rules(&pk_fronters.members, config);
+    let pk_members = http_pluralkit_members(&client, &config.pluralkit_token, user_id).await?;
+
+    let fronting_members: Vec<PkMember> = pk_members
+        .into_iter()
+        .filter(|m| pk_fronters.members.contains(&m.id))
+        .collect();
+
+    let frontables = get_pk_members_by_privacy_rules(&fronting_members, config);
 
     let (fronters, excluded): (Vec<_>, Vec<_>) =
         frontables.into_iter().partition_map(|result| match result {
@@ -186,7 +184,7 @@ fn get_pk_members_by_privacy_rules(
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PkFronters {
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub members: Vec<PkMember>,
+    pub members: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
