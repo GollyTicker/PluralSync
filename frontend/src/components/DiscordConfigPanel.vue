@@ -6,6 +6,31 @@
         <div class="config-item">
           <label for="enable_discord">Enable Discord Rich Presence</label>
           <input id="enable_discord" type="checkbox" v-model="config.enable_discord" />
+        </div>
+        <div class="config-item">
+          <label for="discord_rich_presence_url">Rich Presence Link</label>
+          <p class="config-description">
+            Choose what happens when someone clicks on your Discord Rich Presence.
+          </p>
+          <select id="discord_rich_presence_url" v-model="config.discord_rich_presence_url">
+            <option value="PluralSyncFrontingWebsiteIfDefined">
+              Your Systems' PluralSync Fronting Website (if configured; default)
+            </option>
+            <option value="CustomUrl">A Custom URL</option>
+            <option value="PluralSyncAboutPage">PluralSync About Page</option>
+            <option value="None">Nothing</option>
+          </select>
+        </div>
+        <div v-if="config.discord_rich_presence_url === 'CustomUrl'" class="config-item">
+          <label for="discord_rich_presence_url_custom">Rich Presence Custom URL</label>
+          <input
+            id="discord_rich_presence_url_custom"
+            type="url"
+            v-model="config.discord_rich_presence_url_custom"
+            placeholder="https://example.com"
+          />
+        </div>
+        <div class="config-item">
           <p class="config-description">
             If enabled, shows your fronting status as a
             <a href="https://discord.com/developers/docs/rich-presence/overview"

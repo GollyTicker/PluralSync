@@ -2,7 +2,7 @@ use crate::metrics::SHOULDNT_HAPPEN_BUT_IT_DID;
 use crate::platforms::discord;
 use crate::updater::Platform;
 use crate::users::UserId;
-use crate::{database, plurality, updater, users};
+use crate::{database, plurality, setup, updater, users};
 use anyhow::{Result, anyhow};
 use futures::never;
 use pluralsync_base::communication::{self, FireAndForgetChannel, LatestReceiver};
@@ -24,6 +24,7 @@ pub async fn get_api_user_platform_discord_bridge_events(
     db_pool: &State<PgPool>,
     client: &State<reqwest::Client>,
     application_user_secrets: &State<database::ApplicationUserSecrets>,
+    smtp_config: &State<setup::SmtpConfig>,
 ) -> Result<rocket_ws::Stream!['static], response::Debug<anyhow::Error>> {
     let user_id = jwt.user_id()?;
     let user_id_c = user_id.clone();
@@ -53,6 +54,7 @@ pub async fn get_api_user_platform_discord_bridge_events(
         initial_fronters,
         fronting_channel,
         foreign_status_channel,
+        smtp_config.inner().clone(),
     );
 
     log::info!(
@@ -70,6 +72,7 @@ fn create_bidirection_websocket_stream_to_bridge(
     initial_fronters: Option<plurality::FilteredFronters>,
     fronting_channel: LatestReceiver<plurality::FilteredFronters>,
     foreign_status_channel: FireAndForgetChannel<Option<(Platform, UpdaterStatus)>>,
+    smtp_config: setup::SmtpConfig,
 ) -> rocket_ws::Stream!['static] {
     let mut fronting_channel = fronting_channel;
     let mut foreign_status_channel = foreign_status_channel;
@@ -81,7 +84,7 @@ fn create_bidirection_websocket_stream_to_bridge(
         let ping_interval = std::time::Duration::from_secs(60);
         let mut last_received_fronters_msg = initial_fronters.clone();
 
-        if let Some(m) = send_initial_discord_rich_presence_message(initial_fronters, &user_id, &config, notify.clone()) {
+        if let Some(m) = send_initial_discord_rich_presence_message(initial_fronters, &user_id, &config, &smtp_config, notify.clone()) {
             yield m;
         }
 
@@ -98,7 +101,7 @@ fn create_bidirection_websocket_stream_to_bridge(
                 },
                 fronters_msg = fronting_channel.recv() => {
                     last_received_fronters_msg = fronters_msg.clone();
-                    match process_message_from_fronting_channel(fronters_msg, &user_id, &config, notify) {
+                    match process_message_from_fronting_channel(fronters_msg, &user_id, &config, &smtp_config, notify) {
                         Break => break,
                         Continue => continue,
                         Yield(m) => yield m,
@@ -108,7 +111,7 @@ fn create_bidirection_websocket_stream_to_bridge(
                 // So we just send a ping intentionally every minute and re-send the last fronters message.
                 () = tokio::time::sleep(ping_interval) => {
                     log::debug!("# | fronters_chan <-> WS | {user_id} | ping re-sending last fronters.");
-                    match process_message_from_fronting_channel(last_received_fronters_msg.clone(), &user_id, &config, notify) {
+                    match process_message_from_fronting_channel(last_received_fronters_msg.clone(), &user_id, &config, &smtp_config, notify) {
                         Break => break,
                         Continue => continue,
                         Yield(m) => yield m,
@@ -125,11 +128,18 @@ fn send_initial_discord_rich_presence_message(
     initial_fronters: Option<plurality::FilteredFronters>,
     user_id: &UserId,
     config: &users::UserConfigForUpdater,
+    smtp_config: &setup::SmtpConfig,
     mut notify: impl FnMut(UpdaterStatus) -> usize,
 ) -> Option<rocket_ws::Message> {
     let initial_discord_rich_presence_message = initial_fronters
         .ok_or_else(|| anyhow!("No initial fronters found!"))
-        .and_then(|f| discord::render_fronts_to_discord_rich_presence(f.fronters.as_ref(), config))
+        .and_then(|f| {
+            discord::render_fronts_to_discord_rich_presence(
+                f.fronters.as_ref(),
+                config,
+                smtp_config,
+            )
+        })
         .map(|rp| communication::ServerToBridgeSseMessage {
             discord_rich_presence: Some(rp),
         })
@@ -159,12 +169,16 @@ fn process_message_from_fronting_channel(
     fronters_msg: Option<plurality::FilteredFronters>,
     user_id: &UserId,
     config: &users::UserConfigForUpdater,
+    smtp_config: &setup::SmtpConfig,
     mut notify: impl FnMut(UpdaterStatus) -> usize,
 ) -> LoopStreamControl<rocket_ws::Message> {
     log::info!("# | fronters_chan <-> WS | {user_id} | fronters received");
     if let Some(filtered_fronters) = fronters_msg {
-        let rich_presence_result =
-            discord::render_fronts_to_discord_rich_presence(filtered_fronters.fronters.as_ref(), config);
+        let rich_presence_result = discord::render_fronts_to_discord_rich_presence(
+            filtered_fronters.fronters.as_ref(),
+            config,
+            smtp_config,
+        );
         match rich_presence_result {
             Ok(rich_presence) => {
                 let message = communication::ServerToBridgeSseMessage {

@@ -9,7 +9,7 @@ use pluralsync::{
     },
     updater::Platform,
     users::{
-        PrivacyFineGrained, UserId,
+        DiscordRichPresenceUrl, PrivacyFineGrained, UserId,
         auth_endpoints::{
             EmailVerificationResponse, ForgotPasswordRequest, ResetPasswordAttempt,
         },
@@ -73,8 +73,11 @@ fn main() -> Result<()> {
     history_limit?: number;
     history_truncate_after_days?: number;
     fronter_channel_wait_increment?: number;
+    discord_rich_presence_url?: DiscordRichPresenceUrl;
+    discord_rich_presence_url_custom?: string;
 }".to_owned(),
         export::<PrivacyFineGrained>(conf)?,
+        export::<DiscordRichPresenceUrl>(conf)?,
         export::<JwtString>(conf)?,
         export::<Platform>(conf)?,
         "export type UpdaterStatus = \"Disabled\" | \"Running\" | { \"Error\": string } | \"Starting\"".to_owned(),

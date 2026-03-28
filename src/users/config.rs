@@ -24,6 +24,19 @@ pub enum PrivacyFineGrained {
     ViaPrivacyBuckets,
 }
 
+#[derive(
+    Display, Clone, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
+)]
+#[specta(export)]
+#[sqlx(type_name = "discord_rich_presence_url")]
+pub enum DiscordRichPresenceUrl {
+    None,
+    PluralSyncAboutPage,
+    #[default]
+    PluralSyncFrontingWebsiteIfDefined,
+    CustomUrl,
+}
+
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Clone, Serialize, Deserialize, FromRow, PartialEq, Eq)] // DO NOT ADD DEBUG HERE! Risk of printing sensitive data!
 pub struct UserConfigDbEntries<Secret, Constraints = database::InvalidConstraints>
@@ -63,6 +76,9 @@ where
     pub history_truncate_after_days: Option<i32>,
 
     pub fronter_channel_wait_increment: Option<i32>,
+
+    pub discord_rich_presence_url: DiscordRichPresenceUrl,
+    pub discord_rich_presence_url_custom: Option<String>,
 
     pub simply_plural_token: Option<Secret>,
     pub discord_status_message_token: Option<Secret>,
@@ -129,6 +145,8 @@ impl<S: SecretType> UserConfigDbEntries<S> {
                 .fronter_channel_wait_increment
                 .or(defaults.fronter_channel_wait_increment),
             valid_constraints: self.valid_constraints.clone(), // Constraints are not defaulted
+            discord_rich_presence_url: self.discord_rich_presence_url.clone(),
+            discord_rich_presence_url_custom: self.discord_rich_presence_url_custom.clone(),
         }
     }
 }
@@ -165,6 +183,8 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             vrchat_cookie: None,
             pluralkit_token: None,
             from_pluralkit_webhook_signing_token: None,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
         }
     }
 }
@@ -236,6 +256,14 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
             "fronter_channel_wait_increment_configured".to_owned(),
             user_config.fronter_channel_wait_increment != defaults.fronter_channel_wait_increment,
         ),
+        (
+            "discord_rich_presence_url_set".to_owned(),
+            user_config.discord_rich_presence_url != DiscordRichPresenceUrl::default(),
+        ),
+        (
+            "discord_rich_presence_url_custom_set".to_owned(),
+            user_config.discord_rich_presence_url_custom.is_some(),
+        ),
     ]
 }
 
@@ -283,6 +311,9 @@ pub struct UserConfigForUpdater {
     pub history_limit: usize,
     pub history_truncate_after_days: usize,
     pub fronter_channel_wait_increment: usize,
+
+    pub discord_rich_presence_url: DiscordRichPresenceUrl,
+    pub discord_rich_presence_url_custom: Option<String>,
 }
 
 #[derive(Clone, Deserialize, Serialize, Default)]
@@ -413,6 +444,10 @@ where
             local_config_with_defaults,
             fronter_channel_wait_increment
         )?.try_into()?,
+        discord_rich_presence_url: local_config_with_defaults.discord_rich_presence_url,
+        discord_rich_presence_url_custom: local_config_with_defaults
+            .discord_rich_presence_url_custom
+            ,
     };
 
     if config.privacy_fine_grained == PrivacyFineGrained::ViaPrivacyBuckets
@@ -441,6 +476,15 @@ where
         return Err(anyhow!(
             "history_truncate_after_days must be between 0 and 30, got {}",
             config.history_truncate_after_days
+        ));
+    }
+
+    if config.discord_rich_presence_url == DiscordRichPresenceUrl::CustomUrl
+        && config.discord_rich_presence_url_custom.is_none()
+    {
+        return Err(anyhow!(
+            "discord rich presence is set to {}, not URL was provided",
+            config.discord_rich_presence_url
         ));
     }
 
@@ -513,6 +557,8 @@ mod tests {
             history_limit: Some(100),
             history_truncate_after_days: Some(7),
             fronter_channel_wait_increment: Some(100),
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
         };
 
         let (config_for_updater, _) =
@@ -569,6 +615,8 @@ mod tests {
             fronter_channel_wait_increment: Some(100),
             valid_constraints: None,
             enable_from_sp: true,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
         };
 
         let json_string = serde_json::to_string_pretty(&config).unwrap();
@@ -597,6 +645,8 @@ mod tests {
   "history_limit": 100,
   "history_truncate_after_days": 7,
   "fronter_channel_wait_increment": 100,
+  "discord_rich_presence_url": "PluralSyncFrontingWebsiteIfDefined",
+  "discord_rich_presence_url_custom": null,
   "simply_plural_token": {
     "secret": "sp_token_123"
   },
@@ -690,6 +740,8 @@ mod tests {
             history_truncate_after_days: Some(7),
             fronter_channel_wait_increment: Some(100),
             valid_constraints: None,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
         }
     }
 }

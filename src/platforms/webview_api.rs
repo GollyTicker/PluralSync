@@ -2,8 +2,10 @@ use crate::database;
 use crate::meta_api::HttpResult;
 use crate::meta_api::expose_internal_error;
 use crate::plurality;
+use crate::setup::SmtpConfig;
 use crate::updater;
 use crate::users;
+use crate::users::UserConfigForUpdater;
 use anyhow::anyhow;
 use rocket::serde::json::Json;
 use rocket::{State, response::content::RawHtml};
@@ -20,7 +22,7 @@ pub struct FrontingStatusWithExclusions {
 #[get("/api/fronting-status")]
 pub async fn get_api_fronting_status(
     jwt: users::Jwt,
-    _db_pool: &State<PgPool>,
+    db_pool: &State<PgPool>,
     application_user_secrets: &State<database::ApplicationUserSecrets>,
     client: &State<reqwest::Client>,
     shared_updaters: &State<updater::UpdaterManager>,
@@ -30,7 +32,7 @@ pub async fn get_api_fronting_status(
     log::debug!("# | GET /api/fronting-status/{user_id}");
 
     let config =
-        database::get_user_config_with_secrets(_db_pool, &user_id, client, application_user_secrets)
+        database::get_user_config_with_secrets(db_pool, &user_id, client, application_user_secrets)
             .await
             .map_err(expose_internal_error)?;
 
@@ -56,7 +58,8 @@ pub async fn get_api_fronting_status(
         truncate_names_to_length_if_status_too_long: config.status_truncate_names_to,
     };
 
-    let status_text = plurality::format_fronting_status(&fronting_format, &filtered_fronters.fronters);
+    let status_text =
+        plurality::format_fronting_status(&fronting_format, &filtered_fronters.fronters);
 
     let result = FrontingStatusWithExclusions {
         fronters: filtered_fronters.fronters,
@@ -65,6 +68,21 @@ pub async fn get_api_fronting_status(
     };
 
     Ok(Json(result))
+}
+
+#[must_use]
+pub fn website_fronting_url(
+    config: &UserConfigForUpdater,
+    smtp_config: &SmtpConfig,
+) -> Option<String> {
+    if config.enable_website {
+        Some(format!(
+            "{}/fronting/{}",
+            smtp_config.frontend_base_url, config.website_url_name
+        ))
+    } else {
+        None
+    }
 }
 
 #[get("/fronting/<website_url_name>")]

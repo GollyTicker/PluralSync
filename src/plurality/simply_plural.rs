@@ -5,8 +5,8 @@ use anyhow::{Result, anyhow};
 use crate::{
     int_counter_metric, int_gauge_metric,
     plurality::{
-        CustomFront, ExcludedFronter, ExclusionReason, FilteredFronter, FrontEntry, Fronter,
-        FilteredFronters, Friend, GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID, Member,
+        CustomFront, ExcludedFronter, ExclusionReason, FilteredFronter, FilteredFronters, Friend,
+        FrontEntry, Fronter, GLOBAL_PLURALSYNC_ON_SIMPLY_PLURAL_USER_ID, Member,
     },
     users::{self, PrivacyFineGrained},
 };
@@ -20,7 +20,9 @@ int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_ARCHIVED_MEMBERS_COUNT);
 int_gauge_metric!(SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT);
 
 #[allow(clippy::cast_possible_wrap)]
-pub(crate) async fn fetch_fronts_from_simply_plural(config: &users::UserConfigForUpdater) -> Result<FilteredFronters> {
+pub async fn fetch_fronts_from_simply_plural(
+    config: &users::UserConfigForUpdater,
+) -> Result<FilteredFronters> {
     let user_id = &config.user_id;
 
     log::info!("# | fetch_fronts | {user_id}");
@@ -43,19 +45,19 @@ pub(crate) async fn fetch_fronts_from_simply_plural(config: &users::UserConfigFo
 
     let system_id = &front_entries[0].content.system_id.clone();
 
-    let frontables =
-        get_members_and_custom_fronters_by_privacy_rules(system_id, config).await?;
+    let frontables = get_members_and_custom_fronters_by_privacy_rules(system_id, config).await?;
 
     let fronters_filtered = filter_frontables_by_front_entries(front_entries.as_ref(), &frontables);
 
-    let (fronters, excluded): (Vec<_>, Vec<_>) = fronters_filtered
-        .into_iter()
-        .partition_map(|result| match result {
-            FilteredFronter::Included(f) => itertools::Either::Left(f),
-            FilteredFronter::Excluded(f, reason) => {
-                itertools::Either::Right(ExcludedFronter { fronter: f, reason })
-            }
-        });
+    let (fronters, excluded): (Vec<_>, Vec<_>) =
+        fronters_filtered
+            .into_iter()
+            .partition_map(|result| match result {
+                FilteredFronter::Included(f) => itertools::Either::Left(f),
+                FilteredFronter::Excluded(f, reason) => {
+                    itertools::Either::Right(ExcludedFronter { fronter: f, reason })
+                }
+            });
 
     for f in &fronters {
         log::debug!("# | fetch_fronts | {user_id} | fronter[*] {f:?}");
@@ -105,12 +107,14 @@ async fn get_members_and_custom_fronters_by_privacy_rules(
         .with_label_values(&[&config.user_id.to_string()])
         .set(all_members.len() as i64 - active_members_count);
 
-    let all_custom_fronts: Vec<CustomFront> = simply_plural_http_get_custom_fronts(config, system_id).await?;
+    let all_custom_fronts: Vec<CustomFront> =
+        simply_plural_http_get_custom_fronts(config, system_id).await?;
 
     SIMPLY_PLURAL_FETCH_FRONTS_CUSTOM_FRONTS_COUNT
         .with_label_values(&[&config.user_id.to_string()])
         .set(all_custom_fronts.len() as i64);
 
+    #[allow(clippy::needless_collect)]
     let member_results: Vec<FilteredFronter> = all_members
         .iter()
         .map(|m| show_member_according_to_privacy_rules(config, m))
@@ -161,11 +165,12 @@ async fn filter_frontables_by_fine_grained_privacy(
     let privacy_bucket_filtered = all_frontables
         .into_iter()
         .map(|result| match result {
-            FilteredFronter::Excluded(f, reason) => {
-                FilteredFronter::Excluded(f, reason)
-            }
+            FilteredFronter::Excluded(f, reason) => FilteredFronter::Excluded(f, reason),
             FilteredFronter::Included(f) => {
-                if f.privacy_buckets.iter().any(|b| allowed_buckets.contains(b)) {
+                if f.privacy_buckets
+                    .iter()
+                    .any(|b| allowed_buckets.contains(b))
+                {
                     FilteredFronter::Included(f)
                 } else {
                     FilteredFronter::Excluded(f, ExclusionReason::NotInDisplayedPrivacyBuckets)
@@ -341,7 +346,7 @@ async fn simply_plural_http_request_get_pluralsync_assigned_buckets(
 mod tests {
     use super::*;
     use crate::plurality::{FrontEntryContent, Member, MemberContent};
-    use crate::users::UserConfigForUpdater;
+    use crate::users::{DiscordRichPresenceUrl, UserConfigForUpdater};
     use sqlx::types::uuid;
 
     fn create_test_config(
@@ -384,6 +389,8 @@ mod tests {
             fronter_channel_wait_increment: Default::default(),
             from_pluralkit_webhook_signing_token: Default::default(),
             enable_from_sp: true,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
         }
     }
 
@@ -421,7 +428,10 @@ mod tests {
         let config = create_test_config(true, true, true);
         let member = create_test_member(false, true);
         let result = show_member_according_to_privacy_rules(&config, &member);
-        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::FrontNotificationsDisabled)));
+        assert!(matches!(
+            result,
+            FilteredFronter::Excluded(_, ExclusionReason::FrontNotificationsDisabled)
+        ));
     }
 
     #[test]
@@ -445,7 +455,10 @@ mod tests {
         let config = create_test_config(false, false, true);
         let member = create_test_member(true, false);
         let result = show_member_according_to_privacy_rules(&config, &member);
-        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)));
+        assert!(matches!(
+            result,
+            FilteredFronter::Excluded(_, ExclusionReason::ArchivedMemberHidden)
+        ));
     }
 
     #[test]
@@ -461,7 +474,10 @@ mod tests {
         let config = create_test_config(false, true, false);
         let member = create_test_member(false, false);
         let result = show_member_according_to_privacy_rules(&config, &member);
-        assert!(matches!(result, FilteredFronter::Excluded(_, ExclusionReason::NonArchivedMemberHidden)));
+        assert!(matches!(
+            result,
+            FilteredFronter::Excluded(_, ExclusionReason::NonArchivedMemberHidden)
+        ));
     }
 
     #[test]
@@ -524,20 +540,18 @@ mod tests {
         let mut config = create_test_config(false, true, true);
         config.privacy_fine_grained = PrivacyFineGrained::NoFineGrained;
 
-        let frontables = vec![
-            FilteredFronter::Excluded(
-                Fronter {
-                    fronter_id: "member1".to_string(),
-                    name: "Member 1".to_string(),
-                    pronouns: None,
-                    avatar_url: "".to_string(),
-                    pluralkit_id: None,
-                    start_time: None,
-                    privacy_buckets: vec![],
-                },
-                ExclusionReason::ArchivedMemberHidden,
-            ),
-        ];
+        let frontables = vec![FilteredFronter::Excluded(
+            Fronter {
+                fronter_id: "member1".to_string(),
+                name: "Member 1".to_string(),
+                pronouns: None,
+                avatar_url: "".to_string(),
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            },
+            ExclusionReason::ArchivedMemberHidden,
+        )];
 
         let result = filter_frontables_by_fine_grained_privacy("system1", &config, frontables)
             .await

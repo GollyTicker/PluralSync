@@ -1,8 +1,10 @@
 use crate::{
+    platforms::webview_api,
     plurality,
-    users::{self},
+    setup::{self},
+    users::{self, DiscordRichPresenceUrl},
 };
-use anyhow::Result;
+use anyhow::{Result, anyhow};
 use pluralsync_base::{
     meta,
     platforms::{DiscordActivityType, DiscordRichPresence, DiscordStatusDisplayType},
@@ -44,6 +46,7 @@ impl DiscordUpdater {
 pub fn render_fronts_to_discord_rich_presence(
     fronters: &[plurality::Fronter],
     config: &users::UserConfigForUpdater,
+    smtp_config: &setup::SmtpConfig,
 ) -> Result<DiscordRichPresence> {
     let short_format = plurality::FrontingFormat {
         max_length: Some(30), // seems to fit often enough without '...' truncation
@@ -53,6 +56,24 @@ pub fn render_fronts_to_discord_rich_presence(
         truncate_names_to_length_if_status_too_long: config.status_truncate_names_to,
     };
     let short_fronters_string = plurality::format_fronting_status(&short_format, fronters);
+
+    let url = match config.discord_rich_presence_url {
+        DiscordRichPresenceUrl::CustomUrl => Some(
+            config
+                .discord_rich_presence_url_custom
+                .clone()
+                .ok_or_else(|| {
+                    anyhow!("bug #7298374. discord_rich_presence_url_custom not defined.")
+                })?,
+        ),
+        DiscordRichPresenceUrl::PluralSyncFrontingWebsiteIfDefined => {
+            webview_api::website_fronting_url(config, smtp_config)
+        }
+        DiscordRichPresenceUrl::PluralSyncAboutPage => {
+            Some(meta::CANONICAL_PLURALSYNC_ABOUT.to_owned())
+        }
+        DiscordRichPresenceUrl::None => None,
+    };
 
     let long_format = plurality::FrontingFormat {
         max_length: Some(50), // seems to fit often enough without '...' truncation
@@ -70,9 +91,9 @@ pub fn render_fronts_to_discord_rich_presence(
         activity_type: DiscordActivityType::Playing,
         status_display_type: DiscordStatusDisplayType::Details,
         details: Some(short_fronters_string),
-        details_url: Some(meta::CANONICAL_PLURALSYNC_ABOUT.to_owned()), // // future: link to fronting web url
+        details_url: url.clone(), // // future: link to fronting web url
         state: Some(long_fronters_string),
-        state_url: None,
+        state_url: url.clone(),
         start_time: most_recent_fronting_change,
         end_time: None,        // we can't predict when the fronting will stop
         large_image_url: None, // future: populate these fields.
@@ -81,8 +102,8 @@ pub fn render_fronts_to_discord_rich_presence(
         small_image_text: None,
         party_current: Some(fronters.len().try_into()?),
         party_max: None,
-        button_label: None, // future: Some("View Online".to_string()), or maybe instead with a 'What's this?' buttom?
-        button_url: None,   // future: link to fronting web url
+        button_label: Some("About".to_string()),
+        button_url: Some(meta::CANONICAL_PLURALSYNC_ABOUT.to_owned()),
     };
 
     log::debug!(

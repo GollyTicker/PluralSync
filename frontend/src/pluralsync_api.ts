@@ -22,7 +22,7 @@ import type {
 import { getJwt, logoutAndBackToStart, setJwt } from './jwt'
 import router from './router'
 
-export const UNREACHABLE: never = undefined as never;
+export const UNREACHABLE: never = undefined as never
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_PLURALSYNC_BASE_URL || '' /* use relate url by default */,

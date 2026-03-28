@@ -35,8 +35,11 @@ export type UserConfigDbEntries = {
     history_limit?: number;
     history_truncate_after_days?: number;
     fronter_channel_wait_increment?: number;
+    discord_rich_presence_url?: DiscordRichPresenceUrl;
+    discord_rich_presence_url_custom?: string;
 };
 export type PrivacyFineGrained = "NoFineGrained" | "ViaFriend" | "ViaPrivacyBuckets";
+export type DiscordRichPresenceUrl = "None" | "PluralSyncAboutPage" | "PluralSyncFrontingWebsiteIfDefined" | "CustomUrl";
 export type JwtString = { inner: string };
 export type Platform = "VRChat" | "Discord" | "DiscordStatusMessage" | "ToPluralKit";
 export type UpdaterStatus = "Disabled" | "Running" | { "Error": string } | "Starting";
@@ -59,7 +62,7 @@ export type DeleteAccountRequest = { password: UserProvidedPassword; confirmatio
 export type UserInfoUI = { id: UserId, email: { inner: string }, created_at: string };
 export type HistoryEntry = { id: string; user_id: UserId; status_text: string; created_at: string };
 /**
- * Generic representation of a fronter from any system source (SimplyPlural, PluralKit, etc.)
+ * Generic representation of a fronter from any system source (`SimplyPlural`, `PluralKit`, etc.)
  */
 export type Fronter = { fronter_id: string; name: string; pronouns: string | null; avatar_url: string; pluralkit_id: string | null; start_time: string; privacy_buckets: string[] };
 /**

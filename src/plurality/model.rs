@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-/// Generic representation of a fronter from any system source (SimplyPlural, PluralKit, etc.)
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, specta::Type)]
+/// Generic representation of a fronter from any system source (`SimplyPlural`, `PluralKit`, etc.)
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct Fronter {
     pub fronter_id: String,
     pub name: String,
@@ -14,7 +14,7 @@ pub struct Fronter {
 }
 
 /// Reasons why a fronter might be excluded from display
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum ExclusionReason {
     FrontNotificationsDisabled,
     ArchivedMemberHidden,
@@ -25,31 +25,32 @@ pub enum ExclusionReason {
 }
 
 /// A fronter that has been filtered, either included or excluded with a reason
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub enum FilteredFronter {
     Included(Fronter),
     Excluded(Fronter, ExclusionReason),
 }
 
 /// A fronter that has been excluded along with the reason
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct ExcludedFronter {
     pub fronter: Fronter,
     pub reason: ExclusionReason,
 }
 
 /// Collection of filtered fronters, separated into included and excluded
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize, specta::Type)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, specta::Type)]
 pub struct FilteredFronters {
     pub fronters: Vec<Fronter>,
     pub excluded: Vec<ExcludedFronter>,
 }
 
 impl FilteredFronter {
+    #[must_use]
     pub fn into_included(self) -> Option<Fronter> {
         match self {
-            FilteredFronter::Included(f) => Some(f),
-            FilteredFronter::Excluded(_, _) => None,
+            Self::Included(f) => Some(f),
+            Self::Excluded(_, _) => None,
         }
     }
 }

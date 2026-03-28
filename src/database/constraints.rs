@@ -99,6 +99,8 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         history_truncate_after_days: value.history_truncate_after_days,
         fronter_channel_wait_increment: value.fronter_channel_wait_increment,
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
+        discord_rich_presence_url: value.discord_rich_presence_url.clone(),
+        discord_rich_presence_url_custom: value.discord_rich_presence_url_custom.clone(),
     }
 }
 
@@ -137,5 +139,7 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         history_truncate_after_days: value.history_truncate_after_days,
         fronter_channel_wait_increment: value.fronter_channel_wait_increment,
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
+        discord_rich_presence_url: value.discord_rich_presence_url.clone(),
+        discord_rich_presence_url_custom: value.discord_rich_presence_url_custom.clone(),
     }
 }

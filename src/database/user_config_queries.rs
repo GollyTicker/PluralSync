@@ -40,6 +40,8 @@ pub async fn get_user(
             history_limit,
             history_truncate_after_days,
             fronter_channel_wait_increment,
+            discord_rich_presence_url,
+            discord_rich_presence_url_custom,
             '' AS simply_plural_token,
             '' AS discord_status_message_token,
             '' AS vrchat_username,
@@ -107,6 +109,8 @@ pub async fn get_user_secrets(
             history_limit,
             history_truncate_after_days,
             fronter_channel_wait_increment,
+            discord_rich_presence_url,
+            discord_rich_presence_url_custom,
             pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
             pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
             pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
@@ -164,7 +168,9 @@ pub async fn set_user_config_secrets(
             fronter_channel_wait_increment = $28,
             enable_from_pluralkit = $29,
             enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9),
-            enable_from_sp = $31
+            enable_from_sp = $31,
+            discord_rich_presence_url = $32,
+            discord_rich_presence_url_custom = $33
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -202,6 +208,8 @@ pub async fn set_user_config_secrets(
             .map(|s| s.secret),
     )
     .bind(config.enable_from_sp)
+    .bind(config.discord_rich_presence_url)
+    .bind(config.discord_rich_presence_url_custom)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;

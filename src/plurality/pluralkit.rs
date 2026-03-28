@@ -110,9 +110,7 @@ pub fn measure_rate_limits(user_id: &UserId, response: &reqwest::Response) {
         .and_then(|v| v.to_str().ok());
 
     log::info!(
-        "pluralkit rate limit: remaining={:?}, scope={:?}",
-        rate_limit_remaining,
-        rate_limit_scope
+        "pluralkit rate limit: remaining={rate_limit_remaining:?}, scope={rate_limit_scope:?}"
     );
 
     if let (Some(remaining), Some(scope)) = (rate_limit_remaining, rate_limit_scope) {
@@ -123,7 +121,9 @@ pub fn measure_rate_limits(user_id: &UserId, response: &reqwest::Response) {
 }
 
 #[allow(clippy::cast_possible_wrap)]
-pub(crate) async fn fetch_fronts_from_pluralkit(config: &UserConfigForUpdater) -> Result<FilteredFronters> {
+pub async fn fetch_fronts_from_pluralkit(
+    config: &UserConfigForUpdater,
+) -> Result<FilteredFronters> {
     let user_id = &config.user_id;
 
     log::info!("# | pluralkit::fetch_fronts | {user_id}");
@@ -157,11 +157,11 @@ fn show_pk_member_according_to_privacy_rules(
     member: &PkMember,
 ) -> FilteredFronter {
     // Check if member visibility is private - exclude entirely
-    if let Some(privacy) = &member.privacy {
-        if privacy.visibility == PrivacyLevel::Private {
-            let fronter = Fronter::from(member.clone());
-            return FilteredFronter::Excluded(fronter, ExclusionReason::MemberPrivacyPrivate);
-        }
+    if let Some(privacy) = &member.privacy
+        && privacy.visibility == PrivacyLevel::Private
+    {
+        let fronter = Fronter::from(member.clone());
+        return FilteredFronter::Excluded(fronter, ExclusionReason::MemberPrivacyPrivate);
     }
 
     let fronter = Fronter::from(member.clone());
@@ -239,31 +239,31 @@ pub struct PkMemberFieldPrivacy {
 impl From<PkMember> for Fronter {
     fn from(m: PkMember) -> Self {
         // Check if member visibility is private - return minimal fronter
-        if let Some(privacy) = &m.privacy {
-            if privacy.visibility == PrivacyLevel::Private {
-                return Self {
-                    fronter_id: m.id,
-                    name: m.name,
-                    pronouns: None,
-                    avatar_url: String::new(),
-                    pluralkit_id: None,
-                    start_time: None,
-                    privacy_buckets: vec![],
-                };
-            }
+        if let Some(privacy) = &m.privacy
+            && privacy.visibility == PrivacyLevel::Private
+        {
+            return Self {
+                fronter_id: m.id,
+                name: m.name,
+                pronouns: None,
+                avatar_url: String::new(),
+                pluralkit_id: None,
+                start_time: None,
+                privacy_buckets: vec![],
+            };
         }
 
         // Apply field-level privacy
         let pronouns = m.pronouns.filter(|_| {
             m.privacy
                 .as_ref()
-                .map_or(true, |p| p.pronoun_privacy == PrivacyLevel::Public)
+                .is_none_or(|p| p.pronoun_privacy == PrivacyLevel::Public)
         });
 
         let avatar_url = m.avatar_url.filter(|_| {
             m.privacy
                 .as_ref()
-                .map_or(true, |p| p.avatar_privacy == PrivacyLevel::Public)
+                .is_none_or(|p| p.avatar_privacy == PrivacyLevel::Public)
         });
 
         Self {
@@ -278,17 +278,12 @@ impl From<PkMember> for Fronter {
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
+#[derive(Clone, Debug, Deserialize, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum PrivacyLevel {
+    #[default]
     Public,
     Private,
-}
-
-impl Default for PrivacyLevel {
-    fn default() -> Self {
-        Self::Public
-    }
 }
 
 /// See: <https://pluralkit.me/api/dispatch>/

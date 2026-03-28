@@ -518,7 +518,6 @@ pub async fn restart_first_long_living_updater(
 
     for user_id in users {
         match shared_updaters.updater_active_since(&user_id) {
-            Err(_) => (), // updater not active. ignore this
             Ok(active_since) if is_long_lived(active_since) => {
                 log::debug!(
                     "restart_first_long_living_updater | restarting {user_id} ({active_since})"
@@ -538,7 +537,7 @@ pub async fn restart_first_long_living_updater(
                 );
                 return Ok(());
             }
-            Ok(_) => (),
+            _ => (), // updater not active. ignore this
         }
     }
 

@@ -17,7 +17,7 @@ use tauri::Manager;
 use tauri::async_runtime::{JoinHandle, Mutex};
 use tokio_tungstenite::{connect_async, tungstenite::client::IntoClientRequest};
 
-const MEGABYTES: u128 = 10 ^ 6;
+const MEGABYTES: u128 = 1_000_000;
 
 #[tauri::command]
 async fn fetch_base_url_and_variant_info() -> Result<(String, PluralSyncVariantInfo), String> {

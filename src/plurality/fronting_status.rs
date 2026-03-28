@@ -1,4 +1,10 @@
-use crate::{metric, metrics::SHOULDNT_HAPPEN_BUT_IT_DID, plurality::{FilteredFronters, Fronter, fetch_fronts_from_pluralkit, fetch_fronts_from_simply_plural}};
+use crate::{
+    metric,
+    metrics::SHOULDNT_HAPPEN_BUT_IT_DID,
+    plurality::{
+        FilteredFronters, Fronter, fetch_fronts_from_pluralkit, fetch_fronts_from_simply_plural,
+    },
+};
 
 use encoding_rs::ISO_8859_15;
 
@@ -45,7 +51,6 @@ pub async fn fetch_fronters(
     }
 }
 
-
 #[must_use]
 pub fn format_fronting_status(fronting_format: &FrontingFormat, fronts: &[Fronter]) -> String {
     let cleaned_fronter_names = collect_clean_fronter_names(fronting_format, fronts);
@@ -57,8 +62,7 @@ pub fn format_fronting_status(fronting_format: &FrontingFormat, fronts: &[Fronte
             &cleaned_fronter_names,
         );
 
-    let status =
-        pick_longest_string_within_status_length_limit(fronting_format, &status_strings);
+    let status = pick_longest_string_within_status_length_limit(fronting_format, &status_strings);
 
     FRONTING_STATUS_STRING
         .with_label_values(&[&status.len().to_string()])

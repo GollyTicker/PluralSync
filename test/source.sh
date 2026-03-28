@@ -89,7 +89,8 @@ get_user_config_json() {
         $VRCHAT_PASSWORD_LINE
         $VRCHAT_COOKIE_LINE
         $PLURALKIT_TOKEN_LINE
-        \"website_system_name\": \"${WEBSITE_SYSTEM_NAME-null}\"
+        \"website_system_name\": \"${WEBSITE_SYSTEM_NAME-null}\",
+        \"discord_rich_presence_url\": \"PluralSyncFrontingWebsiteIfDefined\"
     }"
 }
 export -f get_user_config_json

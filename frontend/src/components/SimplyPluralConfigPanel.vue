@@ -10,7 +10,8 @@
           <a href="https://app.apparyllis.com/" target="_blank">SimplyPlural</a>, go to Settings >
           Account > Tokens, create a READ token and copy-paste it here.
           <br />
-          Note, that only one system manager for fronting is supported at a time (either PluralKit or SimplyPlural as source).
+          Note, that only one system manager for fronting is supported at a time (either PluralKit
+          or SimplyPlural as source).
         </p>
         <input
           id="simply_plural_token"
@@ -89,9 +90,8 @@
             Add the
             <span style="font-weight: bold" class="copyable"
               >PluralSync<span style="display: inline-block; margin-left: 0.25rem"
-                ><CopyButton text="PluralSync"
-              /></span></span
-            >
+                ><CopyButton text="PluralSync" /></span
+            ></span>
             user as a friend on Simply Plural and assign that friend to your existing privacy
             buckets. PluralSync will then show any fronters which are are in privacy buckets the
             PluralSync friend is assigned to. The above "Show" toggles still apply. (Note, that the

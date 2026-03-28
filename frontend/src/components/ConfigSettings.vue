@@ -14,11 +14,11 @@
       Stuck with something and still not working despite having re-read the info again and looked
       exactly? Join the discord server and feel free to ask the community for help. (Link in the
       footer of this website). When contacting us, please include your user id:
-      <div class="copyable-field">
-        <input id="user-id" type="text" :value="userId?.inner" readonly />
-        <CopyButton :text="userId?.inner" />
-      </div>
     </p>
+    <div class="copyable-field">
+      <input id="user-id" type="text" :value="userId?.inner" readonly />
+      <CopyButton :text="userId?.inner" />
+    </div>
     <form @submit.prevent="saveConfigAndRestart" autocomplete="off">
       <div class="config-section">
         <h2>PluralSync Settings</h2>
@@ -110,7 +110,7 @@ const config: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
 const defaults: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)
 const status = ref('')
 const currentEmail = ref('')
-const userId = ref<UserId|undefined>(undefined)
+const userId = ref<UserId | undefined>(undefined)
 const newEmail = ref('')
 const emailChangeStatus = ref('')
 const emailChangeLoading = ref(false)

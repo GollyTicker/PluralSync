@@ -43,7 +43,7 @@ import type {
   FrontingStatusWithExclusions,
   UpdaterStatus,
   UserUpdatersStatuses,
-  ExclusionReason
+  ExclusionReason,
 } from '@/pluralsync.bindings'
 import { pluralsync_api, UNREACHABLE } from '@/pluralsync_api'
 import CopyButton from '@/components/CopyButton.vue'
