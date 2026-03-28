@@ -198,3 +198,18 @@ verify_email_with_token() {
     echo ""
 }
 export -f verify_email_with_token
+
+# Note, that this needs 'GatewayPorts clientspecified' in ssd_config on the server.
+# Furthermore, the 42069 port must be allowed ingress on the firewall
+# Also, the domain must accept HTTPS connections and forward them to http connections on this port.
+setup_webhook_port_forwarding() {
+    echo "Webhooks: Forwarding $DEV_WEBHOOK_HOST:$DEV_WEBHOOK_RPORT -> 0.0.0.0:8080 ..."
+    ssh -g -N -R "0.0.0.0:$DEV_WEBHOOK_RPORT:0.0.0.0:8080" "$DEV_WEBHOOK_HOST" &
+}
+export -f setup_webhook_port_forwarding
+
+stop_webhook_port_forwarding() {
+    echo "Closing ssh port"
+    pkill -f "0.0.0.0:8080" || true
+}
+export -f stop_webhook_port_forwarding

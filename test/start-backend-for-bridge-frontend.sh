@@ -24,6 +24,7 @@ main() {
     ./steps/12-backend-cargo-build.sh
     ./steps/17-frontend-npm-build.sh
     set_system_fronts_set "A"
+    setup_webhook_port_forwarding
     start_backend
     
     echo "Showing logs... Abort with ^C to stop backend."
@@ -46,6 +47,7 @@ start_backend() {
 stop_backend() {
     echo "stop_backend"
     ./docker/stop.sh local > docker/logs/stop.log 2>&1
+    stop_webhook_port_forwarding
     echo "Stop Backend."
 }
 trap stop_backend EXIT
