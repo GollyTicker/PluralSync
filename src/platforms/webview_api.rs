@@ -120,7 +120,7 @@ pub async fn get_api_fronting_by_user_id(
         filtered_fronters.fronters.len()
     );
 
-    let html = generate_html(&config.website_system_name, &filtered_fronters.fronters);
+    let html = generate_html(&config, &filtered_fronters.fronters);
 
     log::debug!(
         "# | GET /fronting/{website_url_name} | {user_id} | got_config | {} fronts | HTML generated",
@@ -130,7 +130,7 @@ pub async fn get_api_fronting_by_user_id(
     Ok(RawHtml(html))
 }
 
-fn generate_html(website_system_name: &str, fronts: &[plurality::Fronter]) -> String {
+fn generate_html(config: &users::UserConfigForUpdater, fronts: &[plurality::Fronter]) -> String {
     let fronts_formatted_and_escaped = fronts
         .iter()
         .map(|m| -> String {
@@ -142,6 +142,15 @@ fn generate_html(website_system_name: &str, fronts: &[plurality::Fronter]) -> St
         })
         .collect::<Vec<String>>()
         .join("\n");
+
+    let html_if_empty_fronters = if fronts.is_empty() {
+        format!(
+            "<div><p>{}</p></div>",
+            html_escape::encode_text(&config.status_no_fronts)
+        )
+    } else {
+        "".to_string()
+    };
 
     format!(
         r"<html>
@@ -196,10 +205,12 @@ fn generate_html(website_system_name: &str, fronts: &[plurality::Fronter]) -> St
     </head>
     <body>
         {}
+        {}
     </body>
 </html>",
-        html_escape::encode_text(website_system_name),
-        fronts_formatted_and_escaped
+        html_escape::encode_text(&config.website_system_name),
+        fronts_formatted_and_escaped,
+        html_if_empty_fronters
     )
 }
 
