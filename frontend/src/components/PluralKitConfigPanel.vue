@@ -1,5 +1,5 @@
 <template>
-  <div class="config-section" v-show="showPluralKitConfigInDev">
+  <div class="config-section">
     <h2>PluralKit</h2>
     <div class="config-grid">
       <div class="config-item">
@@ -37,7 +37,7 @@
         />
       </div>
       <div class="config-item">
-        <label for="enable_from_pluralkit">Enable Sync from PluralKit (beta)</label>
+        <label for="enable_from_pluralkit">Enable Sync from PluralKit</label>
         <p class="config-description">
           PluralSync will listen for changes in your system and fronting from PluralKit via webhook
           and update your status on all connected platforms. This option cannot be simultanously
@@ -130,11 +130,6 @@ interface Props {
 }
 
 const props = defineProps<Props>()
-
-// Show PluralKit config everywhere EXCEPT public-test.pluralsync.org
-const showPluralKitConfigInDev = computed(() => {
-  return !location.href.includes('public-test')
-})
 
 type SecretKeys = 'pluralkit_token' | 'from_pluralkit_webhook_signing_token'
 
