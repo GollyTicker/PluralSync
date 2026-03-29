@@ -66,8 +66,9 @@
         <li>Open a Discord DM to the PluralKit bot and paste and send the command to PluralKit.</li>
         <li>PluralKit will respond with a signing token. Copy that token.</li>
         <li>Paste the signing token into the field below.</li>
-        <li>Confirm the signing token in the DM with PluralKit</li>
         <li>Save your changes in PluralSync</li>
+        <li>Confirm the signing token in the DM with PluralKit</li>
+        <li>If PluralKit confirms the test, the setup has worked! If not, try again.</li>
       </ol>
       <div v-if="config.enable_from_pluralkit" class="config-item">
         <label for="from_pluralkit_webhook_signing_token">PluralKit Webhook Signing Token</label>
