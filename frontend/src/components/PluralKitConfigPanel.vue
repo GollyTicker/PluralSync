@@ -37,7 +37,7 @@
         />
       </div>
       <div class="config-item">
-        <label for="enable_from_pluralkit">Enable Sync from PluralKit</label>
+        <label for="enable_from_pluralkit">Enable Sync from PluralKit (beta)</label>
         <p class="config-description">
           PluralSync will listen for changes in your system and fronting from PluralKit via webhook
           and update your status on all connected platforms. This option cannot be simultanously
@@ -45,6 +45,9 @@
           <br />
           Note, that only one system manager for fronting is supported at a time (either PluralKit
           or SimplyPlural as source).
+          <br />
+          Field level privacy is not supported currently! If a member as a whole is marked as
+          private, then PluralSync will not display that member. Otherwise all fields will be shown.
         </p>
         <input id="enable_from_pluralkit" type="checkbox" v-model="config.enable_from_pluralkit" />
       </div>

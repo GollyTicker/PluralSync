@@ -427,7 +427,7 @@ where
             .inspect(|_| log::debug!("create_config_with_strong_constraints | {user_id} | vrchat cookie found and will be used."))
             .unwrap_or_default(),
         pluralkit_token: config_value_if!(
-            enable_to_pluralkit,
+            enable_to_pluralkit || enable_from_pluralkit,
             local_config_with_defaults,
             pluralkit_token
         )?,

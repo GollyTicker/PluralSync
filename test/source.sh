@@ -15,7 +15,9 @@ export PRIVACY_FINE_GRAINED_BUCKETS="[\"68e23553d3877cbeb6000000\"]"
 export HISTORY_LIMIT=100
 export HISTORY_TRUNCATE_AFTER_DAYS=7
 export FRONTER_CHANNEL_WAIT_INCREMENT=100
-export ENABLE_FROM_PLURALKIT=false
+export PK_WEBHOOK_SIGNING_TOKEN=some-mock-token
+export ENABLE_FROM_PLURALKIT=${ENABLE_FROM_PLURALKIT-false}
+export ENABLE_FROM_SP=${ENABLE_FROM_SP-true}
 
 source docker/source.sh # await
 
@@ -57,12 +59,6 @@ get_user_config_json() {
         PLURALKIT_TOKEN_LINE=""
     fi
 
-    if [ -v PLURALKIT_WEBHOOK_SIGNING_TOKEN ] ; then
-        PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE="\"from_pluralkit_webhook_signing_token\": { \"secret\": \"${PLURALKIT_WEBHOOK_SIGNING_TOKEN}\" },"
-    else
-        PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE=""
-    fi
-
     echo "{
         \"enable_discord_status_message\": ${ENABLE_DISCORD_STATUS_MESSAGE},
         \"enable_vrchat\": ${ENABLE_VRCHAT},
@@ -79,10 +75,10 @@ get_user_config_json() {
         \"privacy_fine_grained\": \"${PRIVACY_FINE_GRAINED}\",
         \"privacy_fine_grained_buckets\": ${PRIVACY_FINE_GRAINED_BUCKETS},
         \"history_limit\": ${HISTORY_LIMIT},
-        \"enable_from_sp\": true,
+        \"enable_from_sp\": ${ENABLE_FROM_SP},
+        \"from_pluralkit_webhook_signing_token\": { \"secret\": \"$PK_WEBHOOK_SIGNING_TOKEN\" },
         \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
         \"fronter_channel_wait_increment\": ${FRONTER_CHANNEL_WAIT_INCREMENT},
-        $PLURALKIT_WEBHOOK_SIGNING_TOKEN_LINE
         $SIMPLY_PLURAL_TOKEN_LINE
         $DISCORD_STATUS_MESSAGE_TOKEN_LINE
         $VRCHAT_USERNAME_LINE
@@ -127,7 +123,7 @@ setup_test_user() {
 
     set_user_config_and_restart
     
-    # echo "User config JSON: $JSON"
+    # echo "User config JSON: $(get_user_config)"
 
     echo "Getting user info ..."
     USER_INFO="$(
@@ -150,6 +146,13 @@ set_user_config_and_restart() {
         -H "Authorization: Bearer $JWT" \
         -d "$JSON" \
         "$BASE_URL/api/user/config_and_restart"
+}
+
+get_user_config() {
+    curl -s --fail-with-body \
+        -H "Accept: application/json" \
+        -H "Authorization: Bearer $JWT" \
+        "$BASE_URL/api/user/config"
 }
 
 get_updater_statuses() {
@@ -199,6 +202,7 @@ verify_email_with_token() {
 }
 export -f verify_email_with_token
 
+# These functions aren't used yet. But if we ever automate the creation of webhooks via discord DMs for the test account, then this should be good.
 # Note, that this needs 'GatewayPorts clientspecified' in ssd_config on the server.
 # Furthermore, the 42069 port must be allowed ingress on the firewall
 # Also, the domain must accept HTTPS connections and forward them to http connections on this port.

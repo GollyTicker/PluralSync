@@ -4,6 +4,7 @@ use crate::{
     plurality::{
         FilteredFronters, Fronter, fetch_fronts_from_pluralkit, fetch_fronts_from_simply_plural,
     },
+    users,
 };
 
 use encoding_rs::ISO_8859_15;
@@ -32,7 +33,7 @@ pub enum CleanForPlatform {
 }
 
 pub async fn fetch_fronters(
-    config: &crate::users::UserConfigForUpdater,
+    config: &users::UserConfigForUpdater,
 ) -> Result<FilteredFronters, anyhow::Error> {
     if config.enable_from_sp {
         log::debug!(

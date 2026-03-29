@@ -61,36 +61,6 @@ async fn http_pluralkit_fronters(
     Ok(fronters)
 }
 
-async fn http_pluralkit_members(
-    client: &reqwest::Client,
-    pluralkit_token: &Decrypted,
-    user_id: &UserId,
-) -> Result<Vec<PkMember>> {
-    let url = "https://api.pluralkit.me/v2/systems/@me/members";
-
-    let response = client
-        .get(url)
-        .header("Authorization", &pluralkit_token.secret)
-        .header("User-Agent", PLURALKIT_USER_AGENT)
-        .send()
-        .await?
-        .error_for_status()?;
-
-    measure_rate_limits(user_id, &response);
-
-    let text = response.text().await?;
-
-    let members: Vec<PkMember> = serde_json::from_str(&text).inspect_err(|e| {
-        log::warn!(
-            "# | fetch_system_members | failed to parse response | {} | input: {}",
-            e,
-            text.chars().take(500).collect::<String>()
-        );
-    })?;
-
-    Ok(members)
-}
-
 pub fn measure_rate_limits(user_id: &UserId, response: &reqwest::Response) {
     let headers = response.headers();
     let rate_limit_remaining = headers
@@ -123,17 +93,10 @@ pub async fn fetch_fronts_from_pluralkit(
         .with_label_values(&[&user_id.to_string()])
         .inc();
 
-    let client = reqwest::Client::new();
-    let pk_fronters = http_pluralkit_fronters(&client, &config.pluralkit_token, user_id).await?;
+    let pk_fronters =
+        http_pluralkit_fronters(&config.client, &config.pluralkit_token, user_id).await?;
 
-    let pk_members = http_pluralkit_members(&client, &config.pluralkit_token, user_id).await?;
-
-    let fronting_members: Vec<PkMember> = pk_members
-        .into_iter()
-        .filter(|m| pk_fronters.members.contains(&m.id))
-        .collect();
-
-    let frontables = get_pk_members_by_privacy_rules(&fronting_members, config);
+    let frontables = get_pk_members_by_privacy_rules(&pk_fronters.members, config);
 
     let (fronters, excluded): (Vec<_>, Vec<_>) =
         frontables.into_iter().partition_map(|result| match result {
@@ -184,7 +147,7 @@ fn get_pk_members_by_privacy_rules(
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PkFronters {
     pub timestamp: chrono::DateTime<chrono::Utc>,
-    pub members: Vec<String>,
+    pub members: Vec<PkMember>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

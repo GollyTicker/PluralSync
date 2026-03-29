@@ -364,7 +364,7 @@ impl UpdaterManager {
                 log::info!("SP WS '{user_id}': Not creating websocket, because token is not set.");
                 return;
             }
-            let update_fronters_from_simply_plural = || {
+            let update_fronters_from_source = || {
                 self2.fetch_and_update_fronters(
                     &user_id,
                     &client,
@@ -372,9 +372,9 @@ impl UpdaterManager {
                     &application_user_secrets,
                 )
             };
-            match update_fronters_from_simply_plural().await {
-                Ok(()) => log::debug!("Initial SP update after restart OK."),
-                Err(e) => log::warn!("Initial SP update after restart Err: {e}"),
+            match update_fronters_from_source().await {
+                Ok(()) => log::debug!("Initial source update after restart OK."),
+                Err(e) => log::warn!("Initial source update after restart Err: {e}"),
             }
             plurality::auto_reconnecting_websocket_client_to_simply_plural(
                 &user_id.to_string(),
@@ -389,11 +389,11 @@ impl UpdaterManager {
                         .with_label_values(&[&user_id.to_string()])
                         .inc();
                     if changed {
-                        update_fronters_from_simply_plural().await?;
+                        update_fronters_from_source().await?;
                     }
                     Ok(())
                 },
-                update_fronters_from_simply_plural,
+                update_fronters_from_source,
             )
             .await;
         })

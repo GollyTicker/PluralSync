@@ -29,26 +29,34 @@ set_system_fronts_set() {
     clear_all_fronts
 
     if [[ "$SET" == "A" ]]; then
-        set_to_front "$ANNALEA_ID"
-        set_to_front "$BORGNEN_ID"
-        set_to_front "$DAENSSA_ID"
-        set_to_front "$CUSTOM_FRONT_1_ID"
+        set_to_front_sp "$ANNALEA_ID"
+        set_to_front_sp "$BORGNEN_ID" "$BORGNEN_ID_PK"
+        set_to_front_sp "$DAENSSA_ID" "$DAENSSA_ID_PK"
+        set_to_front_sp "$CUSTOM_FRONT_1_ID"
+
+        set_to_front_pk "[\"$ANNALEA_ID_PK\",\"$BORGNEN_ID_PK\",\"$DAENSSA_ID_PK\"]"
     elif [[ "$SET" == "B" ]]; then
-        set_to_front "$TEST_MEMBER_ID"
+        set_to_front_sp "$TEST_MEMBER_ID"
+        set_to_front_pk "[\"$TEST_MEMBER_ID_PK\"]"
     elif [[ "$SET" == "C" ]]; then
-        set_to_front "$NOTIF_OK"
-        set_to_front "$NOTIF_NOT_OK"
-        set_to_front "$ARCHIVED_NOTIF_OK"
+        set_to_front_sp "$NOTIF_OK"
+        set_to_front_sp "$NOTIF_NOT_OK"
+        set_to_front_sp "$ARCHIVED_NOTIF_OK"
+        set_to_front_pk "[\"$NOTIF_OK_PK\",\"$NOTIF_NOT_OK_PK\",\"$ARCHIVED_NOTIF_OK_PK\"]"
     elif [[ "$SET" == "D" ]]; then
-        set_to_front "$PBUCKET_MEMBER_NO"
-        set_to_front "$PBUCKET_MEMBER_YES"
+        set_to_front_sp "$PBUCKET_MEMBER_NO"
+        set_to_front_sp "$PBUCKET_MEMBER_YES" "$PBUCKET_MEMBER_NO_PK"
+        set_to_front_pk  "[\"$PBUCKET_MEMBER_NO_PK\",\"$PBUCKET_MEMBER_YES_PK\"]"
     else
         return 1
     fi
+
+    push_pk_mock_webhook_dispatch_after_delay
 }
 
 
-set_to_front() {
+set_to_front_sp() {
+    if [[ "$ENABLE_FROM_SP" != "true" ]]; then return 0 ; fi
     FRONTER_ID="$1"
     FRONT_ID="$(openssl rand -hex 12)" # produces valid 24 hexdec digits
     UNIX_MILLIS_CURRENT="$(date +%s%3N)"
@@ -67,39 +75,65 @@ set_to_front() {
     rate_limiting_delay
 }
 
+push_pk_mock_webhook_dispatch_after_delay() {
+    if [[ "$ENABLE_FROM_PLURALKIT" == "true" ]]; then
+        sleep 1.5s
+        echo "Sending mocked pluralkit dispatch for $USER_ID"
+        curl -s -H "Content-Type: application/json" -X POST "http://localhost:8080/api/webhook/pluralkit/$USER_ID" -d "{\"type\": \"CREATE_SWITCH\", \"signing_token\": \"$PK_WEBHOOK_SIGNING_TOKEN\"}"
+    fi
+}
+
+set_to_front_pk() {
+    if [[ "$ENABLE_FROM_PLURALKIT" != "true" ]]; then return 0 ; fi
+    echo "Setting pk switch: $1"
+    curl -s --fail-with-body -o /dev/null \
+        -H "Authorization: $PLURALKIT_TOKEN" -H "Content-Type: application/json" \
+        -X POST "https://api.pluralkit.me/v2/systems/@me/switches" \
+        -d "{\"members\":$1}"
+}
+
 
 clear_all_fronts() {
     echo "Clearing all active fronts."
 
-    FRONTER_IDS="$(
-        curl --silent \
-            -L 'https://api.apparyllis.com/v1/fronters/' \
-            -H "Authorization: $SPS_API_WRITE_TOKEN" |
-            jq -r '.[].id'
-    )"
+    if [[ "$ENABLE_FROM_SP" == "true" ]]; then 
+        FRONTER_IDS="$(
+            curl --silent \
+                -L 'https://api.apparyllis.com/v1/fronters/' \
+                -H "Authorization: $SPS_API_WRITE_TOKEN" |
+                jq -r '.[].id'
+        )"
 
-    if [[ "$FRONTER_IDS" == "" ]]; then
-        return 0
+        if [[ "$FRONTER_IDS" == "" ]]; then
+            return 0
+        fi
+
+        while read fronter_id; do
+            
+            echo "Clearing front (id=$fronter_id)"
+            
+            curl --silent -L -X PATCH "https://api.apparyllis.com/v1/frontHistory/$fronter_id" \
+                -H 'Content-Type: application/json' \
+                -H "Authorization: $SPS_API_WRITE_TOKEN" \
+                -d '{
+                    "live": false,
+                    "startTime": 0,
+                    "endTime": 15,
+                    "customStatus": "",
+                    "custom": false
+                }'
+            
+            rate_limiting_delay
+
+        done <<< "$FRONTER_IDS"
+    else
+        curl -s --fail-with-body -o /dev/null \
+            -H "Authorization: $PLURALKIT_TOKEN" -H "Content-Type: application/json" \
+            -X POST "https://api.pluralkit.me/v2/systems/@me/switches" \
+            -d '{"members":[]}' || true
+        # pk returns 400 if the switch is already empty
     fi
-
-    while read fronter_id; do
-        
-        echo "Clearing front (id=$fronter_id)"
-        
-        curl --silent -L -X PATCH "https://api.apparyllis.com/v1/frontHistory/$fronter_id" \
-            -H 'Content-Type: application/json' \
-            -H "Authorization: $SPS_API_WRITE_TOKEN" \
-            -d '{
-                "live": false,
-                "startTime": 0,
-                "endTime": 15,
-                "customStatus": "",
-                "custom": false
-            }'
-        
-        rate_limiting_delay
-
-    done <<< "$FRONTER_IDS"
+    echo "Done."
 }
 
 rate_limiting_delay() {
