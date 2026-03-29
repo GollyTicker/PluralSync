@@ -4,15 +4,13 @@
 
 A cloud service where users can automatically sync their plural systems' fronting status
 between various system managers and social platforms such as [SimplyPLURAL](https://apparyllis.com/), [PluralKit](https://pluralkit.me/), [VRChat](https://hello.vrchat.com/), [Discord](https://discord.com) or their own website. Users of system managers (plural systems, DID/OSDD systems, etc.) benefit from this as it makes it easier for them to communicate who's fronting while only
-needing to update their fronting on Simply Plural.
+needing to update their fronting on their preferred system manager.
 
-A public test version can be found online at [public-test.pluralsync.ayake.net](https://public-test.pluralsync.ayake.net). (*Use this at your own risk.*)
+A public _alpha_ version is available at [public-test.pluralsync.ayake.net](https://public-test.pluralsync.ayake.net). (*Use this at your own risk.*)
 
-Currently the following updates are supported:
-* SimplyPlural to VRChat Status
-* SimplyPlural to Discord Status / Discord Rich Presence
-* SimplyPlural to Website with fronter names and avatars
-* SimplyPlural to PluralKit Fronters Switch
+Currently the following synchronizations are supported:
+* **From SimplyPlural** → VRChat Status, Discord (Rich Presence + Status Message), PluralKit, Website
+* **From PluralKit** → VRChat Status, Discord (Rich Presence + Status Message), Website
 
 We, the developers, take data security and privacy seriously. The data to synchronise between the services
 is stored encrypted and at industry-standard security. Self hosting is possible if you have some tech knowledge.
@@ -73,10 +71,12 @@ PluralSync is a cloud service designed to synchronize the "fronting" status of p
     *   Provides the core backend services, including a RESTful API and WebSocket communication.
     *   Interacts with a PostgreSQL database using `sqlx` for data persistence.
     *   Manages user authentication using JSON Web Tokens (JWT).
-    *   Communicates with external services like the VRChat API.
+    *   Communicates with external services like the VRChat API and PluralKit API.
     *   Exposes application metrics for monitoring via Prometheus.
+    *   Handles email notifications via SMTP (Brevo) for account verification and announcements.
 *   **Tooling:**
     *   Includes a utility (`ts-bindings`) to generate TypeScript type definitions from Rust code using `specta`, ensuring type safety between the backend and frontend.
+    *   Includes `announcement-archive-generator` to generate static announcement JSON for the frontend.
 
 ### Web Frontend (`frontend`)
 *   **Framework:** [Vue.js](https://vuejs.org/) with TypeScript
@@ -106,15 +106,26 @@ PluralSync is a cloud service designed to synchronize the "fronting" status of p
 
 ## Synchronization Architecture
 
-### Data Source: SimplyPlural
-SimplyPlural is the primary data source for all fronting status information:
+PluralSync supports **source-agnostic synchronization**, allowing users to choose their primary system manager (SimplyPlural or PluralKit) as the data source for fronting status.
+
+### Data Sources
+
+#### SimplyPlural (Legacy/Primary Source)
+SimplyPlural was the original primary data source for all fronting status information:
 *   Real-time WebSocket connection monitors fronting changes
 *   HTTP API fetches system members, custom fronts, and privacy bucket configuration
 *   User provides read-only token for secure API access
 *   Includes members (archived/active), custom fronts, privacy settings
 
+#### PluralKit (New Source)
+PluralKit integration enables synchronization from PluralKit to other platforms:
+*   HTTP API fetches current fronters and system information
+*   User provides PluralKit token for API access
+*   Respects member visibility and privacy settings
+*   Rate-limited API access with automatic delay management
+
 ### Synchronization Targets (Updaters)
-PluralSync synchronizes fronting status from SimplyPlural to multiple platforms:
+PluralSync synchronizes fronting status from the configured source to multiple platforms:
 
 **1. VRChat Status Updater** (server-managed)
 *   Updates user's VRChat bio with current fronter name(s)
@@ -134,9 +145,10 @@ PluralSync synchronizes fronting status from SimplyPlural to multiple platforms:
     *   Independent of browser/web app (runs on system boot)
 
 **3. PluralKit Fronters Sync Updater** (server-managed, to-pluralkit)
-*   Synchronizes fronters from SimplyPlural to PluralKit system
+*   Synchronizes fronters from the configured source to PluralKit system
 *   Performs fronter switches via PluralKit API
 *   Monitors rate-limit quota for API calls
+*   Avoids unnecessary switches when fronters haven't changed
 
 **4. Website Fronting Display** (read-only)
 *   Public API endpoint: `GET /fronting/<website_url_name>`
@@ -145,9 +157,20 @@ PluralSync synchronizes fronting status from SimplyPlural to multiple platforms:
 *   Respects privacy configuration and cleaning rules
 
 ### Update Flow
-1. **Detection**: SimplyPlural fronting change detected via WebSocket or polling
+1. **Detection**: Fronting change detected via WebSocket (SimplyPlural) or polling (PluralKit)
 2. **Processing**: Privacy rules applied, names cleaned per platform, formatted with limits
 3. **Distribution**: Each enabled updater runs async to push changes to target platform
+
+### Configuration
+User config enables/disables updaters and sources:
+*   `enable_from_sp` - Enable SimplyPlural as data source
+*   `enable_from_pluralkit` - Enable PluralKit as data source
+*   `enable_vrchat` - VRChat bio updates
+*   `enable_discord` - Discord Rich Presence
+*   `enable_discord_status_message` - Discord status (if deployment-enabled)
+*   `enable_to_pluralkit` - PluralKit synchronization (target)
+
+Server filters "foreign_managed" updaters (Discord bot management is user-controlled, not server-managed).
 
 ### Bridge (Desktop Application)
 **pluralsync-bridge** is a Tauri-based desktop application:
@@ -160,18 +183,9 @@ PluralSync synchronizes fronting status from SimplyPlural to multiple platforms:
 
 ### Global Manager
 **pluralsync-global-manager** binary:
-*   Consumes SimplyPlural webhook events system-wide
+*   Consumes webhook events from configured sources (SimplyPlural, PluralKit)
 *   Detects fronting changes and distributes to all connected updaters
 *   Central event processing pipeline
-
-### Configuration
-User config enables/disables updaters:
-*   `enable_vrchat` - VRChat bio updates
-*   `enable_discord` - Discord Rich Presence
-*   `enable_discord_status_message` - Discord status (if deployment-enabled)
-*   `enable_to_pluralkit` - PluralKit synchronization
-
-Server filters "foreign_managed" updaters (Discord bot management is user-controlled, not server-managed).
 
 ### Error Handling
 *   Each updater tracks `last_operation_error`
@@ -231,20 +245,21 @@ PluralSync includes comprehensive account management features built on email ver
 
 ## Coding Guidelines
 
-*   Rust import statemnts should be one crate per statement. Importing multiple objects from the same create should be done in the same statement.
+*   Rust import statements should be one crate per statement. Importing multiple objects from the same crate should be done in the same statement.
     *   Good: `use anyhow::{anyhow, Error, Result}`
     *   Bad: the above imports on separate lines/statements for each imported object
 *   Rust import statements should use separate lines for imports from different modules originating from this project.
-*   In general, avoid excessive Debug and fmt::Display traits. Only add them, if printing to logs if useful. And then prefer Display over Debug.
+*   In general, avoid excessive Debug and fmt::Display traits. Only add them if printing to logs is useful. Prefer Display over Debug.
 *   **Security: Never add `#[derive(Debug)]` or `#[derive(Display)]` to structs containing sensitive fields** (passwords, tokens, API keys, cookies, secrets). If debugging output is needed, implement `fmt::Display` or `fmt::Debug` manually and redact all sensitive values (e.g., show only first 5 chars or `<field_name>`).
     *   Affected structs include: `UserConfigDbEntries`, `VRChatCredentials`, `VRChatCredentialsWithCookie`, `VRChatCredentialsWithTwoFactorAuth`, `UserLoginCredentials`, `SmtpConfig`, `ApplicationConfig`, and any struct with fields named `password`, `token`, `secret`, `cookie`, `api_key`, `credentials`. Check them for examples
+*   The project uses Rust edition 2024 (requires Rust 1.90.0+)
 
 ## Development Workflows
 
 > **Reminder**: For all operations below, prefer the provided scripts in `./steps/` and `./test/` directories over writing custom bash commands. The scripts handle environment setup, error handling, and correct command sequences.
 
 ### Prerequisites
-*   Rust toolchain (installation via `rustup` is recommended)
+*   Rust toolchain v1.90.0+ (installation via `rustup` is recommended)
 *   Node.js (v20.19.0 or >=22.12.0) + npm
 
 ### Installation of Dependencies
@@ -266,6 +281,7 @@ To build the Rust backend:
 To generate TypeScript bindings from the Rust backend and build the web frontend:
 ```bash
 ./steps/15-frontend-generate-bindings.sh # Generate type-safe bindings
+./steps/14-frontend-generate-announcements.sh # Generate announcement archive JSON
 ./steps/17-frontend-npm-build.sh # Build production frontend
 ```
 
@@ -333,7 +349,8 @@ Multiple integration tests are available for different components. **Always run 
 *   **Web Frontend Integration Tests:** `./test/frontend.needs-backend.integration-tests.sh` - Requires backend running separately
 *   **Bridge Frontend Integration Tests:** `./test/bridge.needs-backend.integration-tests.sh` - Requires bridge backend built and backend running
 *   **Webserver Integration Tests:** `./test/webserver.integration-tests.sh` - Tests website sync functionality
-*   **Updater Integration Tests:** `./test/updater.integration-tests.sh` - Tests the update mechanism
+*   **Updater Integration Tests (SimplyPlural source):** `./test/updater.sp.integration-tests.sh` - Tests updates from SimplyPlural source
+*   **Updater Integration Tests (PluralKit source):** `./test/updater.pk.integration-tests.sh` - Tests updates from PluralKit source (requires `SPS_API_TOKEN`, `SPS_API_WRITE_TOKEN`, `DISCORD_STATUS_MESSAGE_TOKEN`, `PLURALKIT_TOKEN`)
 *   **Restarts Integration Tests:** `./test/restarts.integration-tests.sh` - Tests behavior during restarts
 *   **History Integration Tests:** `./test/history.integration-tests.sh` - Tests fronting history functionality
 *   **Email Rate Limit Tests:** `./test/email-rate-limit.integration-tests.sh` - Tests SMTP rate limiting
@@ -348,7 +365,7 @@ To lint and format the codebase:
 ```bash
 ./steps/10-lint.sh
 ```
-This script runs `cargo clippy` with strict warning levels (`-W clippy::pedantic`, `-W clippy::nursery`, `-W clippy::unwrap_used`, `-W clippy::expect_used`), `rustfmt --edition 2024` for Rust code, and `prettier` for frontend code formatting. (Note: `eslint` linting for frontends is a pending TODO in the `web_frontend_lint` function within this script).
+This script runs `cargo clippy` with strict warning levels (`-W clippy::pedantic`, `-W clippy::nursery`, `-W clippy::unwrap_used`, `-W clippy::expect_used`), `rustfmt --edition 2024` for Rust code, and `prettier` for frontend code formatting. The web frontend also runs `eslint` for linting.
 
 ### Security Audits
 To check for known security vulnerabilities in dependencies:
@@ -358,11 +375,16 @@ To check for known security vulnerabilities in dependencies:
 This runs `cargo audit` for all Rust crates (`base-src`, main backend, `bridge-src-tauri`) and `npm audit` for Node.js dependencies.
 
 ### Release Process
-The release process is managed by creating a new Git tag and running:
+The release process involves creating a Git tag and publishing the release:
 ```bash
-./steps/32-publish-release.sh
+./steps/33-create-tag-and-release.sh # Creates tag and publishes release
 ```
-This script verifies the current Git revision has a tag (e.g., `v2.10`), ensures GitHub CLI authentication, and publishes the release.
+This script creates a new Git tag (e.g., `v2.10`), ensures GitHub CLI authentication, and publishes the release.
+
+Alternatively, to publish an existing tag:
+```bash
+./steps/32-publish-release.sh # Publishes release for existing tag
+```
 
 ## Utility Scripts
 
@@ -402,6 +424,7 @@ The project includes multiple Rust binary targets in the main crate:
 *   **pluralsync:** The main API server and WebSocket backend
 *   **ts-bindings:** Generates TypeScript type definitions from Rust using `specta`, ensuring type safety between backend and frontend
 *   **pluralsync-global-manager:** Handles global event processing and synchronization across all users' plural systems
+*   **announcement-archive-generator:** Generates static JSON archive of announcement emails for the frontend
 
 ## Patches
 
@@ -410,6 +433,30 @@ The project includes patches for external dependencies:
 *   `discord-rich-presence.discord_ipc.rs.patch` - Patch for Discord IPC communication
 
 These patches are applied automatically during dependency installation via `./steps/02-install-dependencies.sh`.
+
+---
+
+## Announcement System
+
+PluralSync includes an email announcement system for communicating important updates to all users.
+
+### Architecture
+*   **Email Templates:** Defined in `src/users/announcement_email.rs`
+*   **Database:** Tracks which users have received which announcements (`announcement_email_definitions` table)
+*   **Static Archive:** `frontend/public/announcements.json` displays historical announcements on the website
+*   **Generation:** `announcement-archive-generator` binary generates the static JSON from email templates
+
+### Workflow
+1. New announcement email template added to code
+2. On deployment, system sends emails to all eligible users
+3. Static JSON archive regenerated for website display
+4. Database tracks delivery to prevent duplicate sends
+
+### Usage
+```bash
+# Generate static announcement archive for frontend
+./steps/14-frontend-generate-announcements.sh
+```
 
 ---
 
@@ -434,7 +481,8 @@ ls test/     # Test scripts and helpers
 * `10-lint.sh` - Linting and formatting
 * `11-prepare-sqlx.sh` - Database preparation
 * `12-backend-cargo-build.sh` - Backend builds
-* `13-*` to `17-*` - Running and building frontends
+* `13-*` - Running services (global manager)
+* `14-*` to `17-*` - Frontend operations (announcements, bindings, dev, build)
 * `20-*` to `22-*` - Tauri/bridge operations
 * `30-*` to `33-*` - Release operations
 * `40-*` to `41-*` - Production monitoring

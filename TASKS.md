@@ -1,12 +1,16 @@
 ## Steps to first public release version
 
+* Steps before final release:
+  * move to pluralsync.org
+  * make bridge auto-updating
+  * send both on an announcement email
 * Sync from Pluralkit
   * DONE webhook
   * DONE fetch fronts
   * DONE properly integrate and final tests
-  * TODO add basic self-rate limiting to ensure the global rate limit isn't overstepped
+  * DONE add basic self-rate limiting to ensure the global rate limit isn't overstepped
   * TODO wait for proper system-based rate-limiting in PluraKit
-  * TODO deploy and send announcement email
+  * DONE deploy and send announcement email
   * TODO have a proper start time per member based on the latest multiple switches here
 * fix pluralsync bridge issues:
   * make it auto-updating
