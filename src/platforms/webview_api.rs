@@ -149,7 +149,7 @@ fn generate_html(config: &users::UserConfigForUpdater, fronts: &[plurality::Fron
             html_escape::encode_text(&config.status_no_fronts)
         )
     } else {
-        "".to_string()
+        String::new()
     };
 
     format!(
@@ -217,7 +217,53 @@ fn generate_html(config: &users::UserConfigForUpdater, fronts: &[plurality::Fron
 #[cfg(test)]
 mod tests {
     use super::generate_html;
+    use crate::database::Decrypted;
     use crate::plurality::Fronter;
+    use crate::users::{DiscordRichPresenceUrl, PrivacyFineGrained, UserConfigForUpdater};
+
+    fn create_test_config(system_name: &str) -> UserConfigForUpdater {
+        UserConfigForUpdater {
+            client: reqwest::Client::new(),
+            user_id: crate::users::UserId {
+                inner: uuid::Uuid::new_v4(),
+            },
+            simply_plural_base_url: String::new(),
+            discord_base_url: String::new(),
+            status_prefix: String::new(),
+            status_no_fronts: "no fronts".to_string(),
+            status_truncate_names_to: 0,
+            show_members_non_archived: true,
+            show_members_archived: true,
+            show_custom_fronts: true,
+            respect_front_notifications_disabled: true,
+            privacy_fine_grained: PrivacyFineGrained::default(),
+            privacy_fine_grained_buckets: None,
+            enable_website: true,
+            enable_discord: false,
+            enable_discord_status_message: false,
+            enable_vrchat: false,
+            enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
+            enable_from_sp: false,
+            website_url_name: String::new(),
+            website_system_name: system_name.to_string(),
+            simply_plural_token: Decrypted::default(),
+            discord_status_message_token: Decrypted::default(),
+            vrchat_username: Decrypted::default(),
+            vrchat_password: Decrypted::default(),
+            vrchat_cookie: Decrypted::default(),
+            pluralkit_token: Decrypted::default(),
+            from_pluralkit_webhook_signing_token: Decrypted::default(),
+            from_pluralkit_prefer_displayname: false,
+            from_pluralkit_respect_member_visibility: true,
+            from_pluralkit_respect_field_visibility: true,
+            history_limit: 0,
+            history_truncate_after_days: 0,
+            fronter_channel_wait_increment: 0,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
+        }
+    }
 
     #[test]
     fn test_generate_html_escaping() {
@@ -230,8 +276,8 @@ mod tests {
             privacy_buckets: vec![],
             pluralkit_id: None,
         }];
-        let system_name = "My <System>";
-        let html = generate_html(system_name, &fronters);
+        let config = create_test_config("My <System>");
+        let html = generate_html(&config, &fronters);
 
         // Test system name escaping
         assert!(html.contains("<title>My &lt;System&gt; - Fronting Status</title>"));
@@ -246,11 +292,12 @@ mod tests {
     #[test]
     fn test_generate_html_empty_fronters() {
         let fronters = vec![];
-        let system_name = "My System";
-        let html = generate_html(system_name, &fronters);
+        let config = create_test_config("My System");
+        let html = generate_html(&config, &fronters);
 
         assert!(html.contains("<title>My System - Fronting Status</title>"));
         assert!(!html.contains("<div><img"));
+        assert!(html.contains("no fronts"));
     }
 
     #[test]
@@ -275,8 +322,8 @@ mod tests {
                 pluralkit_id: None,
             },
         ];
-        let system_name = "My System";
-        let html = generate_html(system_name, &fronters);
+        let config = create_test_config("My System");
+        let html = generate_html(&config, &fronters);
 
         assert!(html.contains("<p>Fronter 1</p>"));
         assert!(html.contains("src=\"https://example.com/avatar1.png\""));
@@ -295,8 +342,8 @@ mod tests {
             privacy_buckets: vec![],
             pluralkit_id: None,
         }];
-        let system_name = "My System";
-        let html = generate_html(system_name, &fronters);
+        let config = create_test_config("My System");
+        let html = generate_html(&config, &fronters);
 
         assert!(html.contains("src=\"https://example.com/&quot; onerror=&quot;alert('oops')\""));
     }
@@ -312,8 +359,8 @@ mod tests {
             privacy_buckets: vec![],
             pluralkit_id: None,
         }];
-        let system_name = "My System";
-        let html = generate_html(system_name, &fronters);
+        let config = create_test_config("My System");
+        let html = generate_html(&config, &fronters);
 
         assert!(!html.contains("\"><script>alert('xss')</script>"));
         assert!(html.contains("src=\"&quot;&gt;&lt;script&gt;alert('xss')&lt;/script&gt;\""));
