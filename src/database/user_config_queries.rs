@@ -42,6 +42,9 @@ pub async fn get_user(
             fronter_channel_wait_increment,
             discord_rich_presence_url,
             discord_rich_presence_url_custom,
+            from_pluralkit_prefer_displayname,
+            from_pluralkit_respect_member_visibility,
+            from_pluralkit_respect_field_visibility,
             '' AS simply_plural_token,
             '' AS discord_status_message_token,
             '' AS vrchat_username,
@@ -49,9 +52,6 @@ pub async fn get_user(
             '' AS vrchat_cookie,
             '' AS pluralkit_token,
             '' AS from_pluralkit_webhook_signing_token,
-            false AS from_pluralkit_prefer_displayname,
-            false AS from_pluralkit_respect_member_visibility,
-            false AS from_pluralkit_respect_field_visibility,
             false AS valid_constraints
             FROM users WHERE id = $1",
     )
