@@ -1,3 +1,5 @@
+use std::fmt;
+
 use sqlx::{Decode, FromRow, Postgres, error::BoxDynError, postgres};
 
 use crate::{database::secrets, metrics::SHOULDNT_HAPPEN_BUT_IT_DID, users::UserConfigDbEntries};
@@ -11,7 +13,7 @@ pub trait ConstraintsType: Clone {}
 #[derive(Clone)]
 pub struct ValidConstraints {}
 
-#[derive(Clone, Default, FromRow)]
+#[derive(Clone, Default, FromRow, fmt::Debug)]
 pub struct InvalidConstraints {}
 
 impl ConstraintsType for ValidConstraints {}

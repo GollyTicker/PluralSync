@@ -13,7 +13,17 @@ use serde::{Deserialize, Serialize};
 use specta;
 
 #[derive(
-    Display, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
+    Display,
+    Clone,
+    Copy,
+    Debug,
+    Serialize,
+    Deserialize,
+    PartialEq,
+    Eq,
+    Default,
+    sqlx::Type,
+    specta::Type,
 )]
 #[specta(export)]
 #[sqlx(type_name = "privacy_fine_grained_enum")]
@@ -25,7 +35,7 @@ pub enum PrivacyFineGrained {
 }
 
 #[derive(
-    Display, Clone, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
+    Display, Clone, Debug, Serialize, Deserialize, PartialEq, Eq, Default, sqlx::Type, specta::Type,
 )]
 #[specta(export)]
 #[sqlx(type_name = "discord_rich_presence_url")]

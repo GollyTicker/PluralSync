@@ -16,8 +16,10 @@ pub async fn get_user(
     db_pool: &PgPool,
     user_id: &UserId,
 ) -> Result<UserConfigDbEntries<secrets::Encrypted>> {
+    type Out = UserConfigDbEntries<secrets::Encrypted>;
     log::debug!("# | db::get_user | {user_id}");
-    sqlx::query_as(
+    sqlx::query_as!(
+        Out,
         "SELECT
             website_system_name,
             website_url_name,
@@ -35,27 +37,27 @@ pub async fn get_user(
             enable_to_pluralkit,
             enable_from_pluralkit,
             enable_from_sp,
-            privacy_fine_grained,
+            privacy_fine_grained AS \"privacy_fine_grained: users::PrivacyFineGrained\",
             privacy_fine_grained_buckets,
             history_limit,
             history_truncate_after_days,
             fronter_channel_wait_increment,
-            discord_rich_presence_url,
+            discord_rich_presence_url AS \"discord_rich_presence_url: users::DiscordRichPresenceUrl\",
             discord_rich_presence_url_custom,
             from_pluralkit_prefer_displayname,
             from_pluralkit_respect_member_visibility,
             from_pluralkit_respect_field_visibility,
-            '' AS simply_plural_token,
-            '' AS discord_status_message_token,
-            '' AS vrchat_username,
-            '' AS vrchat_password,
-            '' AS vrchat_cookie,
-            '' AS pluralkit_token,
-            '' AS from_pluralkit_webhook_signing_token,
-            false AS valid_constraints
+            '' AS \"simply_plural_token: secrets::Encrypted\",
+            '' AS \"discord_status_message_token: secrets::Encrypted\",
+            '' AS \"vrchat_username: secrets::Encrypted\",
+            '' AS \"vrchat_password: secrets::Encrypted\",
+            '' AS \"vrchat_cookie: secrets::Encrypted\",
+            '' AS \"pluralkit_token: secrets::Encrypted\",
+            '' AS \"from_pluralkit_webhook_signing_token: secrets::Encrypted\",
+            false AS \"valid_constraints: constraints::InvalidConstraints\"
             FROM users WHERE id = $1",
+        user_id.inner
     )
-    .bind(user_id.inner)
     .fetch_one(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))
@@ -85,11 +87,12 @@ pub async fn get_user_secrets(
     user_id: &UserId,
     application_user_secret: &secrets::ApplicationUserSecrets,
 ) -> Result<UserConfigDbEntries<secrets::Decrypted, constraints::ValidConstraints>> {
+    type Out = UserConfigDbEntries<secrets::Decrypted, constraints::ValidConstraints>;
+
     log::debug!("# | db::get_user_secrets | {user_id}");
-
     let secrets_key = compute_user_secrets_key(user_id, application_user_secret);
-
-    sqlx::query_as(
+    sqlx::query_as!(
+        Out,
         "SELECT
             website_system_name,
             website_url_name,
@@ -107,28 +110,28 @@ pub async fn get_user_secrets(
             enable_to_pluralkit,
             enable_from_pluralkit,
             enable_from_sp,
-            privacy_fine_grained,
+            privacy_fine_grained AS \"privacy_fine_grained: crate::users::PrivacyFineGrained\",
             privacy_fine_grained_buckets,
             history_limit,
             history_truncate_after_days,
             fronter_channel_wait_increment,
-            discord_rich_presence_url,
+            discord_rich_presence_url AS \"discord_rich_presence_url: crate::users::DiscordRichPresenceUrl\",
             discord_rich_presence_url_custom,
-            pgp_sym_decrypt(enc__simply_plural_token, $2) AS simply_plural_token,
-            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS discord_status_message_token,
-            pgp_sym_decrypt(enc__vrchat_username, $2) AS vrchat_username,
-            pgp_sym_decrypt(enc__vrchat_password, $2) AS vrchat_password,
-            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS vrchat_cookie,
-            pgp_sym_decrypt(enc__pluralkit_token, $2) AS pluralkit_token,
-            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS from_pluralkit_webhook_signing_token,
+            pgp_sym_decrypt(enc__simply_plural_token, $2) AS \"simply_plural_token: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS \"discord_status_message_token: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__vrchat_username, $2) AS \"vrchat_username: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__vrchat_password, $2) AS \"vrchat_password: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS \"vrchat_cookie: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__pluralkit_token, $2) AS \"pluralkit_token: secrets::Decrypted\",
+            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS \"from_pluralkit_webhook_signing_token: secrets::Decrypted\",
             from_pluralkit_prefer_displayname,
             from_pluralkit_respect_member_visibility,
             from_pluralkit_respect_field_visibility,
-            true AS valid_constraints
+            true AS \"valid_constraints: constraints::ValidConstraints\"
             FROM users WHERE id = $1",
+        user_id.inner,
+        secrets_key.inner
     )
-    .bind(user_id.inner)
-    .bind(secrets_key.inner)
     .fetch_one(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))
@@ -144,46 +147,48 @@ pub async fn set_user_config_secrets(
 
     let secrets_key = compute_user_secrets_key(user_id, application_user_secret);
 
-    let _: Option<UserConfigDbEntries<secrets::Decrypted>> = sqlx::query_as(
+    // Note: Using query_as() instead of query!() because custom enums need Encode trait
+    // which is complex to implement. UPDATE queries don't benefit as much from compile-time
+    // verification since they don't return data.
+    let _: Option<()> = sqlx::query_as(
         "UPDATE users
         SET
-            website_system_name = $3,
-            status_prefix = $4,
-            status_no_fronts = $5,
-            status_truncate_names_to = $6,
-            enable_discord_status_message = $7,
-            enable_vrchat = $8,
-            enc__simply_plural_token = pgp_sym_encrypt($10, $9),
-            enc__discord_status_message_token = pgp_sym_encrypt($11, $9),
-            enc__vrchat_username = pgp_sym_encrypt($12, $9),
-            enc__vrchat_password = pgp_sym_encrypt($13, $9),
-            enc__vrchat_cookie = pgp_sym_encrypt($14, $9),
-            enable_discord = $15,
-            enable_website = $16,
-            website_url_name = $17,
-            show_members_non_archived = $18,
-            show_members_archived = $19,
-            show_custom_fronts = $20,
-            respect_front_notifications_disabled = $21,
-            privacy_fine_grained = $22,
-            privacy_fine_grained_buckets = $23,
-            enable_to_pluralkit = $24,
-            enc__pluralkit_token = pgp_sym_encrypt($25, $9),
-            history_limit = $26,
-            history_truncate_after_days = $27,
-            fronter_channel_wait_increment = $28,
-            enable_from_pluralkit = $29,
-            enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9),
-            enable_from_sp = $31,
-            discord_rich_presence_url = $32,
-            discord_rich_presence_url_custom = $33,
-            from_pluralkit_prefer_displayname = $34,
-            from_pluralkit_respect_member_visibility = $35,
-            from_pluralkit_respect_field_visibility = $36
+            website_system_name = $2,
+            status_prefix = $3,
+            status_no_fronts = $4,
+            status_truncate_names_to = $5,
+            enable_discord_status_message = $6,
+            enable_vrchat = $7,
+            enc__simply_plural_token = pgp_sym_encrypt($9, $8),
+            enc__discord_status_message_token = pgp_sym_encrypt($10, $8),
+            enc__vrchat_username = pgp_sym_encrypt($11, $8),
+            enc__vrchat_password = pgp_sym_encrypt($12, $8),
+            enc__vrchat_cookie = pgp_sym_encrypt($13, $8),
+            enable_discord = $14,
+            enable_website = $15,
+            website_url_name = $16,
+            show_members_non_archived = $17,
+            show_members_archived = $18,
+            show_custom_fronts = $19,
+            respect_front_notifications_disabled = $20,
+            privacy_fine_grained = $21,
+            privacy_fine_grained_buckets = $22,
+            enable_to_pluralkit = $23,
+            enc__pluralkit_token = pgp_sym_encrypt($24, $8),
+            history_limit = $25,
+            history_truncate_after_days = $26,
+            fronter_channel_wait_increment = $27,
+            enable_from_pluralkit = $28,
+            enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($29, $8),
+            enable_from_sp = $30,
+            discord_rich_presence_url = $31,
+            discord_rich_presence_url_custom = $32,
+            from_pluralkit_prefer_displayname = $33,
+            from_pluralkit_respect_member_visibility = $34,
+            from_pluralkit_respect_field_visibility = $35
         WHERE id = $1",
     )
     .bind(user_id.inner)
-    .bind(0)
     .bind(&config.website_system_name)
     .bind(&config.status_prefix)
     .bind(&config.status_no_fronts)
@@ -204,7 +209,7 @@ pub async fn set_user_config_secrets(
     .bind(config.show_custom_fronts)
     .bind(config.respect_front_notifications_disabled)
     .bind(config.privacy_fine_grained)
-    .bind(config.privacy_fine_grained_buckets)
+    .bind(&config.privacy_fine_grained_buckets)
     .bind(config.enable_to_pluralkit)
     .bind(config.pluralkit_token.map(|s| s.secret))
     .bind(config.history_limit)
@@ -217,8 +222,8 @@ pub async fn set_user_config_secrets(
             .map(|s| s.secret),
     )
     .bind(config.enable_from_sp)
-    .bind(config.discord_rich_presence_url)
-    .bind(config.discord_rich_presence_url_custom)
+    .bind(&config.discord_rich_presence_url)
+    .bind(&config.discord_rich_presence_url_custom)
     .bind(config.from_pluralkit_prefer_displayname)
     .bind(config.from_pluralkit_respect_member_visibility)
     .bind(config.from_pluralkit_respect_field_visibility)

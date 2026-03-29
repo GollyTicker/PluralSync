@@ -1,5 +1,7 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
-use sqlx::{Decode, FromRow, Postgres, error::BoxDynError, postgres};
+use sqlx::{self, Decode, FromRow, Postgres, error::BoxDynError, postgres};
 
 #[derive(Clone)]
 pub struct UserSecretsDecryptionKey {
@@ -12,10 +14,12 @@ pub struct ApplicationUserSecrets {
 }
 
 pub trait SecretType: Default + Clone {}
+
 impl SecretType for Encrypted {}
 impl SecretType for Decrypted {}
 
-#[derive(Default, Clone, Serialize, FromRow, PartialEq, Eq)]
+#[derive(Default, Clone, Serialize, FromRow, PartialEq, Eq, fmt::Debug)]
+#[sqlx(type_name = "encrypted")]
 pub struct Encrypted {}
 
 impl From<String> for Encrypted {
@@ -43,6 +47,7 @@ impl<'r> Decode<'r, Postgres> for Encrypted {
 }
 
 #[derive(Default, Clone, Serialize, Deserialize, FromRow, PartialEq, Eq, specta::Type)]
+#[sqlx(type_name = "decrypted")]
 pub struct Decrypted {
     pub secret: String,
 }

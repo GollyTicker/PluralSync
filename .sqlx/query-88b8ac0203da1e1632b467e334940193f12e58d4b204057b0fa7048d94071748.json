@@ -1,0 +1,244 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "SELECT\n            website_system_name,\n            website_url_name,\n            status_prefix,\n            status_no_fronts,\n            status_truncate_names_to,\n            show_members_non_archived,\n            show_members_archived,\n            show_custom_fronts,\n            respect_front_notifications_disabled,\n            enable_website,\n            enable_discord,\n            enable_discord_status_message,\n            enable_vrchat,\n            enable_to_pluralkit,\n            enable_from_pluralkit,\n            enable_from_sp,\n            privacy_fine_grained AS \"privacy_fine_grained: crate::users::PrivacyFineGrained\",\n            privacy_fine_grained_buckets,\n            history_limit,\n            history_truncate_after_days,\n            fronter_channel_wait_increment,\n            discord_rich_presence_url AS \"discord_rich_presence_url: crate::users::DiscordRichPresenceUrl\",\n            discord_rich_presence_url_custom,\n            pgp_sym_decrypt(enc__simply_plural_token, $2) AS \"simply_plural_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS \"discord_status_message_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_username, $2) AS \"vrchat_username: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_password, $2) AS \"vrchat_password: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS \"vrchat_cookie: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__pluralkit_token, $2) AS \"pluralkit_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS \"from_pluralkit_webhook_signing_token: secrets::Decrypted\",\n            from_pluralkit_prefer_displayname,\n            from_pluralkit_respect_member_visibility,\n            from_pluralkit_respect_field_visibility,\n            true AS \"valid_constraints: constraints::ValidConstraints\"\n            FROM users WHERE id = $1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "website_system_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "website_url_name",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 2,
+        "name": "status_prefix",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 3,
+        "name": "status_no_fronts",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 4,
+        "name": "status_truncate_names_to",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 5,
+        "name": "show_members_non_archived",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "show_members_archived",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 7,
+        "name": "show_custom_fronts",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 8,
+        "name": "respect_front_notifications_disabled",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 9,
+        "name": "enable_website",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 10,
+        "name": "enable_discord",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 11,
+        "name": "enable_discord_status_message",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 12,
+        "name": "enable_vrchat",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 13,
+        "name": "enable_to_pluralkit",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 14,
+        "name": "enable_from_pluralkit",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 15,
+        "name": "enable_from_sp",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 16,
+        "name": "privacy_fine_grained: crate::users::PrivacyFineGrained",
+        "type_info": {
+          "Custom": {
+            "name": "privacy_fine_grained_enum",
+            "kind": {
+              "Enum": [
+                "NoFineGrained",
+                "ViaFriend",
+                "ViaPrivacyBuckets"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 17,
+        "name": "privacy_fine_grained_buckets",
+        "type_info": "TextArray"
+      },
+      {
+        "ordinal": 18,
+        "name": "history_limit",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 19,
+        "name": "history_truncate_after_days",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 20,
+        "name": "fronter_channel_wait_increment",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 21,
+        "name": "discord_rich_presence_url: crate::users::DiscordRichPresenceUrl",
+        "type_info": {
+          "Custom": {
+            "name": "discord_rich_presence_url",
+            "kind": {
+              "Enum": [
+                "None",
+                "PluralSyncAboutPage",
+                "PluralSyncFrontingWebsiteIfDefined",
+                "CustomUrl"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 22,
+        "name": "discord_rich_presence_url_custom",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 23,
+        "name": "simply_plural_token: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 24,
+        "name": "discord_status_message_token: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 25,
+        "name": "vrchat_username: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 26,
+        "name": "vrchat_password: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 27,
+        "name": "vrchat_cookie: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 28,
+        "name": "pluralkit_token: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 29,
+        "name": "from_pluralkit_webhook_signing_token: secrets::Decrypted",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 30,
+        "name": "from_pluralkit_prefer_displayname",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 31,
+        "name": "from_pluralkit_respect_member_visibility",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 32,
+        "name": "from_pluralkit_respect_field_visibility",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 33,
+        "name": "valid_constraints: constraints::ValidConstraints",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text"
+      ]
+    },
+    "nullable": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      true,
+      true,
+      true,
+      true,
+      false,
+      true,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      false,
+      false,
+      false,
+      null
+    ]
+  },
+  "hash": "88b8ac0203da1e1632b467e334940193f12e58d4b204057b0fa7048d94071748"
+}
