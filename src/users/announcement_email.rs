@@ -81,6 +81,7 @@ pub fn smiply_plural_discontinuation_1() -> AnnouncementEmail {
     }
 }
 
+#[must_use]
 pub fn pluralkit_as_source() -> AnnouncementEmail {
     AnnouncementEmail {
         email_id: "2026-03-29-pluralkit-added",

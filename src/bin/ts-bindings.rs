@@ -61,6 +61,7 @@ fn main() -> Result<()> {
     enable_discord?: boolean;
     enable_discord_status_message?: boolean;
     enable_vrchat?: boolean;
+    enable_from_sp?: boolean;
     enable_to_pluralkit?: boolean;
     enable_from_pluralkit?: boolean;
     simply_plural_token?: Decrypted;

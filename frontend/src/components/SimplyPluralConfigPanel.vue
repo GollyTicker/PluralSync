@@ -1,7 +1,18 @@
 <template>
   <div class="config-section">
-    <h2>Sync From Simply Plural</h2>
+    <h2>Simply Plural</h2>
     <div class="config-grid">
+      <div class="config-item">
+        <label for="enable_from_pluralkit">Enable Sync from SimplyPlural</label>
+        <p class="config-description">
+          PluralSync will listen for changes in your system and fronting from SimplyPlural via
+          websocket and update your status on all connected platforms.
+          <br />
+          Note, that only one system manager for fronting is supported at a time (either PluralKit
+          or SimplyPlural as source).
+        </p>
+        <input id="enable_from_sp" type="checkbox" v-model="config.enable_from_sp" />
+      </div>
       <div class="config-item">
         <label for="simply_plural_token">Simply Plural Token</label>
         <p class="config-description">
