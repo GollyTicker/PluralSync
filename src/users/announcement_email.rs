@@ -81,6 +81,35 @@ pub fn smiply_plural_discontinuation_1() -> AnnouncementEmail {
     }
 }
 
+pub fn pluralkit_as_source() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-03-29-pluralkit-added",
+        date: "2026-03-29",
+        subject_fn: |_| "PluralSync 🔄 - Added PluralKit as Syncing Source 💖".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            Being able to synchronize from PluralKit to other platforms and system managers was a frequently requested feature from the beginning of PluralSync.\n
+            We're happy to announce, that from now on, you can sync Pluralkit -> * ! ❤️\n\
+            \n\
+            Check the settings to configure the synchronisation. The synchronisation respects the privacy levels of the fields and the member visibility - and it can be configured as well.\n\
+            This integration is still fresh - so issues might arise. If you have issues or have feedback, let us know on the community server!\n\
+            Due to technical details, the requests against PluralKit are slowed down a bit - but this should be resolved in a few weeks and not be noticeable for you practically.\n\
+            \n\
+            Given the near-future discontinuation of SimplyPlural ( https://apparyllis.com/simply-plural-will-be-discontinued/ ), having more options on PluralSync is important.\n\
+            \n\
+            We're very happy for the PluralKit community and especially the devs for their interactions with us. We enjoy the open-source availability of PluralKit and\n\
+            that also enabled us to contribute new code to PluralKit which is needed for PluralSync to better support this synchronisation sustainabily.\n\
+            \n\
+            Thank you for your attenion.\n\
+            \n\
+            Kinds, PluralSync
+            "
+            .to_owned()
+        },
+    }
+}
+
 /// Registry of all announcement emails
 /// Add new emails here when deploying
 #[must_use]
@@ -88,6 +117,7 @@ pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
     vec![
         email_announcements_activated(),
         smiply_plural_discontinuation_1(),
+        pluralkit_as_source(),
     ]
 }
 

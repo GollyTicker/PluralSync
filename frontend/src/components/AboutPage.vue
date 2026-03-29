@@ -19,8 +19,8 @@ export interface Screenshot {
       <p>
         PluralSync is a cloud service where users can automatically sync their plural systems'
         fronting status between various system managers and social platforms such as
-        <a href="https://apparyllis.com/" target="_blank">SimplyPlural</a>,
         <a href="https://pluralkit.me/" target="_blank">PluralKit</a>,
+        <a href="https://apparyllis.com/" target="_blank">SimplyPlural</a>,
         <a href="https://hello.vrchat.com/" target="_blank">VRChat</a>,
         <a href="https://discord.com" target="_blank">Discord</a> or their own website. Users of
         system managers (plural systems, DID/OSDD systems, etc.) benefit from this as it makes it
@@ -48,10 +48,17 @@ export interface Screenshot {
 
       <h2>Supported Synchronizations</h2>
       <ul>
-        <li>SimplyPlural to VRChat Status</li>
-        <li>SimplyPlural to Discord Status or Rich Presence / Activity</li>
-        <li>SimplyPlural to Website with fronter names and avatars</li>
+        <li>
+          SimplyPlural to VRChat Status, Discord Status, Discord Rich Presence / Activity, Website
+          with fronter names and avatars
+        </li>
         <li>SimplyPlural to PluralKit Fronters Switch</li>
+      </ul>
+      <ul>
+        <li>
+          PluralKit to VRChat Status, Discord Status, Discord Rich Presence / Activity, Website with
+          fronter names and avatars
+        </li>
       </ul>
 
       <h2>Open Source, Free & Libre Software</h2>
