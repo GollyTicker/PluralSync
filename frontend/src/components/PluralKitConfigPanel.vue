@@ -45,9 +45,6 @@
           <br />
           Note, that only one system manager for fronting is supported at a time (either PluralKit
           or SimplyPlural as source).
-          <br />
-          Field level privacy is not supported currently! If a member as a whole is marked as
-          private, then PluralSync will not display that member. Otherwise all fields will be shown.
         </p>
         <input id="enable_from_pluralkit" type="checkbox" v-model="config.enable_from_pluralkit" />
       </div>
@@ -83,6 +80,39 @@
           type="password"
           :value="config.from_pluralkit_webhook_signing_token?.secret"
           @input="setSecret('from_pluralkit_webhook_signing_token', $event)"
+        />
+      </div>
+      <div v-if="config.enable_from_pluralkit" class="config-item">
+        <label for="from_pluralkit_prefer_displayname">Prefer Display Names</label>
+        <input
+          id="from_pluralkit_prefer_displayname"
+          type="checkbox"
+          v-model="config.from_pluralkit_prefer_displayname"
+        />
+      </div>
+      <div v-if="config.enable_from_pluralkit" class="config-item">
+        <label for="from_pluralkit_respect_member_visibility">Respect Member Visibility</label>
+        <p class="config-description">
+          If ON and if a member is marked as private in PluralKit, they will not be shown in
+          PluralSync. If OFF, then members will always be shown.
+        </p>
+        <input
+          id="from_pluralkit_respect_member_visibility"
+          type="checkbox"
+          v-model="config.from_pluralkit_respect_member_visibility"
+        />
+      </div>
+      <div v-if="config.enable_from_pluralkit" class="config-item">
+        <label for="from_pluralkit_respect_field_visibility">Respect Field Visibility</label>
+        <p class="config-description">
+          If ON and if a member's field (e.g. pronouns, avatar url) is marked as private in
+          PluralKit, that field will not be shown in PluralSync. If OFF, then all fields will always
+          be shown.
+        </p>
+        <input
+          id="from_pluralkit_respect_field_visibility"
+          type="checkbox"
+          v-model="config.from_pluralkit_respect_field_visibility"
         />
       </div>
     </div>

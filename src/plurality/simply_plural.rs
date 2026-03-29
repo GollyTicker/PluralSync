@@ -391,6 +391,9 @@ mod tests {
             enable_from_sp: true,
             discord_rich_presence_url: DiscordRichPresenceUrl::default(),
             discord_rich_presence_url_custom: None,
+            from_pluralkit_prefer_displayname: false,
+            from_pluralkit_respect_member_visibility: false,
+            from_pluralkit_respect_field_visibility: false,
         }
     }
 

@@ -49,6 +49,9 @@ pub async fn get_user(
             '' AS vrchat_cookie,
             '' AS pluralkit_token,
             '' AS from_pluralkit_webhook_signing_token,
+            false AS from_pluralkit_prefer_displayname,
+            false AS from_pluralkit_respect_member_visibility,
+            false AS from_pluralkit_respect_field_visibility,
             false AS valid_constraints
             FROM users WHERE id = $1",
     )
@@ -118,6 +121,9 @@ pub async fn get_user_secrets(
             pgp_sym_decrypt(enc__vrchat_cookie, $2) AS vrchat_cookie,
             pgp_sym_decrypt(enc__pluralkit_token, $2) AS pluralkit_token,
             pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS from_pluralkit_webhook_signing_token,
+            from_pluralkit_prefer_displayname,
+            from_pluralkit_respect_member_visibility,
+            from_pluralkit_respect_field_visibility,
             true AS valid_constraints
             FROM users WHERE id = $1",
     )
@@ -170,7 +176,10 @@ pub async fn set_user_config_secrets(
             enc__from_pluralkit_webhook_signing_token = pgp_sym_encrypt($30, $9),
             enable_from_sp = $31,
             discord_rich_presence_url = $32,
-            discord_rich_presence_url_custom = $33
+            discord_rich_presence_url_custom = $33,
+            from_pluralkit_prefer_displayname = $34,
+            from_pluralkit_respect_member_visibility = $35,
+            from_pluralkit_respect_field_visibility = $36
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -210,6 +219,9 @@ pub async fn set_user_config_secrets(
     .bind(config.enable_from_sp)
     .bind(config.discord_rich_presence_url)
     .bind(config.discord_rich_presence_url_custom)
+    .bind(config.from_pluralkit_prefer_displayname)
+    .bind(config.from_pluralkit_respect_member_visibility)
+    .bind(config.from_pluralkit_respect_field_visibility)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;

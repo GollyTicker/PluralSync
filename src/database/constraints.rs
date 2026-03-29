@@ -101,6 +101,9 @@ pub fn downgrade<Secret: secrets::SecretType, C: ConstraintsType>(
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
         discord_rich_presence_url: value.discord_rich_presence_url.clone(),
         discord_rich_presence_url_custom: value.discord_rich_presence_url_custom.clone(),
+        from_pluralkit_prefer_displayname: value.from_pluralkit_prefer_displayname,
+        from_pluralkit_respect_member_visibility: value.from_pluralkit_respect_member_visibility,
+        from_pluralkit_respect_field_visibility: value.from_pluralkit_respect_field_visibility,
     }
 }
 
@@ -141,5 +144,8 @@ pub fn only_use_this_function_to_mark_validation_after_you_have_actually_validat
         from_pluralkit_webhook_signing_token: value.from_pluralkit_webhook_signing_token.clone(),
         discord_rich_presence_url: value.discord_rich_presence_url.clone(),
         discord_rich_presence_url_custom: value.discord_rich_presence_url_custom.clone(),
+        from_pluralkit_prefer_displayname: value.from_pluralkit_prefer_displayname,
+        from_pluralkit_respect_member_visibility: value.from_pluralkit_respect_member_visibility,
+        from_pluralkit_respect_field_visibility: value.from_pluralkit_respect_field_visibility,
     }
 }

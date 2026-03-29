@@ -3,9 +3,11 @@
 * Sync from Pluralkit
   * DONE webhook
   * DONE fetch fronts
-  * TODO properly integrate and final tests
+  * DONE properly integrate and final tests
+  * TODO add basic self-rate limiting to ensure the global rate limit isn't overstepped
   * TODO wait for proper system-based rate-limiting in PluraKit
   * TODO deploy and send announcement email
+  * TODO have a proper start time per member based on the latest multiple switches here
 * fix pluralsync bridge issues:
   * make it auto-updating
   * make each login provide the version of the software sending the request - and only accept the current version

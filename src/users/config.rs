@@ -87,6 +87,9 @@ where
     pub vrchat_cookie: Option<Secret>,
     pub pluralkit_token: Option<Secret>,
     pub from_pluralkit_webhook_signing_token: Option<Secret>,
+    pub from_pluralkit_prefer_displayname: bool,
+    pub from_pluralkit_respect_member_visibility: bool,
+    pub from_pluralkit_respect_field_visibility: bool,
     // When adding new config values, don't forget to also add metrics for them in metrics_config_values
 }
 
@@ -147,6 +150,9 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             valid_constraints: self.valid_constraints.clone(), // Constraints are not defaulted
             discord_rich_presence_url: self.discord_rich_presence_url.clone(),
             discord_rich_presence_url_custom: self.discord_rich_presence_url_custom.clone(),
+            from_pluralkit_prefer_displayname: self.from_pluralkit_prefer_displayname,
+            from_pluralkit_respect_member_visibility: self.from_pluralkit_respect_member_visibility,
+            from_pluralkit_respect_field_visibility: self.from_pluralkit_respect_field_visibility,
         }
     }
 }
@@ -185,6 +191,9 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             from_pluralkit_webhook_signing_token: None,
             discord_rich_presence_url: DiscordRichPresenceUrl::default(),
             discord_rich_presence_url_custom: None,
+            from_pluralkit_prefer_displayname: true,
+            from_pluralkit_respect_member_visibility: true,
+            from_pluralkit_respect_field_visibility: true,
         }
     }
 }
@@ -264,6 +273,18 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
             "discord_rich_presence_url_custom_set".to_owned(),
             user_config.discord_rich_presence_url_custom.is_some(),
         ),
+        (
+            "from_pluralkit_prefer_displayname".to_owned(),
+            user_config.from_pluralkit_prefer_displayname,
+        ),
+        (
+            "from_pluralkit_respect_member_visibility".to_owned(),
+            user_config.from_pluralkit_respect_member_visibility,
+        ),
+        (
+            "from_pluralkit_respect_field_visibility".to_owned(),
+            user_config.from_pluralkit_respect_field_visibility,
+        ),
     ]
 }
 
@@ -307,6 +328,9 @@ pub struct UserConfigForUpdater {
     pub vrchat_cookie: database::Decrypted,
     pub pluralkit_token: database::Decrypted,
     pub from_pluralkit_webhook_signing_token: database::Decrypted,
+    pub from_pluralkit_prefer_displayname: bool,
+    pub from_pluralkit_respect_member_visibility: bool,
+    pub from_pluralkit_respect_field_visibility: bool,
 
     pub history_limit: usize,
     pub history_truncate_after_days: usize,
@@ -448,6 +472,9 @@ where
         discord_rich_presence_url_custom: local_config_with_defaults
             .discord_rich_presence_url_custom
             ,
+        from_pluralkit_prefer_displayname: local_config_with_defaults.from_pluralkit_prefer_displayname,
+        from_pluralkit_respect_member_visibility: local_config_with_defaults.from_pluralkit_respect_member_visibility,
+        from_pluralkit_respect_field_visibility: local_config_with_defaults.from_pluralkit_respect_field_visibility,
     };
 
     if config.privacy_fine_grained == PrivacyFineGrained::ViaPrivacyBuckets
@@ -559,6 +586,9 @@ mod tests {
             fronter_channel_wait_increment: Some(100),
             discord_rich_presence_url: DiscordRichPresenceUrl::default(),
             discord_rich_presence_url_custom: None,
+            from_pluralkit_prefer_displayname: false,
+            from_pluralkit_respect_member_visibility: false,
+            from_pluralkit_respect_field_visibility: false,
         };
 
         let (config_for_updater, _) =
@@ -617,6 +647,9 @@ mod tests {
             enable_from_sp: true,
             discord_rich_presence_url: DiscordRichPresenceUrl::default(),
             discord_rich_presence_url_custom: None,
+            from_pluralkit_prefer_displayname: false,
+            from_pluralkit_respect_member_visibility: false,
+            from_pluralkit_respect_field_visibility: false,
         };
 
         let json_string = serde_json::to_string_pretty(&config).unwrap();
@@ -661,7 +694,10 @@ mod tests {
   },
   "from_pluralkit_webhook_signing_token": {
     "secret": "pk_webhook_signing_token_abc"
-  }
+  },
+  "from_pluralkit_prefer_displayname": false,
+  "from_pluralkit_respect_member_visibility": false,
+  "from_pluralkit_respect_field_visibility": false
 }"#;
 
         assert_eq!(json_string, expected_json);
@@ -742,6 +778,9 @@ mod tests {
             valid_constraints: None,
             discord_rich_presence_url: DiscordRichPresenceUrl::default(),
             discord_rich_presence_url_custom: None,
+            from_pluralkit_prefer_displayname: false,
+            from_pluralkit_respect_member_visibility: false,
+            from_pluralkit_respect_field_visibility: false,
         }
     }
 }

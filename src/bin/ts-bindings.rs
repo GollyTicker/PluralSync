@@ -75,6 +75,9 @@ fn main() -> Result<()> {
     fronter_channel_wait_increment?: number;
     discord_rich_presence_url?: DiscordRichPresenceUrl;
     discord_rich_presence_url_custom?: string;
+    from_pluralkit_prefer_displayname?: boolean;
+    from_pluralkit_respect_member_visibility?: boolean;
+    from_pluralkit_respect_field_visibility?: boolean;
 }".to_owned(),
         export::<PrivacyFineGrained>(conf)?,
         export::<DiscordRichPresenceUrl>(conf)?,

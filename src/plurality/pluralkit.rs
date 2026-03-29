@@ -1,4 +1,5 @@
 use anyhow::Result;
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -96,7 +97,7 @@ pub async fn fetch_fronts_from_pluralkit(
     let pk_fronters =
         http_pluralkit_fronters(&config.client, &config.pluralkit_token, user_id).await?;
 
-    let frontables = get_pk_members_by_privacy_rules(&pk_fronters.members, config);
+    let frontables = get_pk_members_by_privacy_rules(&pk_fronters, config);
 
     let (fronters, excluded): (Vec<_>, Vec<_>) =
         frontables.into_iter().partition_map(|result| match result {
@@ -116,16 +117,17 @@ pub async fn fetch_fronts_from_pluralkit(
 fn show_pk_member_according_to_privacy_rules(
     config: &UserConfigForUpdater,
     member: &PkMember,
+    start_time: &chrono::DateTime<Utc>,
 ) -> FilteredFronter {
     // Check if member visibility is private - exclude entirely
     if let Some(privacy) = &member.privacy
         && privacy.visibility == PrivacyLevel::Private
     {
-        let fronter = Fronter::from(member.clone());
+        let fronter = from_pk_member_to_fronter(member.clone(), config, start_time);
         return FilteredFronter::Excluded(fronter, ExclusionReason::MemberPrivacyPrivate);
     }
 
-    let fronter = Fronter::from(member.clone());
+    let fronter = from_pk_member_to_fronter(member.clone(), config, start_time);
 
     if member.is_archived && !config.show_members_archived {
         return FilteredFronter::Excluded(fronter, ExclusionReason::ArchivedMemberHidden);
@@ -135,12 +137,13 @@ fn show_pk_member_according_to_privacy_rules(
 }
 
 fn get_pk_members_by_privacy_rules(
-    members: &[PkMember],
+    fronters: &PkFronters,
     config: &UserConfigForUpdater,
 ) -> Vec<FilteredFronter> {
-    members
+    fronters
+        .members
         .iter()
-        .map(|m| show_pk_member_according_to_privacy_rules(config, m))
+        .map(|m| show_pk_member_according_to_privacy_rules(config, m, &fronters.timestamp))
         .collect()
 }
 
@@ -197,49 +200,47 @@ pub struct PkMemberFieldPrivacy {
     pub proxy_privacy: PrivacyLevel,
 }
 
-impl From<PkMember> for Fronter {
-    fn from(m: PkMember) -> Self {
-        // Check if member visibility is private - return minimal fronter
-        if let Some(privacy) = &m.privacy
-            && privacy.visibility == PrivacyLevel::Private
-        {
-            return Self {
-                fronter_id: m.id,
-                name: m.name,
-                pronouns: None,
-                avatar_url: String::new(),
-                pluralkit_id: None,
-                start_time: None,
-                privacy_buckets: vec![],
-            };
-        }
-
-        // Apply field-level privacy
-        let pronouns = m.pronouns.filter(|_| {
-            m.privacy
-                .as_ref()
-                .is_none_or(|p| p.pronoun_privacy == PrivacyLevel::Public)
-        });
-
-        let avatar_url = m.avatar_url.filter(|_| {
-            m.privacy
-                .as_ref()
-                .is_none_or(|p| p.avatar_privacy == PrivacyLevel::Public)
-        });
-
-        Self {
-            fronter_id: m.id,
-            name: m.name,
-            pronouns,
-            avatar_url: avatar_url.unwrap_or_default(),
-            pluralkit_id: Some(m.uuid),
-            start_time: None,
-            privacy_buckets: vec![],
-        }
+fn redact_if_private<T>(value: T, privacy: Option<PrivacyLevel>, redacted: T) -> T {
+    match privacy {
+        Some(PrivacyLevel::Private) => redacted,
+        Some(_) | None => value, // unspecified privacy is equivalent to public according to pluralkit
     }
 }
 
-#[derive(Clone, Debug, Deserialize, Default, Serialize, PartialEq, Eq)]
+fn from_pk_member_to_fronter(
+    m: PkMember,
+    config: &UserConfigForUpdater,
+    current_switch_start_time: &chrono::DateTime<Utc>,
+) -> Fronter {
+    let name = config
+        .from_pluralkit_prefer_displayname
+        .then_some(m.display_name)
+        .flatten()
+        .unwrap_or(m.name);
+    Fronter {
+        fronter_id: m.id.clone(),
+        name: redact_if_private(
+            name,
+            m.privacy.as_ref().map(|m| m.name_privacy),
+            "<hidden>".to_string(),
+        ),
+        pronouns: redact_if_private(
+            m.pronouns,
+            m.privacy.as_ref().map(|m| m.pronoun_privacy),
+            None,
+        ),
+        avatar_url: redact_if_private(
+            m.avatar_url.unwrap_or_default(),
+            m.privacy.as_ref().map(|m| m.avatar_privacy),
+            String::new(),
+        ),
+        pluralkit_id: Some(m.id),
+        start_time: Some(*current_switch_start_time),
+        privacy_buckets: vec![],
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Default, Serialize, PartialEq, Eq)]
 #[serde(rename_all = "lowercase")]
 pub enum PrivacyLevel {
     #[default]

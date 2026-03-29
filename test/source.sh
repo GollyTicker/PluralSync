@@ -78,6 +78,9 @@ get_user_config_json() {
         \"enable_from_sp\": ${ENABLE_FROM_SP},
         \"from_pluralkit_webhook_signing_token\": { \"secret\": \"$PK_WEBHOOK_SIGNING_TOKEN\" },
         \"history_truncate_after_days\": ${HISTORY_TRUNCATE_AFTER_DAYS},
+        \"from_pluralkit_prefer_displayname\": true,
+        \"from_pluralkit_respect_member_visibility\": true,
+        \"from_pluralkit_respect_field_visibility\": true,
         \"fronter_channel_wait_increment\": ${FRONTER_CHANNEL_WAIT_INCREMENT},
         $SIMPLY_PLURAL_TOKEN_LINE
         $DISCORD_STATUS_MESSAGE_TOKEN_LINE
