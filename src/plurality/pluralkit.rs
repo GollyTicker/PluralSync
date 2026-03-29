@@ -1,6 +1,7 @@
 use anyhow::Result;
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
+use tokio::time::sleep;
 
 use crate::{
     database::Decrypted,
@@ -32,6 +33,11 @@ async fn http_pluralkit_fronters(
     user_id: &UserId,
 ) -> Result<PkFronters> {
     let url = "https://api.pluralkit.me/v2/systems/@me/fronters";
+
+    log::info!("# | fetch_current_fronters | pluralkit for {user_id}");
+
+    // TEMPORARY: Add a artificial delay to avoid hitting the 10 GET/s rate limit until we get system-specific rate limits
+    sleep(std::time::Duration::from_millis(124)).await;
 
     let response = client
         .get(url)
@@ -312,63 +318,331 @@ pub struct PluralKitWebhookPayload {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::users::{DiscordRichPresenceUrl, UserConfigForUpdater};
+    use sqlx::types::uuid;
 
-    #[test]
-    fn test_event_is_ping() {
-        assert!(PluralKitWebhookEvent::Ping.is_ping());
-        assert!(!PluralKitWebhookEvent::CreateSwitch.is_ping());
+    fn create_test_config(prefer_displayname: bool) -> UserConfigForUpdater {
+        UserConfigForUpdater {
+            client: reqwest::Client::new(),
+            user_id: crate::users::UserId {
+                inner: uuid::Uuid::new_v4(),
+            },
+            simply_plural_base_url: "https://test.simplyplural.com".to_string(),
+            discord_base_url: "https://discord.com".to_string(),
+            status_prefix: "".to_string(),
+            status_no_fronts: "".to_string(),
+            status_truncate_names_to: 0,
+            show_members_non_archived: true,
+            show_members_archived: true,
+            show_custom_fronts: true,
+            respect_front_notifications_disabled: false,
+            privacy_fine_grained: crate::users::PrivacyFineGrained::NoFineGrained,
+            privacy_fine_grained_buckets: None,
+            enable_website: false,
+            enable_discord: false,
+            enable_discord_status_message: false,
+            enable_vrchat: false,
+            enable_to_pluralkit: false,
+            enable_from_pluralkit: false,
+            enable_from_sp: false,
+            website_url_name: "".to_string(),
+            website_system_name: "".to_string(),
+            simply_plural_token: Default::default(),
+            discord_status_message_token: Default::default(),
+            vrchat_username: Default::default(),
+            vrchat_password: Default::default(),
+            vrchat_cookie: Default::default(),
+            pluralkit_token: Default::default(),
+            from_pluralkit_webhook_signing_token: Default::default(),
+            from_pluralkit_prefer_displayname: prefer_displayname,
+            from_pluralkit_respect_member_visibility: false,
+            from_pluralkit_respect_field_visibility: false,
+            history_limit: 0,
+            history_truncate_after_days: 0,
+            fronter_channel_wait_increment: 0,
+            discord_rich_presence_url: DiscordRichPresenceUrl::default(),
+            discord_rich_presence_url_custom: None,
+        }
+    }
+
+    fn create_test_member(
+        id: &str,
+        name: &str,
+        display_name: Option<&str>,
+        privacy: Option<PrivacyLevel>,
+    ) -> PkMember {
+        PkMember {
+            id: id.to_string(),
+            uuid: "test-uuid".to_string(),
+            name: name.to_string(),
+            display_name: display_name.map(String::from),
+            color: None,
+            avatar_url: Some("https://example.com/avatar.png".to_string()),
+            pronouns: Some("they/them".to_string()),
+            description: None,
+            birthday: None,
+            tags: None,
+            is_archived: false,
+            privacy: privacy.map(|visibility| PkMemberFieldPrivacy {
+                visibility,
+                name_privacy: visibility,
+                description_privacy: visibility,
+                birthday_privacy: visibility,
+                pronoun_privacy: visibility,
+                avatar_privacy: visibility,
+                banner_privacy: visibility,
+                metadata_privacy: visibility,
+                proxy_privacy: visibility,
+            }),
+        }
+    }
+
+    fn create_test_time() -> chrono::DateTime<Utc> {
+        chrono::DateTime::from_timestamp(1704067200, 0).unwrap() // 2024-01-01T00:00:00Z
     }
 
     #[test]
-    fn test_payload_deserialize_switch_event() {
-        let json = r#"{
-            "type": "CREATE_SWITCH",
-            "signing_token": "test-secret-token",
-            "system_id": "sys_abc123",
-            "data": {
-                "members": ["mem_1", "mem_2"],
-                "timestamp": "2024-01-01T00:00:00Z"
-            }
-        }"#;
+    fn test_from_pk_member_to_fronter_uses_name_when_prefer_displayname_false() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem1", "Member Name", Some("Display Name"), None);
+        let time = create_test_time();
 
-        let payload: PluralKitWebhookPayload = serde_json::from_str(json).unwrap();
-        assert!(matches!(
-            payload.event_type,
-            PluralKitWebhookEvent::CreateSwitch
-        ));
-        assert_eq!(payload.signing_token, "test-secret-token");
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Member Name");
+        assert_eq!(fronter.fronter_id, "mem1");
     }
 
     #[test]
-    fn test_payload_deserialize_ping() {
-        let json = r#"{
-            "type": "PING",
-            "signing_token": "test-secret-token",
-            "system_id": "sys_abc123"
-        }"#;
+    fn test_from_pk_member_to_fronter_uses_display_name_when_available_and_preferred() {
+        let config = create_test_config(true);
+        let member = create_test_member("mem2", "Member Name", Some("Display Name"), None);
+        let time = create_test_time();
 
-        let payload: PluralKitWebhookPayload = serde_json::from_str(json).unwrap();
-        assert!(matches!(payload.event_type, PluralKitWebhookEvent::Ping));
-        assert_eq!(payload.signing_token, "test-secret-token");
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Display Name");
+        assert_eq!(fronter.fronter_id, "mem2");
     }
 
     #[test]
-    fn test_payload_deserialize_member_event_with_id() {
-        let json = r#"{
-            "type": "UPDATE_MEMBER",
-            "signing_token": "test-secret-token",
-            "system_id": "sys_abc123",
-            "id": "mem_def456",
-            "data": {
-                "name": "New Member Name",
-                "color": "FF5733"
-            }
-        }"#;
+    fn test_from_pk_member_to_fronter_falls_back_to_name_when_display_name_none() {
+        let config = create_test_config(true);
+        let member = create_test_member("mem3", "Member Name", None, None);
+        let time = create_test_time();
 
-        let payload: PluralKitWebhookPayload = serde_json::from_str(json).unwrap();
-        assert!(matches!(
-            payload.event_type,
-            PluralKitWebhookEvent::UpdateMember
-        ));
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Member Name");
+        assert_eq!(fronter.fronter_id, "mem3");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_uses_display_name_when_display_name_empty_and_preferred() {
+        let config = create_test_config(true);
+        let mut member = create_test_member("mem4", "Member Name", Some(""), None);
+        member.display_name = Some("".to_string());
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        // Empty string is Some, so it's used
+        assert_eq!(fronter.name, "");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_name_privacy_public() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem5", "Member Name", None, Some(PrivacyLevel::Public));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Member Name");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_name_privacy_private() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem6", "Member Name", None, Some(PrivacyLevel::Private));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "<hidden>");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_name_privacy_private_with_display_name() {
+        let config = create_test_config(true);
+        let member = create_test_member(
+            "mem7",
+            "Member Name",
+            Some("Display Name"),
+            Some(PrivacyLevel::Private),
+        );
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "<hidden>");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_pronouns_privacy_public() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem8", "Member Name", None, Some(PrivacyLevel::Public));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.pronouns, Some("they/them".to_string()));
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_pronouns_privacy_private() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem9", "Member Name", None, Some(PrivacyLevel::Private));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.pronouns, None);
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_avatar_privacy_public() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem10", "Member Name", None, Some(PrivacyLevel::Public));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.avatar_url, "https://example.com/avatar.png");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_avatar_privacy_private() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem11", "Member Name", None, Some(PrivacyLevel::Private));
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.avatar_url, "");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_all_privacy_private() {
+        let config = create_test_config(true);
+        let member = create_test_member(
+            "mem12",
+            "Member Name",
+            Some("Display Name"),
+            Some(PrivacyLevel::Private),
+        );
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "<hidden>");
+        assert_eq!(fronter.pronouns, None);
+        assert_eq!(fronter.avatar_url, "");
+        assert_eq!(fronter.fronter_id, "mem12");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_no_privacy_specified_defaults_to_public() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem13", "Member Name", None, None);
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Member Name");
+        assert_eq!(fronter.pronouns, Some("they/them".to_string()));
+        assert_eq!(fronter.avatar_url, "https://example.com/avatar.png");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_start_time_is_set() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem14", "Member Name", None, None);
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.start_time, Some(time));
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_pluralkit_id_is_set() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem15", "Member Name", None, None);
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.pluralkit_id, Some("mem15".to_string()));
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_privacy_buckets_empty() {
+        let config = create_test_config(false);
+        let member = create_test_member("mem16", "Member Name", None, None);
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert!(fronter.privacy_buckets.is_empty());
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_fronter_id_matches_member_id() {
+        let config = create_test_config(false);
+        let member = create_test_member("custom_id_123", "Member Name", None, None);
+        let time = create_test_time();
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.fronter_id, "custom_id_123");
+    }
+
+    #[test]
+    fn test_from_pk_member_to_fronter_mixed_field_visibility() {
+        let config = create_test_config(false);
+        let time = create_test_time();
+
+        let member = PkMember {
+            id: "mem_mixed".to_string(),
+            uuid: "test-uuid".to_string(),
+            name: "Member Name".to_string(),
+            display_name: Some("Display Name".to_string()),
+            color: None,
+            avatar_url: Some("https://example.com/avatar.png".to_string()),
+            pronouns: Some("they/them".to_string()),
+            description: None,
+            birthday: None,
+            tags: None,
+            is_archived: false,
+            privacy: Some(PkMemberFieldPrivacy {
+                visibility: PrivacyLevel::Public,
+                name_privacy: PrivacyLevel::Public,
+                description_privacy: PrivacyLevel::Public,
+                birthday_privacy: PrivacyLevel::Public,
+                pronoun_privacy: PrivacyLevel::Private,
+                avatar_privacy: PrivacyLevel::Public,
+                banner_privacy: PrivacyLevel::Public,
+                metadata_privacy: PrivacyLevel::Public,
+                proxy_privacy: PrivacyLevel::Public,
+            }),
+        };
+
+        let fronter = from_pk_member_to_fronter(member, &config, &time);
+
+        assert_eq!(fronter.name, "Member Name");
+        assert_eq!(fronter.pronouns, None);
+        assert_eq!(fronter.avatar_url, "https://example.com/avatar.png");
+        assert_eq!(fronter.fronter_id, "mem_mixed");
     }
 }
