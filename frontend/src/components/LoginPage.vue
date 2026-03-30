@@ -21,6 +21,7 @@
       </p>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
+    <p style="margin: 1em">ℹ️ <a href="https://forms.gle/zCNL4YfmyTReHVM5A">Fill in the Users' Survey and let us know what you want</a></p>
     <p style="margin: 1em">✨ We've added support for syncing from PluralKit ✨</p>
     <p style="margin: 1em">
       ❗ Please read this post by the local system manager (Ampersand) developer:

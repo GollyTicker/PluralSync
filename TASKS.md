@@ -5,38 +5,13 @@
   * make bridge auto-updating
   * send both on an announcement email
 * Sync from Pluralkit
-  * DONE webhook
-  * DONE fetch fronts
-  * DONE properly integrate and final tests
-  * DONE add basic self-rate limiting to ensure the global rate limit isn't overstepped
   * TODO wait for proper system-based rate-limiting in PluraKit
-  * DONE deploy and send announcement email
   * TODO have a proper start time per member based on the latest multiple switches here
 * fix pluralsync bridge issues:
   * make it auto-updating
   * make each login provide the version of the software sending the request - and only accept the current version
   * once auto-updating, let the users know, that it's auto-updating via email
 * move to pluralsync.org for more proper version
-* DONE: accounce and get second phase test users by posting about it in more channels
-  * DONE: pk server
-  * DONE: sp server
-  * DONE: rl plural channel
-  * pridevr plural channel
-    * ticket asking for approval created
-  * reddit?
-* DONE: improve metrics:
-  * measure all the places which "shouldn't happen" in production
-    * DONE also do that for important places where errors shouldnt happen.
-    * or alternatively, simply setup to regularly look at WARN and ERROR logs?
-      and filter theose which are expected away?
-  * DONE: distinguish between active and non-active members in metrics
-  * DONE: measure length's of suggested fronting statuses
-  * measure usage of many specific features
-* DONE: Add + test: FireAndForgetChannel with only changes being propagates and another variant with integrated rate-limits
-* RESOLVED: complete features from first test users
-  * POSTPONED: primarily vrchat rate limit fix
-  * REJECTED: possibly also system sync with pluralkit
-* add a small log of the latest updates and their timestamps. this log is useful for the users to understand if and when the last update happened
 * DONE: extract user agent and make them non-public deployment/build vars
 * easily give quick feedback in website - whcih will be saved in db and then I can response to it
 * suggested by Aino: make general interviews with a few diverse systems. focus on their needs regardless of pluralsync specifically.
@@ -46,26 +21,12 @@
       * on discord just read some channels with plural systems
       * and also checkout the inspirations channel on simply plural discord
   * The core focus is to simply listen and be curious without any specific intention of being a pluralsync user.
-* DONE: show example fronters in status page
-* DONE: use websocket subscription to simply plural and only get the fronters + system, when it actually changes
-  * DONE: and also make the discord websocket thing, that an update is sent immediately once the websocket is created
-  * DONE: this also resolves the bottleneck of allowing users to set a 1s update duration
 * pluralsync-bridge
   * auto-update
   * DONE: auto-start on system start
-* do not clean stuff by default in vrchat. make that configureable
-  * add todo to adapt it to work with many other characters as well (chinese, japanese, etc.)
-* Remove 'VRChat Status Name' field and change it
-  * INSTEAD: change this functionality to have this new name configured in PluralSync UI!
-  * and tell users in the setting page, that this is configureable
-* make sure, that stuff stays useable in mobile view
 * deploy first proper version
 * finalize README
-* DONE:
-  * DONE: add link to Discord Server
-  * DONE: add link to KoFi and ask for kind donations
-  * DONE: add link to source code
-* add data-base backups
+* add database backups
 
 ## Feedback from second test phase users
 * configureable fronting order (details in discord)
@@ -78,17 +39,13 @@
   * having a debouce, where updates are not done too frequently are also important.
 
 ## Feedback after first deployment of public-test
-
 * member privacy
-  * DONE custom fronts configuration
-  * DONE archived members configuration / hiding
   * make lists of members / CFs / archived members collapeble and searchable to manage large systems
   * probably start with defaults for actives / archived / CFs and integration with privacy buckets from SP
     * DONE: [privacy buckets in SimplyPlual](https://docs.apparyllis.com/docs/help/features/buckets/intro). Perhaps
       we can also instead make a singleton "pluralsync" account on SP and people can add that one as a friend.
       This way, they can simply assign pluralsync to existing privacy bucket groups and chose what should be shown.
       This is an alternative to asking the users to make a new privacy bucket with the name "pluralsync" which is then read by the API.
-    * DONE: privacy bucket API doesn't seem to be documented. I'll have to reverse-engineer that.
   * bidrectional sync of privacy bucket membership and "show in pluralsync" setting
     > If I search for myself, and toggle the "show as fronting" button in SP2A, it autoadds me to the privacy bucket in SP.
     > And if I add myself to the PB in SP, it toggles me as "show as fronting"
@@ -130,56 +87,11 @@ This way we can get even more early testers so that we can then move to the app 
 * BUG: when discord rich presence is disabled and the bridge is started, it connects and shows up as "running" though it doesn't show any
   rich presence in discord. this might be confusing. and also, there happens some related errors in the bridge logs which should be investigated
 * add status not only for updaters but also for SP itself.
-* DONE: remove `0.1.0` from pluralsync bridge executable
 * make sure, that during production, only my own domains are allowed and not localhost or so.
-* DONE: restart updaters once in a while, just to get temporary issues out of the way (e.g. vrchat someimes just doesn't work after a re-deployment)
-* DONE: make website view such that it doesn't eagery fetch data from simply plural every time but instead uses the latest values from a channel
 * merge cargo crates into a single workspace to improve build times
-* DONE: better split pluralsync crate into what is exported to bridge-src-tauri and what is not. makes for much faster compiles
 * IRRELEVANT?: reduce compile times by removing vrchatapi library and using http rest requests directly
-* DONE: complete migration to webapp
-
-* add initial suggestions by ChatAI (e.g. privacy, configurability, etc.)
 
 ---
 
 ## Initial User Feedback before first Prototype
-* DONE: sync to pluralkit as well
-* DONE add a warning, that using the discord self-botting comes with a risk for both the user and the dev
-  * [artcle by discord](https://support.discord.com/hc/en-us/articles/115002192352-Automated-User-Accounts-Self-Bots)
-  * [self-botting](https://gist.github.com/nomsi/2684f5692cad5b0ceb52e308631859fd)
-  * [reddit 1](https://old.reddit.com/r/Discord_selfbots/comments/t9o5xf/anyone_got_banned/), [reddit 2](https://old.reddit.com/r/discordapp/comments/7nl35v/regarding_the_ban_on_selfbots/)
-  * perhaps use the same approach as used by the discord chat exporter? this might actually work well.
-* share with refactionvr server mods before sharing in channel
 * extend pluralsync to also cover tone-tags / interaction hints as an additional use case? (e.g. IWC = interact-with-care)
-
----
-
-## PWA as a Native App Alternative
-
-Summary of the plan to create a PWA instead of native iOS/Android apps to ensure data remains on the user's device.
-
-### Core Architecture
-- **Goal**: Avoid app stores (iOS, Android) by using an installable PWA.
-- **Rust Code**: Compile the core Rust logic to **WebAssembly (WASM)**.
-- **Execution**: Run the WASM module inside a **Web Worker** to handle all data processing on the client-side, preventing UI blocking. This acts as a "local backend".
-- **Database**: Since direct SQLite access is not possible in a browser, use **IndexedDB** for storage. To keep SQL-based logic, a WASM-compiled version of SQLite (e.g., `sql.js`, `wa-sqlite`) can be used, which persists its data to IndexedDB.
-
-### Background Tasks & Notifications
-The primary challenge is running tasks (e.g., hourly sync, reacting to WebSocket events) when the app is in the background. A PWA cannot maintain a persistent background connection.
-The solution is a **server-driven push notification system**.
-
-**Workflow:**
-1.  **Server is the Listener/Scheduler**:
-    - The backend server (Rocket) listens for external WebSocket events.
-    - The backend server runs a cron job for scheduled tasks (e.g., once per hour).
-2.  **Server Sends Push Notification**:
-    - When an event occurs, the server sends a push notification to the user's device.
-3.  **Service Worker Executes Task**:
-    - The push notification wakes up the PWA's Service Worker.
-    - The Service Worker has a short time window to execute the required task (e.g., fetch data, update IndexedDB). A few seconds is well within the limits.
-
-### Platform-Specific Constraints
-- **Requirement**: The user must grant the PWA permission to receive push notifications.
-- **Android**: More flexible. Supports "silent" push notifications that can run tasks without displaying a visible alert.
-- **iOS**: More restrictive. Background execution is limited to ~30 seconds. To guarantee the task runs, the push notification may need to be user-visible (e.g., display a message or update the app's badge).
