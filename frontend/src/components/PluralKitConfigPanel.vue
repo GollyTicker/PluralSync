@@ -62,11 +62,12 @@
       </div>
       <p class="config-description">Follow these steps to set up the webhook:</p>
       <ol class="config-description" style="padding-left: 1.5rem">
-        <li>Click copy the PluralKit Webhook setup command beow.</li>
+        <li>Copy the PluralKit Webhook setup command above.</li>
         <li>Open a Discord DM to the PluralKit bot and paste and send the command to PluralKit.</li>
-        <li>PluralKit will respond with a signing token. Copy that token.</li>
+        <li>PluralKit will respond with a signing token. Copy that token. Make sure, that only the token and not extra stuff is copied.</li>
         <li>Paste the signing token into the field below.</li>
-        <li>Save your changes in PluralSync</li>
+        <li>Click 'Save and Restart' in the botton or top of this PluralSync Settings page</li>
+        <li>Make sure, that PluralSync confirms, that the settings have been saved.</li>
         <li>Confirm the signing token in the DM with PluralKit</li>
         <li>If PluralKit confirms the test, the setup has worked! If not, try again.</li>
       </ol>
