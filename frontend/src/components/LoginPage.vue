@@ -21,6 +21,7 @@
       </p>
     </form>
     <p v-if="status" class="status-message">{{ status }}</p>
+    <p style="margin: 1em">✨ We've added support for syncing from PluralKit ✨</p>
     <p style="margin: 1em">
       ❗ Please read this post by the local system manager (Ampersand) developer:
       <a href="https://ampersand.moe/blog/rumors.html">Clearing up rumors (no, I won't be nice)</a>
@@ -59,7 +60,7 @@ const login = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: { inner: password.value } },
+    password: { inner: { inner: password.value } }
   } as UserLoginCredentials
 
   try {
@@ -80,7 +81,7 @@ const register = async () => {
   }
   const creds = {
     email: { inner: email.value },
-    password: { inner: { inner: password.value } },
+    password: { inner: { inner: password.value } }
   } as UserLoginCredentials
 
   try {
