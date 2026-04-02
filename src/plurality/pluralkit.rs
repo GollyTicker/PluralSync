@@ -1,5 +1,10 @@
 use anyhow::Result;
 use chrono::Utc;
+use rand::{
+    RngExt,
+    distr::{self},
+    rngs::ThreadRng,
+};
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 
@@ -27,6 +32,13 @@ pub const PLURALKIT_USER_AGENT: &str = concat!(
     env!("USER_AGENT_DISCORD_USERNAME")
 );
 
+// TEMPORARY: Add a artificial delay to avoid hitting the 10 GET/s rate limit until we get system-specific rate limits
+pub async fn artifical_delay_to_avoid_hitting_pluralkit_rate_limit() -> Result<()> {
+    let random_delay = ThreadRng::default().sample(distr::Uniform::new_inclusive(150, 500)?);
+    sleep(std::time::Duration::from_millis(random_delay)).await;
+    Ok(())
+}
+
 async fn http_pluralkit_fronters(
     client: &reqwest::Client,
     pluralkit_token: &Decrypted,
@@ -36,8 +48,7 @@ async fn http_pluralkit_fronters(
 
     log::info!("# | fetch_current_fronters | pluralkit for {user_id}");
 
-    // TEMPORARY: Add a artificial delay to avoid hitting the 10 GET/s rate limit until we get system-specific rate limits
-    sleep(std::time::Duration::from_millis(124)).await;
+    artifical_delay_to_avoid_hitting_pluralkit_rate_limit().await?;
 
     let response = client
         .get(url)
