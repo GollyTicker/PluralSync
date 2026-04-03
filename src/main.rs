@@ -1,6 +1,7 @@
 use anyhow::Result;
 use anyhow::anyhow;
 
+use pluralsync::debug_api;
 use pluralsync::history;
 use pluralsync::meta_api;
 use pluralsync::metrics;
@@ -146,6 +147,7 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
                 history::get_api_user_history_fronting,
                 meta_api::get_api_meta_pluralsync_variant,
                 pluralsync::plurality::post_api_webhook_pluralkit_user_id,
+                debug_api::post_api_debug_verify_pluralkit_webhooks,
             ],
         )
         .mount("/metrics", metrics::PROM_METRICS.clone())
