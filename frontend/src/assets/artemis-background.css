@@ -1,0 +1,23 @@
+.artemis-background {
+  position: relative;
+  background-image: url('/artemis-earth.webp');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+.artemis-background::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  z-index: 0;
+}
+
+.artemis-background > * {
+  z-index: 1;
+}

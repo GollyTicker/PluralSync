@@ -111,6 +111,10 @@ export interface Screenshot {
         We strive to use AI pragmatically and beneficially. Our actions align with our
         interpretation of reasonable AI usage - and we prefer to use AI rather than not use it.
       </p>
+
+      <h2>Background Image</h2>
+      <p>The photo <a href="https://www.nasa.gov/image-detail/fd02_for-pao/">Hello, World by NASA/Reid Wiseman</a> was taken on 2nd April 2026 on the Artemis II mission around the moon.<br />
+        ❤️ In the harsh times, this picture unites us all and symbolises how we've all lived on the same planet for our entire lives and humanity. ❤️</p>
     </div>
 
     <div class="screenshots-section">

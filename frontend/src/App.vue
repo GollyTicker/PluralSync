@@ -1,5 +1,5 @@
 <template>
-  <div id="app-container">
+  <div id="app-container" class="artemis-background">
     <nav>
       <div id="app-header">
         <router-link to="/" class="header-link">
@@ -43,6 +43,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+@import url('assets/artemis-background.css');
+
 #app-container {
   padding-top: 60px;
   /* Add padding to prevent content from overlapping with the nav bar */
