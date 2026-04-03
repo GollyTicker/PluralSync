@@ -44,7 +44,7 @@ pub async fn post_api_user_email_change(
         ));
     }
 
-    let old_email = database::get_user_info(db_pool, user_id.clone())
+    let old_email = database::get_user_info(db_pool, &user_id)
         .await
         .map_err(expose_internal_error)?
         .email;
@@ -104,7 +104,7 @@ pub async fn get_api_user_info(
 ) -> HttpResult<Json<UserInfoUI>> {
     let user_id = jwt.user_id().map_err(expose_internal_error)?;
     log::info!("# | GET /api/user/info | {user_id}");
-    let user_info = database::get_user_info(db_pool, user_id.clone())
+    let user_info = database::get_user_info(db_pool, &user_id)
         .await
         .map_err(expose_internal_error)?;
     log::info!("# | GET /api/user/info | {user_id} | user_info");
@@ -163,7 +163,7 @@ pub async fn delete_api_user(
         ));
     }
 
-    let user_info = database::get_user_info(db_pool, user_id.clone())
+    let user_info = database::get_user_info(db_pool, &user_id)
         .await
         .map_err(expose_internal_error)?;
 

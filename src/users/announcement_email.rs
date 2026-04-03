@@ -183,7 +183,7 @@ async fn send_pending_email(
         .iter()
         .find(|e| e.email_id == email_id)
         .ok_or_else(|| anyhow::anyhow!("Unknown email_id: {email_id}"))?;
-    let user_info = database::get_user_info(db_pool, user_id.clone()).await?;
+    let user_info = database::get_user_info(db_pool, &user_id).await?;
     let subject = (email_def.subject_fn)(&user_info);
     let body = (email_def.body_fn)(&user_info);
     let to = user_info.email;

@@ -11,5 +11,6 @@ pub mod user_endpoints;
 
 pub use auth::*;
 pub use config::*;
+pub use email::*;
 pub use jwt::*;
 pub use model::*;

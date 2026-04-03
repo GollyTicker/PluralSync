@@ -54,7 +54,7 @@ pub async fn post_api_user_email_verify(
     )
     .await;
     if let Ok(Some(user_id)) = existing_user
-        && let Ok(user_info) = database::get_user_info(db_pool, user_id.clone()).await
+        && let Ok(user_info) = database::get_user_info(db_pool, &user_id).await
         && let Some(new_email) = user_info.new_email
         && let Some(expires_at) = user_info.email_verification_token_expires_at
         && expires_at > Utc::now()
@@ -183,7 +183,7 @@ pub async fn post_api_user_login(
         &credentials.email
     );
 
-    let user_info = database::get_user_info(db_pool, user_id.clone())
+    let user_info = database::get_user_info(db_pool, &user_id)
         .await
         .map_err(|e| (http::Status::InternalServerError, e.to_string()))?;
 

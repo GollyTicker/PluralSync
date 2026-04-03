@@ -79,6 +79,30 @@ async fn http_pluralkit_fronters(
     Ok(fronters)
 }
 
+pub async fn http_pluralkit_system(
+    client: &reqwest::Client,
+    pluralkit_token: &Decrypted,
+    user_id: &UserId,
+) -> Result<PkSystem> {
+    let url = "https://api.pluralkit.me/v2/systems/@me";
+
+    log::info!("# | fetch_pluralkit_system | {user_id}");
+
+    artifical_delay_to_avoid_hitting_pluralkit_rate_limit().await?;
+
+    let response = client
+        .get(url)
+        .header("Authorization", &pluralkit_token.secret)
+        .header("User-Agent", PLURALKIT_USER_AGENT)
+        .send()
+        .await?
+        .error_for_status()?;
+
+    measure_rate_limits(user_id, &response);
+
+    Ok(response.json::<PkSystem>().await?)
+}
+
 pub fn measure_rate_limits(user_id: &UserId, response: &reqwest::Response) {
     let headers = response.headers();
     let rate_limit_remaining = headers
@@ -168,6 +192,14 @@ fn get_pk_members_by_privacy_rules(
 pub struct PkFronters {
     pub timestamp: chrono::DateTime<chrono::Utc>,
     pub members: Vec<PkMember>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct PkSystem {
+    pub id: String,
+    pub name: Option<String>,
+    #[serde(default)]
+    pub webhook_url: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

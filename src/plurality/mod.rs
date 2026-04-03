@@ -6,6 +6,7 @@ mod fronting_status_tests;
 mod model;
 mod pluralkit;
 mod pluralkit_webhook_api;
+mod pluralkit_webhook_verification;
 mod simply_plural;
 mod simply_plural_model;
 mod simply_plural_websocket;
@@ -18,6 +19,7 @@ pub use fronting_status::{
 pub use model::*;
 pub use pluralkit::*;
 pub use pluralkit_webhook_api::*;
+pub use pluralkit_webhook_verification::*;
 pub use simply_plural::*;
 pub use simply_plural_model::*;
 pub use simply_plural_websocket::*;

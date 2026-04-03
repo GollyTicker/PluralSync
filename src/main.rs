@@ -5,7 +5,9 @@ use pluralsync::history;
 use pluralsync::meta_api;
 use pluralsync::metrics;
 use pluralsync::platforms;
+use pluralsync::plurality;
 use pluralsync::setup;
+use pluralsync::setup::DAILY_AT_0400;
 use pluralsync::updater;
 use pluralsync::users;
 use pluralsync_base::license;
@@ -31,6 +33,7 @@ async fn main() -> Result<()> {
 
     let () = setup::start_cron_job(
         &app_setup.db_pool,
+        &app_setup.client,
         &app_setup.shared_updaters,
         &app_setup.application_user_secrets,
         &app_setup.smtp_config,
@@ -42,6 +45,7 @@ async fn main() -> Result<()> {
 
     let () = setup::start_cron_job(
         &app_setup.db_pool,
+        &app_setup.client,
         &app_setup.shared_updaters,
         &app_setup.application_user_secrets,
         &app_setup.smtp_config,
@@ -53,17 +57,38 @@ async fn main() -> Result<()> {
 
     let () = setup::start_cron_job(
         &app_setup.db_pool,
+        &app_setup.client,
         &app_setup.shared_updaters,
         &app_setup.application_user_secrets,
         &app_setup.smtp_config,
         "announcement-email-sender",
         setup::EVERY_5_MINUTES,
-        |db_pool, _, _, smtp_config| async move {
+        |db_pool, _, _, _, smtp_config| async move {
             users::announcement_email::send_pending_announcement_emails(
                 &db_pool,
                 &smtp_config,
                 0.8,
                 4,
+            )
+            .await
+        },
+    )
+    .await?;
+
+    let () = setup::start_cron_job(
+        &app_setup.db_pool,
+        &app_setup.client,
+        &app_setup.shared_updaters,
+        &app_setup.application_user_secrets,
+        &app_setup.smtp_config,
+        "pluralkit-webhook-verification",
+        DAILY_AT_0400,
+        |db_pool, client, _, application_user_secrets, smtp_config| async move {
+            plurality::verify_pluralkit_webhooks(
+                db_pool,
+                client,
+                application_user_secrets,
+                smtp_config,
             )
             .await
         },

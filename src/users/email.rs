@@ -21,6 +21,7 @@ pub enum EmailType {
     EmailChangeNotification,
     AccountDeletion,
     Announcement,
+    PluralKitWebhookDeactivated,
 }
 
 pub async fn send_reset_email(
@@ -160,6 +161,32 @@ pub async fn send_account_deletion_notification(
             Kinds, PluralSync"
         ),
         EmailType::AccountDeletion,
+    )
+    .await?;
+
+    Ok(())
+}
+
+pub async fn send_pluralkit_webhook_deactivated_email(
+    db_pool: &PgPool,
+    smtp_config: &setup::SmtpConfig,
+    to: &Email,
+) -> Result<()> {
+    send_email(
+        db_pool,
+        smtp_config,
+        to,
+        "PluralKit Webhook Deactivated",
+        "Dear PluralSync User,\n\n\
+            We detected that your PluralKit webhook is no longer active. This usually happens when:\n\
+            - You configured PluralKit webhook to use a new and different webhook URL (or remove webhooks entirely), while PluralSync was still expecting to receive webhooks.\n\
+            - The webhook was removed by PluralKit, because our PluralSync server was offline when PLuralKit tested the webhook (or we failed it for some other reason).\n\
+            Since PluralKit will not send us webhook events currently, we've deactivated the expectation of webhooks in PluralSync as well.\n\
+            If you wanted to deactivate webhooks towards PluralSync, then no further action is needed from your side.\n\
+            If you want to keep on sending PLuralKit webhooks to PluralSync, then go to PluralSync settings to re-enable them.\n\
+            \n\
+            Kinds, PluralSync".to_string(),
+        EmailType::PluralKitWebhookDeactivated,
     )
     .await?;
 

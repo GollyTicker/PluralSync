@@ -12,6 +12,7 @@ use std::time::Duration;
 
 pub const EVERY_MINUTE: &str = "0 * * * * *";
 pub const EVERY_5_MINUTES: &str = "0 */5 * * * *";
+pub const DAILY_AT_0400: &str = "0 0 3 * * *";
 
 const REQUEST_TIMEOUT: u64 = 10;
 
@@ -208,8 +209,10 @@ pub struct ApplicationSetup {
 /* Yes, this signature is daunting, but essentially it's just taking a task: Fn(PgPool) -> Future<Result<()>>.
 The many extra traits are simply what rustc recommended to make this work, and it works!
 */
+#[allow(clippy::too_many_arguments)]
 pub async fn start_cron_job<F>(
     db_pool: &sqlx::PgPool,
+    client: &reqwest::Client,
     shared_updaters: &updater::UpdaterManager,
     application_user_secrets: &database::ApplicationUserSecrets,
     smtp_config: &SmtpConfig,
@@ -217,6 +220,7 @@ pub async fn start_cron_job<F>(
     schedule: &str,
     task: impl (Fn(
         sqlx::PgPool,
+        reqwest::Client,
         updater::UpdaterManager,
         database::ApplicationUserSecrets,
         SmtpConfig,
@@ -231,12 +235,14 @@ where
 {
     let scheduler = tokio_cron_scheduler::JobScheduler::new().await?;
     let db_pool = db_pool.clone();
+    let client = client.clone();
     let shared_updaters = shared_updaters.clone();
     let application_user_secrets = application_user_secrets.clone();
     let smtp_config = smtp_config.clone();
     let name = name.to_string();
     let job = tokio_cron_scheduler::Job::new(schedule, move |_, _| {
         let db_pool = db_pool.clone();
+        let client = client.clone();
         let shared_updaters = shared_updaters.clone();
         let application_user_secrets = application_user_secrets.clone();
         let smtp_config = smtp_config.clone();
@@ -245,6 +251,7 @@ where
         tokio::spawn(async move {
             if let Err(e) = task(
                 db_pool,
+                client,
                 shared_updaters,
                 application_user_secrets,
                 smtp_config,

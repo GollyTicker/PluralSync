@@ -42,7 +42,7 @@ pub async fn get_user_id(db_pool: &PgPool, email: Email) -> Result<UserId> {
     .map_err(|e| anyhow!(e))
 }
 
-pub async fn get_user_info(db_pool: &PgPool, user_id: UserId) -> Result<UserInfo> {
+pub async fn get_user_info(db_pool: &PgPool, user_id: &UserId) -> Result<UserInfo> {
     log::debug!("# | db::get_user_info | {user_id}");
 
     let row = sqlx::query_as::<_, UserInfoRaw>(

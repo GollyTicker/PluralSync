@@ -181,6 +181,7 @@ fn count_config_metrics(
 
 pub async fn collect_user_metrics(
     db_pool: PgPool,
+    _: reqwest::Client,
     _: updater::UpdaterManager,
     _: database::ApplicationUserSecrets,
     _: setup::SmtpConfig,
