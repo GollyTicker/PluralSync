@@ -1,6 +1,6 @@
 [package]
 name = "pluralsync-bridge"
-version = "2.95.0"
+version = "2.91.0-dev"
 edition = "2024"
 rust-version = "1.90.0"
 
