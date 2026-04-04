@@ -2355,7 +2355,7 @@ checksum = "b4596b6d070b27117e987119b4dac604f3c58cfb0b191112e24771b2faeac1a6"
 
 [[package]]
 name = "pluralsync"
-version = "2.89.0-dev"
+version = "2.91.0"
 dependencies = [
  "anyhow",
  "argon2",
@@ -2400,7 +2400,7 @@ dependencies = [
 
 [[package]]
 name = "pluralsync-base"
-version = "2.89.0-dev"
+version = "2.91.0"
 dependencies = [
  "async-scoped",
  "chrono",
