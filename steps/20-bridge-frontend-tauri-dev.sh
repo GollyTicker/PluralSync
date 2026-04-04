@@ -3,6 +3,8 @@
 set -euo pipefail
 
 export TAURI_APP_PATH="bridge-src-tauri"
+cp bridge-src-tauri/{template.,}tauri.conf.json
+
 export PLURALSYNC_BASE_URL="http://localhost:8080"
 
 echo "PLURALSYNC_BASE_URL: $PLURALSYNC_BASE_URL"

@@ -69,6 +69,7 @@ export async function renderLoginPage() {
         await update.downloadAndInstall()
         updaterStatus.textContent = '⚠️ Bridge Updated. Please restart!'
         loginStatus.textContent = '⚠️ Bridge Updated. Please restart!'
+        // todo. adapt notice to manual intervention on untested platforms
       } else {
         updaterStatus.textContent = '✅ Up to date'
       }

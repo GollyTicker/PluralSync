@@ -14,7 +14,7 @@ use pluralsync::users;
 use pluralsync_base::license;
 use rocket::routes;
 
-#[tokio::main]
+#[rocket::main]
 async fn main() -> Result<()> {
     setup::logging_init();
 

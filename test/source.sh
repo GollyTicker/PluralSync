@@ -98,9 +98,11 @@ export -f get_user_config_json
 setup_test_user() {
     echo "Creating user ..."
     EMAIL="test@example.com"
+    VERSION="$(cat target/version.txt)"
     JSON="{
         \"email\": { \"inner\": \"$EMAIL\" },
-        \"password\": { \"inner\": { \"inner\": \"m?3yp%&wdS+\" } }
+        \"password\": { \"inner\": { \"inner\": \"m?3yp%&wdS+\" } },
+        \"client_version\": \"$VERSION\"
     }"
     curl -s --fail-with-body \
         -H "Content-Type: application/json" \

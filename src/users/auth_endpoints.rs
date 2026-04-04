@@ -34,12 +34,12 @@ pub struct EmailVerificationResponse {
 pub async fn post_api_user_email_verify(
     db_pool: &State<PgPool>,
     app_user_secrets: &State<database::ApplicationUserSecrets>,
-    token: String,
+    token: &str,
 ) -> HttpResult<Json<EmailVerificationResponse>> {
     log::info!("# | POST /api/user/email/verify/{token}");
 
     let email_verification_token = EmailVerificationToken {
-        inner: Secret { inner: token },
+        inner: Secret { inner: token.to_owned() },
     };
     let email_verification_token_hash = auth::create_secret_hash(
         &email_verification_token.inner,
@@ -172,6 +172,7 @@ pub async fn post_api_user_login(
 ) -> Result<Json<JwtString>, (http::Status, String)> {
     let credentials = serde_json::from_str::<UserLoginCredentials>(&credentials)
         .map_err(|err| {
+            log::warn!("# | POST /api/user/login | malformed JSON. update required");
             (
                 http::Status::UpgradeRequired,
                 format!(
@@ -183,6 +184,7 @@ pub async fn post_api_user_login(
             if client_is_up_to_date(&credentials.client_version) {
                 Ok(credentials)
             } else {
+                log::warn!("# | POST /api/user/login | update required client={} server={}", credentials.client_version, PLURALSYNC_VERSION);
                 Err((
                     http::Status::UpgradeRequired,
                     format!(
@@ -232,7 +234,7 @@ pub async fn post_api_user_login(
 fn client_is_up_to_date(client_ver: &str) -> bool {
     Version::from(client_ver)
         .zip(Version::from(PLURALSYNC_VERSION))
-        .is_some_and(|(client, server)| client < server)
+        .is_some_and(|(client, server)| client >= server)
 }
 
 #[derive(Deserialize, specta::Type)]

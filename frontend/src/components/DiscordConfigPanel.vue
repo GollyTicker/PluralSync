@@ -62,9 +62,10 @@
             that these updates only work as long as your PluralSync bridge and Discord are running
             locally.
             <br />
-            Note, that the PluralSync bridge doesn't automatically update at the moment. If it
-            doesn't work then download and install the latest version and try again! If you want to
-            minimize the bridge, you can do so via the program
+            The PluralSync bridge automatically updates on <b>some</b> platforms.
+            Check the text in the bridge to see, if an update is available and how to update.
+            <i>The bridge must be up-to-date with the server for it work.</i>
+            If you want to minimize the bridge, you can do so via the program
             <a href="https://rbtray.sourceforge.net/">RBTray</a> on Windows. (SystemTray is buggy on
             Windows which is why qwe suggest this program instead.)
           </p>

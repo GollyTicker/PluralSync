@@ -1,9 +1,13 @@
+use std::fs;
+
 fn main() {
+    println!("cargo:rerun-if-changed=../target/version.txt");
+
     let version = extract_version_from_git();
     println!("cargo:rustc-env=PLURALSYNC_VERSION={version}");
+    fs::write("../target/version.txt", version).unwrap();
 }
 
-// THIS CODE IS DUPLICATED IN MULTIPLE PLACES!!
 #[allow(clippy::unwrap_used)]
 fn extract_version_from_git() -> String {
     // Exact tag match (e.g., v2.59)
