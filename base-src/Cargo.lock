@@ -842,7 +842,7 @@ checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "pluralsync-base"
-version = "2.92.0"
+version = "2.93.0"
 dependencies = [
  "async-scoped",
  "chrono",
