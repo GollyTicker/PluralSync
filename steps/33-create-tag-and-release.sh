@@ -46,7 +46,10 @@ fi
 
 echo "Creating new tag: $NEW_TAG"
 
-# Create the new tag
+source "$(dirname "$0")/04-version.sh"
+export VERSION=$(extract_version_from_git)
+patch_tauri_config "$VERSION"
+
 git tag "$NEW_TAG"
 
 echo "Tag $NEW_TAG created successfully."

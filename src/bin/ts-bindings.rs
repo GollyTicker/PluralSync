@@ -7,15 +7,13 @@ use pluralsync::{
         VRChatCredentialsWithCookie, VRChatCredentialsWithTwoFactorAuth,
         webview_api::FrontingStatusWithExclusions,
     },
+    plurality::{ExcludedFronter, ExclusionReason, FilteredFronter, FilteredFronters, Fronter},
     updater::Platform,
     users::{
         DiscordRichPresenceUrl, PrivacyFineGrained, UserId,
-        auth_endpoints::{
-            EmailVerificationResponse, ForgotPasswordRequest, ResetPasswordAttempt,
-        },
+        auth_endpoints::{EmailVerificationResponse, ForgotPasswordRequest, ResetPasswordAttempt},
         user_endpoints::{ChangeEmailRequest, DeleteAccountRequest},
     },
-    plurality::{ExcludedFronter, ExclusionReason, FilteredFronter, FilteredFronters, Fronter},
 };
 use pluralsync_base::{
     meta::{

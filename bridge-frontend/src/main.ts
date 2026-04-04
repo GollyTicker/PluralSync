@@ -6,7 +6,7 @@ import { renderStartPage } from './pages/start-page'
 import { renderLicenseInfo } from './license'
 
 import { attachConsole } from '@tauri-apps/plugin-log'
-import { fetchAndRenderVariantInfo } from './variant-info'
+import { fetchAndRenderVersions } from './variant-info'
 await attachConsole() // show tauri backend logs in console
 
 router
@@ -20,4 +20,4 @@ router
 
 renderLicenseInfo()
 
-await fetchAndRenderVariantInfo()
+await fetchAndRenderVersions()

@@ -1,6 +1,6 @@
 [package]
 name = "pluralsync-bridge"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2024"
 rust-version = "1.90.0"
 
@@ -19,6 +19,7 @@ log = "*"
 tokio = { version = "*", default-features = false }
 tauri = { version = "2", default-features = true, features = [] }
 tauri-plugin-log = "*"
+tauri-plugin-updater = "*"
 reqwest = { version = "*", default-features = false, features = [
     "json",
     "rustls-tls",

@@ -26,23 +26,6 @@ add_rust_targets() {
 
 
 build_binaries() {
-    for target in "${TARGETS[@]}"; do
-        echo "🛠️ pluralsync-bridge $target"
-        ./steps/22-bridge-frontend-tauri-release.sh --target "$target"
-        BUILD_OUT_PATH="bridge-src-tauri/target/$target/release/bundle"
-        if [[ "$target" == *"windows"* ]]; then
-            cp -v "$BUILD_OUT_PATH"/*/*.exe "$OUT_DIR/PluralSync-Bridge-Windows-Setup.exe"
-        else
-            cp -v "$BUILD_OUT_PATH"/*/*.rpm "$OUT_DIR/PluralSync-Bridge-Linux.rpm"
-            cp -v "$BUILD_OUT_PATH"/*/*.deb "$OUT_DIR/PluralSync-Bridge-Linux.deb"
-            cp -v "$BUILD_OUT_PATH"/*/*.AppImage "$OUT_DIR/PluralSync-Bridge-Linux.AppImage"
-        fi
-        echo "✅ pluralsync-bridge $target"
-
-        echo ""
-    done
-
-
     echo "🛠️ pluralsync-global-manager $LINUX_TARGET"
     ./steps/12-backend-cargo-build.sh --release --bin pluralsync-global-manager --target "$LINUX_TARGET"
     src_path="target/$LINUX_TARGET/release/pluralsync-global-manager"
@@ -65,6 +48,23 @@ build_binaries() {
     ./steps/17-frontend-npm-build.sh
     tar -czvf "$OUT_DIR/pluralsync-frontend.tar.gz" -C frontend/dist .
     echo "✅ pluralsync-frontend $target"
+
+    for target in "${TARGETS[@]}"; do
+        echo "🛠️ pluralsync-bridge $target"
+        BUILD_OUT_PATH="bridge-src-tauri/target/$target/release/bundle"
+        rm -rv "$BUILD_OUT_PATH"/* || true
+        ./steps/22-bridge-frontend-tauri-release.sh --target "$target"
+        if [[ "$target" == *"windows"* ]]; then
+            cp -v "$BUILD_OUT_PATH"/nsis/*-setup.exe "$OUT_DIR/PluralSync-Bridge-Windows-Setup.exe"
+        else
+            cp -v "$BUILD_OUT_PATH"/*/*.rpm "$OUT_DIR/PluralSync-Bridge-Linux.rpm"
+            cp -v "$BUILD_OUT_PATH"/*/*.deb "$OUT_DIR/PluralSync-Bridge-Linux.deb"
+            cp -v "$BUILD_OUT_PATH"/*/*.AppImage "$OUT_DIR/PluralSync-Bridge-Linux.AppImage"
+        fi
+        echo "✅ pluralsync-bridge $target"
+
+        echo ""
+    done
 }
 
 
