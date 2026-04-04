@@ -1,7 +1,8 @@
 import { invoke } from '@tauri-apps/api/core'
 import router from '../router'
 import { CANONICAL_PLURALSYNC_BASE_URL, type UserLoginCredentials } from '../pluralsync.bindings'
-import { fetchAndRenderVariantInfo } from '../variant-info'
+import { fetchAndRenderVersions, getBridgeVersion } from '../variant-info'
+import { check } from '@tauri-apps/plugin-updater'
 
 export async function renderLoginPage() {
   document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
@@ -22,11 +23,12 @@ export async function renderLoginPage() {
 
   const loginForm = document.querySelector<HTMLFormElement>('#login-form')!
   const loginStatus = document.querySelector<HTMLDivElement>('#login-status')!
+  const updaterStatus = document.querySelector('#updater-status')!
   const pluralsyncBaseUrlInput = document.querySelector<HTMLInputElement>(
     '#pluralsync-base-url-input',
   )!
 
-  let [baseUrl, _] = await fetchAndRenderVariantInfo()
+  let [baseUrl, _] = await fetchAndRenderVersions()
   pluralsyncBaseUrlInput.value = baseUrl
 
   loginForm?.addEventListener('submit', async (e) => {
@@ -40,9 +42,11 @@ export async function renderLoginPage() {
 
     if (email && password) {
       try {
+        const version = await getBridgeVersion()
         let creds: UserLoginCredentials = {
           email: { inner: email },
           password: { inner: { inner: password } },
+          client_version: version,
         }
         await invoke('store_credentials', { creds, baseUrl })
         await invoke('login_with_stored_credentials')
@@ -57,4 +61,21 @@ export async function renderLoginPage() {
       }
     }
   })
+
+  check()
+    .then(async (update) => {
+      if (update !== null) {
+        updaterStatus.textContent = '⚠️ Update ${update.version} available. Installing...'
+        await update.downloadAndInstall()
+        updaterStatus.textContent = '⚠️ Bridge Updated. Please restart!'
+        loginStatus.textContent = '⚠️ Bridge Updated. Please restart!'
+      } else {
+        updaterStatus.textContent = '✅ Up to date'
+      }
+      return Promise.resolve()
+    })
+    .catch((e) => {
+      updaterStatus.textContent = '❌ Update check failed: ${e}'
+      console.error(e)
+    })
 }

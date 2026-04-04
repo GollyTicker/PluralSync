@@ -9,6 +9,7 @@ use crate::users::email;
 use crate::users::jwt;
 use anyhow::anyhow;
 use chrono::Utc;
+use pluralsync_base::meta::PLURALSYNC_VERSION;
 use pluralsync_base::users::Email;
 use pluralsync_base::users::EmailVerificationToken;
 use pluralsync_base::users::JwtString;
@@ -22,6 +23,7 @@ use rocket::{State, post, serde::json::Json};
 use serde::Deserialize;
 use serde::Serialize;
 use sqlx::PgPool;
+use version_compare::Version;
 
 #[derive(Serialize, Deserialize, specta::Type)]
 pub struct EmailVerificationResponse {
@@ -166,8 +168,31 @@ pub async fn post_api_user_register(
 pub async fn post_api_user_login(
     db_pool: &State<PgPool>,
     jwt_app_secret: &State<jwt::ApplicationJwtSecret>,
-    credentials: Json<UserLoginCredentials>,
+    credentials: String,
 ) -> Result<Json<JwtString>, (http::Status, String)> {
+    let credentials = serde_json::from_str::<UserLoginCredentials>(&credentials)
+        .map_err(|err| {
+            (
+                http::Status::UpgradeRequired,
+                format!(
+                    "Provided JSON is malformed. Update required to match newest format. Error: {err}"
+                ),
+            )
+        })
+        .and_then(|credentials| {
+            if client_is_up_to_date(&credentials.client_version) {
+                Ok(credentials)
+            } else {
+                Err((
+                    http::Status::UpgradeRequired,
+                    format!(
+                        "Client {} is outdated. Update required.",
+                        credentials.client_version
+                    ),
+                ))
+            }
+        })?;
+
     log::info!("# | POST /api/user/login | {}", credentials.email);
 
     if credentials.is_empty_and_thus_invalid() {
@@ -202,6 +227,12 @@ pub async fn post_api_user_login(
     );
 
     Ok(Json(jwt_string))
+}
+
+fn client_is_up_to_date(client_ver: &str) -> bool {
+    Version::from(client_ver)
+        .zip(Version::from(PLURALSYNC_VERSION))
+        .is_some_and(|(client, server)| client < server)
 }
 
 #[derive(Deserialize, specta::Type)]

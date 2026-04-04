@@ -2,3 +2,6 @@
 target
 sp-events.log
 /*.log
+
+# We have to specify this on the top level, because tauri respects gitignore...
+bridge-src-tauri/tauri.conf.json
