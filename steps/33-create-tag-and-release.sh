@@ -49,6 +49,14 @@ echo "Creating new tag: $NEW_TAG"
 # Create the new tag
 git tag "$NEW_TAG"
 
+source "$(dirname "$0")/04-version.sh"
+export VERSION=$(extract_version_from_git)
+patch_cargo_versions_on_exit "$VERSION"
+
+# commit new version
+git add Cargo.* **/Cargo.*
+git commit -m "$NEW_TAG"
+
 echo "Tag $NEW_TAG created successfully."
 
 # Run the publish release script

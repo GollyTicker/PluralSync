@@ -2,7 +2,12 @@
 
 set -euo pipefail
 
+source "$(dirname "$0")/04-version.sh"
+export VERSION=$(extract_version_from_git)
+patch_cargo_versions_on_exit "$VERSION"
+
 export TAURI_APP_PATH="bridge-src-tauri"
+
 export PLURALSYNC_BASE_URL="http://localhost:8080"
 
 echo "PLURALSYNC_BASE_URL: $PLURALSYNC_BASE_URL"

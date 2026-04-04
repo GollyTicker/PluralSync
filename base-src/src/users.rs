@@ -29,6 +29,7 @@ impl From<String> for Email {
 pub struct UserLoginCredentials {
     pub email: Email,
     pub password: UserProvidedPassword,
+    pub client_version: String,
 }
 
 impl UserLoginCredentials {

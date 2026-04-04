@@ -1,4 +1,5 @@
+#[allow(clippy::unwrap_used)]
 fn main() {
-    let version = std::env::var("GIT_TAG").unwrap_or_else(|_| "dev".to_string());
+    let version = std::env::var("VERSION").unwrap();
     println!("cargo:rustc-env=PLURALSYNC_VERSION={version}");
 }

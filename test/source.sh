@@ -100,7 +100,8 @@ setup_test_user() {
     EMAIL="test@example.com"
     JSON="{
         \"email\": { \"inner\": \"$EMAIL\" },
-        \"password\": { \"inner\": { \"inner\": \"m?3yp%&wdS+\" } }
+        \"password\": { \"inner\": { \"inner\": \"m?3yp%&wdS+\" } },
+        \"client_version\": \"999.999.999\"
     }"
     curl -s --fail-with-body \
         -H "Content-Type: application/json" \
