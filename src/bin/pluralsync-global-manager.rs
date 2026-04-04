@@ -3,7 +3,6 @@ use pluralsync::{plurality, setup};
 use serde::Deserialize;
 use serde_json::{self};
 use std::env;
-use tokio_tungstenite::tungstenite;
 
 /** The Message as sent by Simply Plural on the Websocket.
  *
@@ -40,7 +39,7 @@ async fn main() -> Result<()> {
     .await
 }
 
-async fn process_event(token: &str, json_string: tungstenite::Utf8Bytes) -> Result<()> {
+async fn process_event(token: &str, json_string: String) -> Result<()> {
     let event = serde_json::from_str::<Event>(&json_string).inspect_err(|e| {
         log::warn!(
             "# | process_event | {e} | input: {}",

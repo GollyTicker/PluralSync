@@ -11,7 +11,7 @@
           id="variant-info"
           :title="variantInfo.description ?? undefined"
         >
-          @{{ variantInfo.variant }}
+          @{{ variantInfo.variant }} | {{ variantInfo.version }}
         </p>
       </div>
       <div class="nav-links-container">

@@ -8,7 +8,7 @@ use argon2::{
 use base64::{Engine, prelude::BASE64_STANDARD_NO_PAD};
 
 use pluralsync_base::users::{JwtString, Secret, UserProvidedPassword};
-use rand::{RngExt as _, distr, prelude::ThreadRng};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 
@@ -35,11 +35,13 @@ impl Display for SecretHashString {
     }
 }
 
+#[must_use]
 pub fn generate_secret() -> Secret {
-    let secret = ThreadRng::default()
-        .sample_iter(distr::Alphanumeric)
-        .take(32)
-        .map(char::from)
+    let secret: String = (0..32)
+        .map(|_| {
+            let byte = rand::thread_rng().gen_range(b'0'..=b'z');
+            char::from(byte)
+        })
         .collect();
     Secret { inner: secret }
 }

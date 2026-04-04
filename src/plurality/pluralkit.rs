@@ -1,10 +1,6 @@
 use anyhow::Result;
 use chrono::Utc;
-use rand::{
-    RngExt,
-    distr::{self},
-    rngs::ThreadRng,
-};
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use tokio::time::sleep;
 
@@ -34,7 +30,7 @@ pub const PLURALKIT_USER_AGENT: &str = concat!(
 
 // TEMPORARY: Add a artificial delay to avoid hitting the 10 GET/s rate limit until we get system-specific rate limits
 pub async fn artifical_delay_to_avoid_hitting_pluralkit_rate_limit() -> Result<()> {
-    let random_delay = ThreadRng::default().sample(distr::Uniform::new_inclusive(150, 500)?);
+    let random_delay = rand::thread_rng().gen_range(150..=500);
     sleep(std::time::Duration::from_millis(random_delay)).await;
     Ok(())
 }

@@ -2,7 +2,6 @@ use anyhow::Result;
 use derive_more::Debug;
 use serde::Deserialize;
 use serde::Deserializer;
-use tokio_tungstenite::tungstenite;
 
 use super::model::Fronter;
 
@@ -163,9 +162,7 @@ pub struct FriendContent {
     pub assigned_privacy_buckets: Vec<String>,
 }
 
-pub fn relevantly_changed_based_on_simply_plural_websocket_event(
-    message: &tungstenite::Utf8Bytes,
-) -> Result<bool> {
+pub fn relevantly_changed_based_on_simply_plural_websocket_event(message: &str) -> Result<bool> {
     let event = serde_json::from_str(message).inspect_err(|e| {
         log::warn!(
             "# | relevantly_changed_based_on_simply_plural_websocket_event | {e} | input: {}",
@@ -227,21 +224,17 @@ struct Event<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use tokio_tungstenite::tungstenite;
 
     #[test]
     fn test_relevantly_changed_based_on_simply_plural_websocket_event() {
-        let utf8_bytes =
-            tungstenite::Utf8Bytes::from("{\"msg\": \"update\", \"target\": \"notes\"}");
-        assert!(!relevantly_changed_based_on_simply_plural_websocket_event(&utf8_bytes).unwrap());
+        let message = "{\"msg\": \"update\", \"target\": \"notes\"}";
+        assert!(!relevantly_changed_based_on_simply_plural_websocket_event(message).unwrap());
 
-        let utf8_bytes =
-            tungstenite::Utf8Bytes::from("{\"msg\": \"update\", \"target\": \"members\"}");
-        assert!(relevantly_changed_based_on_simply_plural_websocket_event(&utf8_bytes).unwrap());
+        let message = "{\"msg\": \"update\", \"target\": \"members\"}";
+        assert!(relevantly_changed_based_on_simply_plural_websocket_event(message).unwrap());
 
-        let utf8_bytes =
-            tungstenite::Utf8Bytes::from("{\"msg\": \"notification\", \"title\": \"Test\"}");
-        assert!(relevantly_changed_based_on_simply_plural_websocket_event(&utf8_bytes).unwrap());
+        let message = "{\"msg\": \"notification\", \"title\": \"Test\"}";
+        assert!(relevantly_changed_based_on_simply_plural_websocket_event(message).unwrap());
     }
 
     #[test]

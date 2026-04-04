@@ -1,6 +1,6 @@
 [package]
 name = "pluralsync"
-version = "0.1.0"
+version = "2.87.0-rc"
 edition = "2024"
 rust-version = "1.90.0"
 
@@ -21,7 +21,7 @@ name = "announcement-archive-generator"
 path = "src/bin/announcement-archive-generator.rs"
 
 [dependencies]
-derive_more = { version = "*", features = ["debug","display"] }
+derive_more = { version = "*", features = ["debug", "display"] }
 lettre = { version = "*", default-features = false, features = [
     "builder",
     "hostname",
@@ -72,6 +72,7 @@ rocket = { version = "*", default-features = false, features = [
     "json",
     "http2",
 ] }
+version-compare = "*"
 specta = { version = "*", default-features = false, features = ["typescript"] }
 specta-typescript = "*"
 rocket_cors = { version = "*", default-features = false }

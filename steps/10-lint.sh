@@ -21,7 +21,9 @@ bridge_frontend_lint() {
     npx prettier --write src
 }
 
-
+source "$(dirname "$0")/04-version.sh"
+export VERSION=$(extract_version_from_git)
+patch_cargo_versions_on_exit "$VERSION"
 
 (cd base-src && rust_lint)
 rust_lint
