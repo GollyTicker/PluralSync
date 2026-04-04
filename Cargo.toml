@@ -1,6 +1,6 @@
 [package]
 name = "pluralsync"
-version = "2.90.0"
+version = "2.95.0"
 edition = "2024"
 rust-version = "1.90.0"
 
