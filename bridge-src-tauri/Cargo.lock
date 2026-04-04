@@ -2988,7 +2988,7 @@ dependencies = [
 
 [[package]]
 name = "pluralsync-base"
-version = "2.88.0"
+version = "2.89.0-dev"
 dependencies = [
  "async-scoped",
  "chrono",
@@ -3005,7 +3005,7 @@ dependencies = [
 
 [[package]]
 name = "pluralsync-bridge"
-version = "2.88.0"
+version = "2.89.0-dev"
 dependencies = [
  "anyhow",
  "chrono",
