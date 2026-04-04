@@ -65,7 +65,7 @@ export async function renderLoginPage() {
   check()
     .then(async (update) => {
       if (update !== null) {
-        updaterStatus.textContent = '⚠️ Update ${update.version} available. Installing...'
+        updaterStatus.textContent = `⚠️ Update ${update.version} available. Installing...`
         await update.downloadAndInstall()
         updaterStatus.textContent = '⚠️ Bridge Updated. Please restart!'
         loginStatus.textContent = '⚠️ Bridge Updated. Please restart!'
@@ -76,7 +76,7 @@ export async function renderLoginPage() {
       return Promise.resolve()
     })
     .catch((e) => {
-      updaterStatus.textContent = '❌ Update check failed: ${e}'
+      updaterStatus.textContent = `❌ Update check failed: ${e}`
       console.error(e)
     })
 }

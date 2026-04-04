@@ -12,6 +12,7 @@ if [ "$TAG" == "" ]; then
 fi
 
 echo "Found tag: $TAG"
+VERSION="${TAG#v}"
 
 if ! gh auth status; then
     echo "You are not logged into GitHub."
@@ -45,11 +46,11 @@ else
   false
 fi
 
-# Generate latest.json
+# Generate current.json
 cat > "$OUT_DIR/current.json" << EOF
 {
-  "version": "$TAG",
-  "notes": "Release $TAG",
+  "version": "$VERSION",
+  "notes": "Release $VERSION",
   "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 }
 EOF
