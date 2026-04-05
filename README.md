@@ -8,7 +8,7 @@ A public _alpha_ version is available at [public-test.pluralsync.ayake.net](http
 
 <!--
 MAKE SURE TO ALSO UPDATE THE PluralSync discord bot 1408232222682517575 description when changing this.
-The main page as well as the sub pages should be adapted.
+The main page as well as the sub pages should be adapted. 
 -->
 
 For more information, see the [About Page](https://public-test.pluralsync.ayake.net/about) on the website.
