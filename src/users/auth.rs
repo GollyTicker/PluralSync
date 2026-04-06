@@ -68,6 +68,9 @@ pub fn create_secret_hash(secret: &Secret, options: SecretHashOptions) -> Result
         .hash_password(secret.inner.as_bytes(), &salt)
         .map_err(|_| anyhow!("secret hashing failed"))?;
 
+    log::info!("secret: {:?}", pwh.to_string()); // todo. this has changed ?? it should be stable!
+    // we need to add tests to check, that a dependencies update didn't change the core hasing stuff...
+
     Ok(SecretHashString {
         inner: pwh.to_string(),
     })

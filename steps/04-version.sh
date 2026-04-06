@@ -2,23 +2,6 @@
 
 set -euo pipefail
 
-# Extracts the PluralSync version from git tags.
-# Mirrors the logic in base-src/build.rs (extract_version_from_git + normalize_tag).
-# Also provides helpers to patch/reset version strings in Cargo.toml files.
-#
-# Output examples:
-#   Tagged commit (v2.59)          → 2.59.0
-#   Tagged commit (v2.59-rc1)      → 2.59.0-rc1
-#   Untagged dev build              → 2.59.0-dev
-#
-# Usage:
-#   source steps/04-version.sh
-#
-#   VERSION=$(extract_version_from_git)
-#   patch_cargo_version Cargo.toml "$VERSION"
-#   trap 'reset_cargo_version Cargo.toml' EXIT
-#   cargo build ...
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ---------- version extraction ----------
