@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@types/parse-color": "^1.0.3",
-    "axios": "^1.13.6",
+    "axios": "^1.15.0",
     "parse-color": "^1.0.0",
     "vue": "^3.5.30",
     "vue-router": "^5.0.4"
