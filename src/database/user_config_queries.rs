@@ -278,7 +278,30 @@ fn compute_user_secrets_key(
         hasher.finalize()
     };
 
-    let hex_string = format!("{digest:x}");
+    let hex_string = hex::encode(digest);
 
     secrets::UserSecretsDecryptionKey { inner: hex_string }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        database::{ApplicationUserSecrets, user_config_queries::compute_user_secrets_key},
+        users::UserId,
+    };
+
+    #[test]
+    fn correct_user_secrets_key() {
+        let user_id: UserId = UserId {
+            inner: uuid::uuid!("33c89b20-be5b-4f8e-adfa-0d444719a6db"),
+        };
+        let app_user_secret = ApplicationUserSecrets {
+            inner: "some-secret".to_owned(),
+        };
+
+        assert_eq!(
+            "6804f20948f345a84a8eb8229d785b967f1bc6fbd4c29f3b1ec02c101b1edde2",
+            compute_user_secrets_key(&user_id, &app_user_secret).inner
+        );
+    }
 }

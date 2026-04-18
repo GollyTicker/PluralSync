@@ -67,6 +67,7 @@ jsonwebtoken = { version = "*", default-features = false, features = [
     "rust_crypto",
 ] }
 rand = "*"
+hex = "*"
 sha2 = "*"
 rocket = { version = "*", default-features = false, features = [
     "json",
