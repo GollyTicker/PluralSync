@@ -111,7 +111,8 @@ export interface Screenshot {
         - as there is a strict isolation between them.
         <br />
         We run the LLM for the coding assistant locally and offline - which is furthermore private,
-        under our control and is financially and energetically sustainable.
+        under our control and is financially and energetically sustainable. We don't spend on
+        companies providing AI/LLMs to not encourage their data-stealing practises.
         <br />
         We strive to use AI pragmatically and beneficially. Our actions align with our
         interpretation of reasonable AI usage - and we prefer to use AI rather than not use it.
