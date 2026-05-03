@@ -2,488 +2,114 @@
 
 ## What is PluralSync?
 
-A cloud service where users can automatically sync their plural systems' fronting status
-between various system managers and social platforms such as [SimplyPLURAL](https://apparyllis.com/), [PluralKit](https://pluralkit.me/), [VRChat](https://hello.vrchat.com/), [Discord](https://discord.com) or their own website. Users of system managers (plural systems, DID/OSDD systems, etc.) benefit from this as it makes it easier for them to communicate who's fronting while only
-needing to update their fronting on their preferred system manager.
+A cloud service that syncs plural systems' fronting status across platforms (SimplyPlural, PluralKit, VRChat, Discord, websites). Users update once on their preferred system manager and PluralSync propagates it everywhere else.
 
-A public _alpha_ version is available at [public-test.pluralsync.ayake.net](https://public-test.pluralsync.ayake.net). (*Use this at your own risk.*)
+Public alpha: [public-test.pluralsync.ayake.net](https://public-test.pluralsync.ayake.net)
 
-Currently the following synchronizations are supported:
-* **From SimplyPlural** → VRChat Status, Discord (Rich Presence + Status Message), PluralKit, Website
-* **From PluralKit** → VRChat Status, Discord (Rich Presence + Status Message), Website
-
-We, the developers, take data security and privacy seriously. The data to synchronise between the services
-is stored encrypted and at industry-standard security. Self hosting is possible if you have some tech knowledge.
-
-## General DOs
-
-Only do the tasks described when explicitly requested to.
-
-## Using Project Scripts (IMPORTANT)
-
-**This project provides comprehensive shell scripts in `./steps/` and `./test/` directories. AI agents should strongly prefer using these scripts over writing custom bash commands.**
-
-### Why Use the Scripts?
-
-1. **Consistency**: Scripts ensure the same commands are executed the same way every time
-2. **Maintainability**: Changes to build/test processes only need to be made in one place
-3. **Correctness**: Scripts encode the correct sequence of operations and dependencies
-4. **Time-saving**: No need to remember complex command sequences or environment variables
-
-### When to Use Scripts vs Custom Commands
-
-**Use scripts for:**
-- Building any component (backend, frontend, bridge)
-- Running tests (unit, integration, e2e)
-- Linting and formatting code
-- Security audits
-- Database migrations
-- Running services (dev servers, global manager)
-- Cleaning build artifacts
-- Updating dependencies
-- Release builds and publishing
-
-**Custom bash commands are appropriate only for:**
-- One-off file operations (reading, editing, creating files)
-- Git operations (status, diff, commit, log)
-- Exploring the codebase (finding files, searching content)
-- Quick inspections that don't affect build state
-- Commands that need to be modified from the standard script behavior
-
-### Script Discovery
-
-If you're unsure which script to use:
-1. Check `./steps/` for build, run, and maintenance operations
-2. Check `./test/` for testing operations
-3. Look at the script contents to understand what they do before invoking them
-4. Scripts are numbered for logical ordering (01-clean, 02-install, 10-lint, 12-build, etc.)
-
-## Project Overview
-PluralSync is a cloud service designed to synchronize the "fronting" status of plural systems across various platforms. It is built as a multi-component application with a Rust backend, a main web frontend (Vue.js/Vite), and a desktop bridge frontend (Tauri/Vite). It uses PostgreSQL for data persistence and Docker/Nginx for deployment/local development. The project emphasizes data security and privacy.
-
-## Architecture
-
-### Backend (`pluralsync`)
-*   **Language:** Rust
-*   **Framework:** [Rocket](https://rocket.rs/)
-*   **Key Technologies:** SQLx (PostgreSQL), Tokio (async runtime)
-*   **Functionality:**
-    *   Provides the core backend services, including a RESTful API and WebSocket communication.
-    *   Interacts with a PostgreSQL database using `sqlx` for data persistence.
-    *   Manages user authentication using JSON Web Tokens (JWT).
-    *   Communicates with external services like the VRChat API and PluralKit API.
-    *   Exposes application metrics for monitoring via Prometheus.
-    *   Handles email notifications via SMTP (Brevo) for account verification and announcements.
-*   **Tooling:**
-    *   Includes a utility (`ts-bindings`) to generate TypeScript type definitions from Rust code using `specta`, ensuring type safety between the backend and frontend.
-    *   Includes `announcement-archive-generator` to generate static announcement JSON for the frontend.
-
-### Web Frontend (`frontend`)
-*   **Framework:** [Vue.js](https://vuejs.org/) with TypeScript
-*   **Build Tool:** [Vite](https://vitejs.dev/)
-*   **Key Technologies:** Vue Router, Axios
-*   **Functionality:**
-    *   Provides the main user interface for the web application.
-    *   Communicates with the Rust backend via HTTP requests (using `axios`) and WebSockets.
-
-### Desktop Application (`pluralsync-bridge`)
-*   **Framework:** [Tauri](https://tauri.app/) (Rust backend, web-based frontend)
-*   **Backend (`bridge-src-tauri`):**
-    *   Written in Rust.
-    *   Integrates with the operating system for features like autostart.
-    *   Includes Discord Rich Presence integration.
-    *   Communicates with the main `pluralsync` backend.
-*   **Frontend (`bridge-frontend`):**
-    *   A web-based UI built with TypeScript and Vite.
-    *   **Key Technologies:** Navigo (routing)
-    *   Uses the Tauri API to interact with the Rust backend part of the desktop application.
-
-### Shared Code (`base-src`)
-*   **Language:** Rust
-*   **Purpose:**
-    *   A shared library containing common data structures, types, and utilities.
-    *   This crate is used as a dependency by both the main backend (`pluralsync`) and the Tauri backend (`pluralsync-bridge`), promoting code reuse and consistency.
-
-## Synchronization Architecture
-
-PluralSync supports **source-agnostic synchronization**, allowing users to choose their primary system manager (SimplyPlural or PluralKit) as the data source for fronting status.
-
-### Data Sources
-
-#### SimplyPlural (Legacy/Primary Source)
-SimplyPlural was the original primary data source for all fronting status information:
-*   Real-time WebSocket connection monitors fronting changes
-*   HTTP API fetches system members, custom fronts, and privacy bucket configuration
-*   User provides read-only token for secure API access
-*   Includes members (archived/active), custom fronts, privacy settings
-
-#### PluralKit (New Source)
-PluralKit integration enables synchronization from PluralKit to other platforms:
-*   HTTP API fetches current fronters and system information
-*   User provides PluralKit token for API access
-*   Respects member visibility and privacy settings
-*   Rate-limited API access with automatic delay management
-
-### Synchronization Targets (Updaters)
-PluralSync synchronizes fronting status from the configured source to multiple platforms:
-
-**1. VRChat Status Updater** (server-managed)
-*   Updates user's VRChat bio with current fronter name(s)
-*   Requires VRChat credentials and authentication cookie
-*   Handles special character cleaning and rate-limit management
-
-**2. Discord Rich Presence Updater** (server-managed or bridge-managed)
-*   **Server variant**: Sends fronting data for Discord Rich Presence display
-    *   Requires Discord bot token + user authorization
-    *   Configurable display formats (short/long, with/without avatars)
-    *   Supports activity types (Playing, Watching, Streaming, etc.)
-*   **Status Message variant**: Updates Discord custom status (optional, per-deployment)
-    *   Requires Discord self-bot token
-*   **Desktop Bridge variant**: Local client management via Tauri desktop app
-    *   WebSocket connection receives real-time updates
-    *   Discord IPC loop runs continuously for immediate sync
-    *   Independent of browser/web app (runs on system boot)
-
-**3. PluralKit Fronters Sync Updater** (server-managed, to-pluralkit)
-*   Synchronizes fronters from the configured source to PluralKit system
-*   Performs fronter switches via PluralKit API
-*   Monitors rate-limit quota for API calls
-*   Avoids unnecessary switches when fronters haven't changed
-
-**4. Website Fronting Display** (read-only)
-*   Public API endpoint: `GET /fronting/<website_url_name>`
-*   Returns formatted fronting status (JSON or HTML)
-*   No authentication required
-*   Respects privacy configuration and cleaning rules
-
-### Update Flow
-1. **Detection**: Fronting change detected via WebSocket (SimplyPlural) or polling (PluralKit)
-2. **Processing**: Privacy rules applied, names cleaned per platform, formatted with limits
-3. **Distribution**: Each enabled updater runs async to push changes to target platform
-
-### Configuration
-User config enables/disables updaters and sources:
-*   `enable_from_sp` - Enable SimplyPlural as data source
-*   `enable_from_pluralkit` - Enable PluralKit as data source
-*   `enable_vrchat` - VRChat bio updates
-*   `enable_discord` - Discord Rich Presence
-*   `enable_discord_status_message` - Discord status (if deployment-enabled)
-*   `enable_to_pluralkit` - PluralKit synchronization (target)
-
-Server filters "foreign_managed" updaters (Discord bot management is user-controlled, not server-managed).
-
-### Bridge (Desktop Application)
-**pluralsync-bridge** is a Tauri-based desktop application:
-*   **Backend** (`bridge-src-tauri`): Rust system integration (auto-start on boot)
-*   **Frontend** (`bridge-frontend`): TypeScript/Vue login and settings UI
-*   **Primary function**: Run Discord Rich Presence locally on user's machine
-*   **WebSocket**: Real-time subscription to backend for fronting updates
-*   **Advantage**: Keeps Discord RPC updated even when web app is closed
-*   **Patches**: Custom patches applied to `discord-rich-presence` crate for compatibility
-
-### Global Manager
-**pluralsync-global-manager** binary:
-*   Consumes webhook events from configured sources (SimplyPlural, PluralKit)
-*   Detects fronting changes and distributes to all connected updaters
-*   Central event processing pipeline
-
-### Error Handling
-*   Each updater tracks `last_operation_error`
-*   Status enum: `Running`, `Disabled`, `Error(message)`, `Starting`
-*   Metrics track API requests, rate limits, and failures per updater
-*   All state changes and errors logged for debugging
+Supported sync directions:
+* **From SimplyPlural** → VRChat, Discord (Rich Presence + Status), PluralKit, Website
+* **From PluralKit** → VRChat, Discord, Website
 
 ---
 
-## User Account Management
+## ⚠️ Critical: Use Project Scripts
 
-PluralSync includes comprehensive account management features built on email verification, secure token handling, and SMTP-based communication (using Brevo email service).
+**This project provides shell scripts in `./steps/` and `./test/`. Always prefer these over writing custom bash commands.**
 
-### Email Verification (Registration)
-*   New users register via `POST /api/user/register` → creates temporary entry
-*   `EmailVerificationToken` generated and hashed with app secret salt; 1-hour expiration
-*   Verification email sent with link: `/verify-email?token={TOKEN}`
-*   `POST /api/user/email/verify/<token>` endpoint converts temporary entry to permanent account
-*   **Dev Mode:** Tokens printed to logs instead of being sent via email
+**Use scripts for:** building, testing, linting, audits, DB migrations, running services, cleaning, releases.
+**Use custom commands for:** file ops, git operations, codebase exploration, quick inspections.
 
-### Email Address Change
-*   Authenticated users request change via `POST /api/user/email/change`
-*   System prevents duplicate emails (409 Conflict response)
-*   Stores `new_email`, `email_verification_token_hash`, and `email_verification_token_expires_at` in user record
-*   Two emails sent: confirmation link to NEW email, security notification to OLD email
-*   Same `POST /api/user/email/verify/<token>` endpoint finalizes change after verification click
-*   User record updated with new email; temporary fields cleared
+**Discovery:** `ls steps/` and `ls test/`. Scripts are numbered (01-clean, 02-install, 10-lint, 12-build, etc.). Read a script before invoking to understand it.
 
-### Password Reset
-*   User requests reset via `POST /api/user/forgot-password` (email only; no auth required)
-*   Always returns 200 OK to prevent email enumeration attacks
-*   `PasswordResetToken` generated, hashed WITHOUT app secret, stored in `password_reset_requests` table with 1-hour expiration
-*   Reset email sent with link: `/reset-password?token={TOKEN}`
-*   User calls `POST /api/user/reset-password` with token and new password:
-    *   System hashes token and verifies against stored request
-    *   Updates user's password (hashed with unique salt)
-    *   Deletes password reset request entry
-    *   Records success/failure metrics
+---
 
-### Account Deletion
-*   Authenticated users only: `DELETE /api/user` (requires JWT)
-*   Security: requires password verification (prevents deletion via stolen JWT) + exact confirmation string: "delete"
-*   Process:
-    *   Verifies JWT and password
-    *   Stops all updater tasks (syncing stops; logged if fails)
-    *   Cascading database delete removes all related data
-*   Frontend: `DeleteAccount.vue` component displays irreversible action warnings
-*   Success: JWT cleared from localStorage, redirects to home page
+## High-Level Architecture
 
-### Security Features
-*   Cryptographically secure token generation
-*   PBKDF2 token hashing (app-secret salt for email tokens; no app-secret for password tokens)
-*   1-hour token expiration on all time-sensitive operations
-*   Password-protected account deletion
-*   Async email delivery (non-blocking)
-*   Email enumeration protection (forgot-password always returns success)
+Four main components, all in one Cargo workspace:
+
+| Component | Tech | Purpose |
+|---|---|---|
+| **`pluralsync`** (backend) | Rust + Rocket + SQLx + Tokio | REST API, WebSocket, user auth (JWT), external API integrations, Prometheus metrics |
+| **`frontend`** | Vue 3 + TypeScript + Vite | Main web UI. Communicates with backend via HTTP (axios) and WebSocket |
+| **`pluralsync-bridge`** | Tauri 2 (Rust + Vue) | Desktop app for local Discord Rich Presence. Auto-starts on boot, runs independently |
+| **`base-src`** | Rust | Shared library (types, utilities) used by both backend and bridge |
+
+**Database:** PostgreSQL 17. Migrations via SQLx (`docker/migrations/`). Secrets encrypted in DB.
+**Deployment:** Docker Compose (Nginx reverse proxy → frontend + backend API).
+
+### Sync Flow
+
+1. **Source detects change** — SimplyPlural WebSocket (real-time) or PluralKit HTTP polling
+2. **Process** — Privacy rules applied, names cleaned per platform, formatted
+3. **Distribute** — Each enabled updater async-pushes to its target platform
+
+User config enables/disables sources and targets (stored encrypted in PostgreSQL).
+
+---
 
 ## Coding Guidelines
 
-*   Rust import statements should be one crate per statement. Importing multiple objects from the same crate should be done in the same statement.
-    *   Good: `use anyhow::{anyhow, Error, Result}`
-    *   Bad: the above imports on separate lines/statements for each imported object
-*   Rust import statements should use separate lines for imports from different modules originating from this project.
-*   In general, avoid excessive Debug and fmt::Display traits. Only add them if printing to logs is useful. Prefer Display over Debug.
-*   **Security: Never add `#[derive(Debug)]` or `#[derive(Display)]` to structs containing sensitive fields** (passwords, tokens, API keys, cookies, secrets). If debugging output is needed, implement `fmt::Display` or `fmt::Debug` manually and redact all sensitive values (e.g., show only first 5 chars or `<field_name>`).
-    *   Affected structs include: `UserConfigDbEntries`, `VRChatCredentials`, `VRChatCredentialsWithCookie`, `VRChatCredentialsWithTwoFactorAuth`, `UserLoginCredentials`, `SmtpConfig`, `ApplicationConfig`, and any struct with fields named `password`, `token`, `secret`, `cookie`, `api_key`, `credentials`. Check them for examples
-*   The project uses Rust edition 2024 (requires Rust 1.90.0+)
-
-## Development Workflows
-
-> **Reminder**: For all operations below, prefer the provided scripts in `./steps/` and `./test/` directories over writing custom bash commands. The scripts handle environment setup, error handling, and correct command sequences.
-
-### Prerequisites
-*   Rust toolchain v1.90.0+ (installation via `rustup` is recommended)
-*   Node.js (v20.19.0 or >=22.12.0) + npm
-
-### Installation of Dependencies
-To set up the development environment and install all necessary dependencies:
-```bash
-./steps/02-install-dependencies.sh
-```
-This script handles system-level packages (e.g., `oathtool`, `mingw-w64`, `libwebkit2gtk-4.1-dev`), installs Rust cargo tools (`cargo-audit`, `sqlx-cli`, `tauri-cli`, `tauri-driver`), applies patches to the `discord-rich-presence` crate, and installs Node.js dependencies for both `bridge-frontend` and `frontend` projects using `npm ci`.
-
-### Building
-#### Building the Backend
-To build the Rust backend:
-```bash
-./steps/12-backend-cargo-build.sh # Builds in debug mode
-./steps/12-backend-cargo-build.sh --release # Builds in release mode
-```
-
-#### Building Web Frontend
-To generate TypeScript bindings from the Rust backend and build the web frontend:
-```bash
-./steps/15-frontend-generate-bindings.sh # Generate type-safe bindings
-./steps/14-frontend-generate-announcements.sh # Generate announcement archive JSON
-./steps/17-frontend-npm-build.sh # Build production frontend
-```
-
-#### Building Tauri Desktop Application
-The desktop bridge application uses the Tauri framework and combines Rust backend logic with a web-based frontend:
-```bash
-./steps/20-bridge-frontend-tauri-dev.sh # Development build with hot reload
-./steps/21-bridge-frontend-tauri-build.sh # Debug build (unbundled)
-./steps/22-bridge-frontend-tauri-release.sh # Release build
-```
-
-#### Building Release Artifacts
-To build release versions for multiple platforms:
-```bash
-./steps/30-build-release.sh # Builds Windows and Linux release artifacts
-```
-
-### Running (Local Development)
-For local development, environment variables can be configured using `docker/local.env` as a template. The full-stack local execution involves the Docker setup defined in `docker/docker.compose.yml`.
-
-#### Running the Web Frontend
-```bash
-./steps/16-frontend-npm-dev.sh # Starts the development server
-```
-
-#### Running the Desktop Application
-```bash
-./steps/20-bridge-frontend-tauri-dev.sh # Runs with hot reload
-```
-Ensure the backend is running separately if testing against it.
-
-#### Running the Global Manager
-The global manager handles SimplyPlural event processing and syncing across all connected users:
-```bash
-./steps/13-run-pluralsync-global-manager.sh # Requires GLOBAL_PLURALSYNC_SIMPLY_PLURAL_READ_WRITE_ADMIN_TOKEN
-```
-
-#### Starting Local Release Build
-To test a complete local release build:
-```bash
-./steps/31-start-local-release.sh # Starts the backend and serves the frontend
-```
-
-### Database Preparation
-Before running the backend, initialize the database with migrations:
-```bash
-./steps/11-prepare-sqlx.sh # Starts PostgreSQL container and runs migrations
-```
-
-### Testing
-
-> **Always use the test scripts in `./test/` directory.** These scripts handle proper setup, teardown, environment variables, and error checking.
-
-#### Unit Tests
-To run Rust unit tests:
-```bash
-./test/rust-tests.sh
-```
-This executes `cargo test` for both the `base-src` and the root Rust projects.
-
-#### Integration Tests
-Multiple integration tests are available for different components. **Always run these via their scripts**:
-*   **Manager Integration Tests:** `./test/manager.integration-tests.sh` - Tests the global manager's synchronization logic (requires `SPS_API_TOKEN`, `SPS_API_WRITE_TOKEN`, and optionally `PLURAL_SYSTEM_MEMBER_TO_TEST`)
-*   **VRChat Integration Tests:** `./test/vrchat.integration-tests.sh` - Tests VRChat status synchronization (requires `VRCHAT_USERNAME`, `VRCHAT_PASSWORD`, and `VRCHAT_COOKIE`)
-*   **Web Frontend Integration Tests:** `./test/frontend.needs-backend.integration-tests.sh` - Requires backend running separately
-*   **Bridge Frontend Integration Tests:** `./test/bridge.needs-backend.integration-tests.sh` - Requires bridge backend built and backend running
-*   **Webserver Integration Tests:** `./test/webserver.integration-tests.sh` - Tests website sync functionality
-*   **Updater Integration Tests (SimplyPlural source):** `./test/updater.sp.integration-tests.sh` - Tests updates from SimplyPlural source
-*   **Updater Integration Tests (PluralKit source):** `./test/updater.pk.integration-tests.sh` - Tests updates from PluralKit source (requires `SPS_API_TOKEN`, `SPS_API_WRITE_TOKEN`, `DISCORD_STATUS_MESSAGE_TOKEN`, `PLURALKIT_TOKEN`)
-*   **Restarts Integration Tests:** `./test/restarts.integration-tests.sh` - Tests behavior during restarts
-*   **History Integration Tests:** `./test/history.integration-tests.sh` - Tests fronting history functionality
-*   **Email Rate Limit Tests:** `./test/email-rate-limit.integration-tests.sh` - Tests SMTP rate limiting
-*   **VRChat Cookie Setup:** `./test/ensure-vrchat-cookie-available.dev.sh` - Helper to obtain VRChat authentication cookie
-
-#### End-to-End (e2e) Tests
-*   **Web Frontend:** Refer to the `e2e` script in `frontend/package.json`. This typically requires the backend to be running separately. Use `./test/frontend.needs-backend.integration-tests.sh` which wraps this.
-*   **Bridge Frontend:** Refer to the `e2e` script in `bridge-frontend/package.json`. This requires `bridge-src-tauri` to be built and the backend to be running. Use `./test/bridge.needs-backend.integration-tests.sh` which wraps this.
-
-### Linting and Formatting
-To lint and format the codebase:
-```bash
-./steps/10-lint.sh
-```
-This script runs `cargo clippy` with strict warning levels (`-W clippy::pedantic`, `-W clippy::nursery`, `-W clippy::unwrap_used`, `-W clippy::expect_used`), `rustfmt --edition 2024` for Rust code, and `prettier` for frontend code formatting. The web frontend also runs `eslint` for linting.
-
-### Security Audits
-To check for known security vulnerabilities in dependencies:
-```bash
-./steps/03-audit.sh
-```
-This runs `cargo audit` for all Rust crates (`base-src`, main backend, `bridge-src-tauri`) and `npm audit` for Node.js dependencies.
-
-### Release Process
-The release process involves creating a Git tag and publishing the release:
-```bash
-./steps/33-create-tag-and-release.sh # Creates tag and publishes release
-```
-This script creates a new Git tag (e.g., `v2.10`), ensures GitHub CLI authentication, and publishes the release.
-
-Alternatively, to publish an existing tag:
-```bash
-./steps/32-publish-release.sh # Publishes release for existing tag
-```
-
-## Utility Scripts
-
-> **Tip**: Scripts are numbered for logical ordering. Use them as your first choice for common operations.
-
-### Cleanup
-To clean build artifacts and dependencies:
-```bash
-./steps/01-clean.sh # Removes node_modules, target directories, and cleans all crates
-```
-
-### Dependency Management
-To update all dependencies to their latest versions:
-```bash
-./steps/92-update-dependencies.sh # Updates Cargo and npm packages
-```
-
-### Code Analysis
-*   **Codebase Size Analysis:** `./steps/90-codebase-size.sh` - Uses `cloc` to analyze lines of code and shows largest Rust files
-*   **Build Time Analysis:** `./steps/91-build-time-analysis.sh` - Generates detailed build timing reports for all components
-
-### Event Processing (Production Monitoring)
-For troubleshooting and monitoring production instances:
-*   `./steps/40-get-sp-events.sh` - Retrieves SimplyPlural webhook events from production logs (SSH access required)
-*   `./steps/41-process-sp-events.sh` - Processes and parses SP events into structured JSON format
-
-### Additional Test Utilities
-The `./test/` directory contains helper scripts for testing:
-*   `./test/plural_system_to_test.sh` - Defines test member IDs and front configuration helpers
-*   `./test/source.sh` - Common test setup functions (user creation, config management)
-*   `./test/start-backend-for-bridge-frontend.sh` - Starts backend for bridge frontend testing
-
-## Binary Targets
-
-The project includes multiple Rust binary targets in the main crate:
-
-*   **pluralsync:** The main API server and WebSocket backend
-*   **ts-bindings:** Generates TypeScript type definitions from Rust using `specta`, ensuring type safety between backend and frontend
-*   **pluralsync-global-manager:** Handles global event processing and synchronization across all users' plural systems
-*   **announcement-archive-generator:** Generates static JSON archive of announcement emails for the frontend
-
-## Patches
-
-The project includes patches for external dependencies:
-*   `discord-rich-presence.activity.rs.patch` - Patch for the Discord Rich Presence activity integration
-*   `discord-rich-presence.discord_ipc.rs.patch` - Patch for Discord IPC communication
-
-These patches are applied automatically during dependency installation via `./steps/02-install-dependencies.sh`.
+* **Rust Edition 2024** (requires Rust 1.90.0+)
+* **Imports:** One `use` statement per crate. Multiple items from the same crate on one line: `use anyhow::{anyhow, Error, Result}`. Separate lines for different modules.
+* **Derive traits:** Prefer `fmt::Display` over `Debug`. Only derive if printing to logs is useful.
+* **⛔ Security — Sensitive fields:** Never `#[derive(Debug)]` or `#[derive(Display)]` on structs with sensitive fields (passwords, tokens, API keys, cookies, secrets). If debug output is needed, implement manually and redact all sensitive values.
+* **Error handling:** Updaters track `last_operation_error`. Status enum: `Running`, `Disabled`, `Error(msg)`, `Starting`.
 
 ---
 
-## Announcement System
+## Essential Commands
 
-PluralSync includes an email announcement system for communicating important updates to all users.
+> All commands below are scripts in `./steps/` or `./test/`.
 
-### Architecture
-*   **Email Templates:** Defined in `src/users/announcement_email.rs`
-*   **Database:** Tracks which users have received which announcements (`announcement_email_definitions` table)
-*   **Static Archive:** `frontend/public/announcements.json` displays historical announcements on the website
-*   **Generation:** `announcement-archive-generator` binary generates the static JSON from email templates
-
-### Workflow
-1. New announcement email template added to code
-2. On deployment, system sends emails to all eligible users
-3. Static JSON archive regenerated for website display
-4. Database tracks delivery to prevent duplicate sends
-
-### Usage
-```bash
-# Generate static announcement archive for frontend
-./steps/14-frontend-generate-announcements.sh
-```
+| Task | Command |
+|---|---|
+| Install deps | `./steps/02-install-dependencies.sh` |
+| Clean | `./steps/01-clean.sh` |
+| Prepare DB | `./steps/11-prepare-sqlx.sh` |
+| Lint & format | `./steps/10-lint.sh` |
+| Security audit | `./steps/03-audit.sh` |
+| Build backend | `./steps/12-backend-cargo-build.sh` (add `--release` for release) |
+| Build frontend | `./steps/17-frontend-npm-build.sh` |
+| Generate TS bindings | `./steps/15-frontend-generate-bindings.sh` |
+| Frontend dev server | `./steps/16-frontend-npm-dev.sh` |
+| Bridge dev | `./steps/20-bridge-frontend-tauri-dev.sh` |
+| Global manager | `./steps/13-run-pluralsync-global-manager.sh` |
+| Rust unit tests | `./test/rust-tests.sh` |
+| Integration tests | `./test/*.integration-tests.sh` (see `test/` for options) |
+| Release build | `./steps/30-build-release.sh` |
+| Update deps | `./steps/92-update-dependencies.sh` |
 
 ---
 
-## Finding Available Scripts
+## Docker / Local Deployment
 
-Rather than maintaining a static list here (which would quickly become outdated), **discover available scripts by exploring the directories**:
+`docker/docker.compose.yml` defines 4 services: Nginx (frontend + reverse proxy), Rust backend, PostgreSQL, global manager.
 
-```bash
-ls steps/    # Build, run, and maintenance scripts
-ls test/     # Test scripts and helpers
-```
+Use `docker/local.env` or `docker/local-release.env` for environment variables. Nginx proxies `/api/` and `/fronting/` to the backend, serves frontend static files, and handles WebSocket upgrades for the bridge endpoint.
 
-**When you need to find a script:**
-1. List the relevant directory (`steps/` or `test/`)
-2. Read the script to understand its purpose and usage
-3. Scripts are numbered for logical ordering (01-clean, 02-install, 10-lint, 12-build, etc.)
+---
 
-**Script naming conventions:**
-* `01-clean.sh` - Cleanup operations
-* `02-install-dependencies.sh` - Dependency installation
-* `03-audit.sh` - Security audits
-* `10-lint.sh` - Linting and formatting
-* `11-prepare-sqlx.sh` - Database preparation
-* `12-backend-cargo-build.sh` - Backend builds
-* `13-*` - Running services (global manager)
-* `14-*` to `17-*` - Frontend operations (announcements, bindings, dev, build)
-* `20-*` to `22-*` - Tauri/bridge operations
-* `30-*` to `33-*` - Release operations
-* `40-*` to `41-*` - Production monitoring
-* `90-*` to `92-*` - Analysis and maintenance
+## Testing
+
+**Always use scripts in `./test/`.** They handle setup, teardown, env vars, and error checking.
+
+Run all relevant integration tests after making changes to sync logic, API endpoints, or configuration.
+
+---
+
+## Script Numbering Conventions
+
+| Range | Purpose |
+|---|---|
+| `01-*` | Cleanup |
+| `02-*` | Dependency installation |
+| `03-*` | Security audits |
+| `10-*` | Linting / formatting |
+| `11-*` | Database preparation |
+| `12-*` | Backend builds |
+| `13-*` | Running services |
+| `14-*`–`17-*` | Frontend (announcements, bindings, dev, build) |
+| `20-*`–`22-*` | Tauri/bridge (dev, build, release) |
+| `30-*`–`33-*` | Release operations |
+| `40-*`–`41-*` | Production monitoring |
+| `90-*`–`92-*` | Analysis and maintenance |
