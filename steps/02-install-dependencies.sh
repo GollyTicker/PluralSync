@@ -22,9 +22,9 @@ sudo apt-get install -y --no-upgrade \
   libayatana-appindicator3-dev \
   librsvg2-dev
 
-cargo install cargo-audit@^0.21
-cargo install sqlx-cli@^0.8
-cargo install cargo-xwin@^0.19
+cargo install cargo-audit@^0
+cargo install sqlx-cli@^0
+cargo install cargo-xwin@^0
 cargo install tauri-cli@^2
 
 # Tauri e2e tests

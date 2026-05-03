@@ -107,7 +107,7 @@ start_updater() {
 
     setup_test_user
 
-    await pluralsync-api "Waiting for next update trigger..."
+    await pluralsync-api "update statues | ok"
 
     echo "Started Updater."
 }
