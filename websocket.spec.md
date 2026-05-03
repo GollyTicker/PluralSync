@@ -10,11 +10,21 @@ Connect using any standard WebSocket library. No authentication headers or query
 
 All messages are JSON-encoded UTF-8 strings.
 
-## 2. Authentication
+## 2. Deployment Feature Flag
 
-Upon connecting, the client **must** send a `login` message. The connection is not authorized to send data until authentication succeeds.
+The websocket push source may be disabled at the **deployment level**. When disabled, the server returns a 400 Bad Request immediately upon connection upgrade, before any application-level protocol messages are exchanged.
 
-### 2.1 Login Request
+### 2.1 Feature Disabled Response
+
+If the deployment has `enable_websocket_push_source` set to `false`, the HTTP upgrade response is **400 Bad Request** with body:
+
+```json
+{"type":"error","result":"feature_disabled","data":"WebSocket push source is not available in this deployment"}
+```
+
+Clients should check the `websocket_push_source_available` field in the server's startup metadata (from `/api/user/info`) before attempting to connect. If `false`, the websocket endpoint should not be used.
+
+### 2.2 Login Request
 
 Sent immediately after connecting:
 
@@ -34,7 +44,7 @@ Sent immediately after connecting:
 
 The JWT must be valid (not expired, correct signature). The `sub` claim inside the JWT identifies the PluralSync user.
 
-### 2.2 Login Response
+### 2.3 Login Response
 
 **On success:**
 
@@ -62,7 +72,7 @@ Additional fields may be present. The connection is now authenticated. The clien
 
 The server then **closes the connection**.
 
-### 2.3 One Connection, One User
+### 2.4 One Connection, One User
 
 Each WebSocket connection may authenticate exactly **one** user. A second `login` message on an authenticated connection is rejected.
 
@@ -156,14 +166,22 @@ The server applies this filter automatically. Fronters marked `"private"` are si
 
 ## 6. Examples
 
-### 6.1 Authentication
+### 6.1 Feature Disabled (HTTP 400)
+
+```
+Client → Server: (connects to wss://...)
+Server → Client: 400 Bad Request
+{"type":"error","result":"feature_disabled","data":"WebSocket push source is not available in this deployment"}
+```
+
+### 6.2 Authentication
 
 ```
 Client → Server: {"type":"login","user":"user@example.com","auth":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
 Server → Client: {"type":"login","result":"success","server_info":{"version":"2.10.0"}}
 ```
 
-### 6.2 Sending Fronters
+### 6.3 Sending Fronters
 
 ```
 Client → Server: {"type":"fronters","data":{"fronters":[{"id":"m1","name":"Alice","pronouns":"she/her","start_time":"2026-05-03T12:00:00Z","privacy":"public"},{"id":"m2","name":"Bob","pronouns":"they/them","privacy":"private"}]}}
@@ -172,14 +190,14 @@ Server → (no response — accepted)
 
 Bob is filtered out because `privacy: "private"`. Only Alice is distributed.
 
-### 6.3 Keepalive
+### 6.4 Keepalive
 
 ```
 Client → Server: {"type":"ping"}
 Server → Client: {"type":"pong"}
 ```
 
-### 6.4 Authentication Failure
+### 6.5 Authentication Failure
 
 ```
 Client → Server: {"type":"login","user":"user@example.com","auth":"invalid.token.here"}
@@ -187,7 +205,7 @@ Server → Client: {"type":"error","result":"invalid_jwt","data":"Token has expi
 Server → (closes connection)
 ```
 
-### 6.5 Invalid Fronters (connection stays open)
+### 6.6 Invalid Fronters (connection stays open)
 
 ```
 Client → Server: {"type":"fronters","data":{"fronters":[{"id":"m1","privacy":"public"}]}}

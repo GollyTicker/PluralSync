@@ -6,7 +6,39 @@ Add a new data source where external clients **push** fronting status updates vi
 
 ---
 
-## 2. Protocol
+## 2. Deployment Feature Flag
+
+The websocket push source is gated by a **deployment-level** feature flag, following the existing pattern of `discord_status_message_updater_available` in `ApplicationConfig`.
+
+### `ApplicationConfig` additions
+
+```rust
+pub struct ApplicationConfig {
+    // ... existing fields ...
+    pub enable_websocket_push_source: bool,
+}
+```
+
+- Read from environment variable `WEBSOCKET_PUSH_SOURCE_AVAILABLE`
+- Defaults to `false`
+
+### Behavior when flag is `false`
+
+- The WebSocket route (`/api/user/platform/pluralsync/events`) **always exists** (no conditional route registration).
+- The handler checks the flag on every connection attempt. If the flag is `false`, the handler returns **400 Bad Request** with JSON:
+  ```json
+  {"type":"error","result":"feature_disabled","data":"WebSocket push source is not available in this deployment"}
+  ```
+  The connection is then closed.
+- No route-level or handler-level branching on the flag beyond this single check.
+
+### Behavior when flag is `true`
+
+- The handler proceeds normally (see §3 onward).
+
+---
+
+## 3. Protocol
 
 | Direction | Message | Description |
 |-----------|---------|-------------|
@@ -21,7 +53,7 @@ Add a new data source where external clients **push** fronting status updates vi
 
 ---
 
-## 3. Authentication
+## 4. Authentication
 
 - First `login` on a connection succeeds → binds the connection to that user.
 - A **second** `login` message on the same connection is **always denied** (error JSON, then close), even if it authenticates a different user. This prevents hijacking or switching.
@@ -32,7 +64,7 @@ Add a new data source where external clients **push** fronting status updates vi
 
 ---
 
-## 4. External API: `GenericFronter`
+## 5. External API: `GenericFronter`
 
 The `data` field in `{"type":"fronters","data":<data>}` is a JSON object:
 
@@ -71,7 +103,7 @@ The `data` field in `{"type":"fronters","data":<data>}` is a JSON object:
 
 ---
 
-## 5. Error Handling
+## 6. Error Handling
 
 | Scenario | Response |
 |----------|----------|
@@ -80,11 +112,11 @@ The `data` field in `{"type":"fronters","data":<data>}` is a JSON object:
 | Missing required field | `{"type":"fronters.response","result":"error","data":"field 'X' is required"}` — connection stays open |
 | Invalid `privacy` value | `{"type":"fronters.response","result":"error","data":"privacy must be 'public' or 'private'"}` — connection stays open |
 
-**Note:** Unlike authentication failures (which close the connection), validation errors on `fronters` messages keep the connection open so the client can retry with corrected data. See §4.4 and §6.5 of the spec.
+**Note:** Unlike authentication failures (which close the connection), validation errors on `fronters` messages keep the connection open so the client can retry with corrected data. See §4.4 and §5 of the client spec.
 
 ---
 
-## 6. Endpoint
+## 7. Endpoint
 
 ```
 GET /api/user/platform/pluralsync/events
@@ -92,15 +124,41 @@ GET /api/user/platform/pluralsync/events
 
 A bare WebSocket upgrade route — **no Rocket `FromRequest` JWT guard**. Authentication is application-level, handled via the `login` message payload after the connection is established. Similar to how the SimplyPlural WebSocket connection works (no Rocket guard, auth is inside the protocol).
 
+The route is **always registered** regardless of the deployment feature flag. The handler performs the flag check as the first step.
+
 ---
 
-## 7. One Source Per User
+## 8. One Source Per User
 
 Same exclusivity as SP/PK: a user has exactly one active source. A websocket connection is rejected if the user's config points to SP or PK. Config changes are handled by the normal updater restart cycle (the websocket is automatically stopped and restarted, just like all other updaters).
 
 ---
 
-## 8. Architecture
+## 9. Frontend Integration
+
+The frontend needs to know whether the websocket push source feature is available in the current deployment.
+
+### Metadata response
+
+The server's user info / startup metadata endpoint (e.g. `/api/user/info`) includes deployment metadata. Add:
+
+```json
+{
+  "websocket_push_source_available": true
+}
+```
+
+The frontend reads this field and:
+- **When `true`**: shows the websocket push source config section (checkbox + optional settings)
+- **When `false`**: hides the websocket config section entirely. The `enable_from_websocket` checkbox is not displayed.
+
+### Config enforcement (UI)
+
+When the feature flag is `false`, the UI never shows the websocket config section, so the user cannot toggle `enable_from_websocket` from the frontend. The server-side handler also enforces that `enable_from_websocket` must be `false` when the deployment flag is `false` (rejected via config update validation).
+
+---
+
+## 10. Architecture
 
 ```
 External Client (custom fronting tracker)
@@ -112,6 +170,8 @@ External Client (custom fronting tracker)
 │                                  │
 │ - Rocket WebSocket handler       │
 │   (no JWT guard, no FromRequest) │
+│ - Feature flag check (400 if     │
+│   disabled)                      │
 │ - Message parser (login/ping/    │
 │   fronters)                      │
 │ - JWT validation from message    │
@@ -137,8 +197,11 @@ External Client (custom fronting tracker)
 ### What's new
 
 - **`src/plurality/websocket.rs`** — new module for the WebSocket handler, message parser, JWT validation, and Fronter builder.
+- **`ApplicationConfig.enable_websocket_push_source: bool`** — deployment-level feature flag (env: `WEBSOCKET_PUSH_SOURCE_AVAILABLE`, default `false`).
+- **`src/plurality/websocket.rs` handler** — checks the flag first; returns 400 Bad Request with `{"type":"error","result":"feature_disabled","data":"..."}` and closes the connection if `false`.
 - **`start_updater()`** in `UpdaterManager` spawns the websocket listener task when `enable_from_websocket` is true.
 - **`enable_from_websocket: bool`** added to `UserConfigForUpdater` and `UserConfigDbEntries`.
+- **Metadata endpoint** — adds `websocket_push_source_available` field for the frontend.
 
 ### What stays the same
 
