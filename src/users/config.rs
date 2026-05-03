@@ -402,7 +402,7 @@ where
     let config = UserConfigForUpdater {
         user_id: user_id.clone(),
         client: client.clone(),
-        simply_plural_token: config_value!(local_config_with_defaults, simply_plural_token)?,
+        simply_plural_token: config_value_if!(enable_from_sp, local_config_with_defaults, simply_plural_token)?,
         simply_plural_base_url: String::from("https://api.apparyllis.com/v1"),
         status_prefix: config_value!(local_config_with_defaults, status_prefix)?,
         status_no_fronts: config_value!(local_config_with_defaults, status_no_fronts)?,
