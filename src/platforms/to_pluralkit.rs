@@ -1,8 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
-    plurality::{self, artifical_delay_to_avoid_hitting_pluralkit_rate_limit},
-    record_if_error,
+    plurality, record_if_error,
     users::{self, UserConfigForUpdater},
 };
 use anyhow::Result;
@@ -50,7 +49,6 @@ async fn update_to_pluralkit(
         .filter_map(|f| f.pluralkit_id.clone())
         .collect();
 
-    artifical_delay_to_avoid_hitting_pluralkit_rate_limit().await?;
     let response = config
         .client
         .get("https://api.pluralkit.me/v2/systems/@me/switches?limit=1")
@@ -106,7 +104,6 @@ async fn update_to_pluralkit(
         .with_label_values(&[&config.user_id.to_string()])
         .inc();
 
-    artifical_delay_to_avoid_hitting_pluralkit_rate_limit().await?;
     let response = config
         .client
         .post("https://api.pluralkit.me/v2/systems/@me/switches")

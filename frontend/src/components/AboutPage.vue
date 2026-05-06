@@ -100,11 +100,10 @@ export interface Screenshot {
       <p>
         This software was written with AI-assistance to enhance development and make things possible
         which would be not possible otherwise. The code is reviewed equally to hand-written code to
-        ensure good quality, safe and reliable software. We're professional software
-        engineers, so we're not dependent on the AI for quality.
-        This is AI-assisted software engineering and not "AI-slop".
-        The AI is used as a "Pair Programmer" to assist coding. We use this
-        because it helps us a lot and because we can provide features to the users.
+        ensure good quality, safe and reliable software. We're professional software engineers, so
+        we're not dependent on the AI for quality. This is AI-assisted software engineering and not
+        "AI-slop". The AI is used as a "Pair Programmer" to assist coding. We use this because it
+        helps us a lot and because we can provide features to the users.
         <br />
         The AI coding assistant only has access to the code (which is public anyways).
         <strong> The AI does not have access to user data on the server </strong>
