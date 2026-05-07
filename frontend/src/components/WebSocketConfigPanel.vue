@@ -27,7 +27,7 @@ interface Props {
   config: UserConfigDbEntries
 }
 
-const props = defineProps<Props>()
+defineProps<Props>()
 
 // NOTE: hidden feature. only enabled on my private instances currently. will be made public with an unstable API in future
 const websocketAvailable: Ref<boolean> = ref(

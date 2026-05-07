@@ -3,6 +3,7 @@ extern crate rocket;
 
 pub mod database;
 pub mod debug_api;
+pub mod deserialisation;
 pub mod history;
 pub mod meta_api;
 pub mod metrics;

@@ -204,11 +204,15 @@ fn generate_html(config: &users::UserConfigForUpdater, fronts: &[plurality::Fron
         </style>
     </head>
     <body>
+      <h1>{}</h1>
+      <p>Fronting count: {}</p>
         {}
         {}
     </body>
 </html>",
         html_escape::encode_text(&config.website_system_name),
+        html_escape::encode_text(&config.website_system_name),
+        fronts.len(),
         fronts_formatted_and_escaped,
         html_if_empty_fronters
     )

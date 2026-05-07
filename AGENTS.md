@@ -9,7 +9,7 @@ Public alpha: [public-test.pluralsync.ayake.net](https://public-test.pluralsync.
 Supported sync directions:
 * **From SimplyPlural** → any target
 * **From PluralKit** → any target except PluralKit
-* **From Websocket Source** -> any target
+* **From WebSocket Source** -> any target
 * **Any target** = VRChat, Discord (Rich Presence + Status), Website, PluralKit
 
 ---

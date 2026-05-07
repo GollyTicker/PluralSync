@@ -158,6 +158,29 @@ impl UpdaterManager {
         Ok(())
     }
 
+    #[allow(clippy::significant_drop_tightening)]
+    pub fn notify_new_fronters(
+        &self,
+        user_id: &UserId,
+        fronters: plurality::FilteredFronters,
+    ) -> Result<()> {
+        let mut locked = self
+            .fronter_channel
+            .lock()
+            .map_err(|e| anyhow!(e.to_string()))?;
+
+        let channel = locked.get_mut(user_id).ok_or_else(|| {
+            SHOULDNT_HAPPEN_BUT_IT_DID
+                .with_label_values(&["updater_manager_fronter_channel_get_most_recent_value"])
+                .inc();
+            anyhow!("fronter_channel_get_most_recent_value: No fronter channel found for {user_id}")
+        })?;
+
+        channel.send(fronters);
+
+        Ok(())
+    }
+
     pub fn stop_updater(&self, user_id: &UserId) -> Result<()> {
         {
             let mut locked_task = self.tasks.lock().map_err(|e| anyhow!(e.to_string()))?;

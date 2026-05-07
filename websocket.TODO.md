@@ -6,38 +6,6 @@ Add a new data source where external clients **push** fronting status updates vi
 
 ---
 
-## 2. Deployment Feature Flag
-
-The websocket push source is gated by a **deployment-level** feature flag, following the existing pattern of `discord_status_message_updater_available` in `ApplicationConfig`.
-
-### `ApplicationConfig` additions
-
-```rust
-pub struct ApplicationConfig {
-    // ... existing fields ...
-    pub enable_websocket_push_source: bool,
-}
-```
-
-- Read from environment variable `WEBSOCKET_PUSH_SOURCE_AVAILABLE`
-- Defaults to `false`
-
-### Behavior when flag is `false`
-
-- The WebSocket route (`/api/user/platform/pluralsync/events`) **always exists** (no conditional route registration).
-- The handler checks the flag on every connection attempt. If the flag is `false`, the handler returns **400 Bad Request** with JSON:
-  ```json
-  {"type":"error","result":"feature_disabled","data":"WebSocket push source is not available in this deployment"}
-  ```
-  The connection is then closed.
-- No route-level or handler-level branching on the flag beyond this single check.
-
-### Behavior when flag is `true`
-
-- The handler proceeds normally (see §3 onward).
-
----
-
 ## 3. Protocol
 
 | Direction | Message | Description |
@@ -198,7 +166,6 @@ External Client (custom fronting tracker)
 ### What's new
 
 - **`src/plurality/websocket.rs`** — new module, route registered in `main.rs`. **Handler is a stub (`todo!()`)** — full implementation (message parser, JWT validation, Fronter builder, FronterChannel integration) is pending.
-- **`ApplicationConfig.enable_websocket_push_source: bool`** — deployment-level feature flag (env: `WEBSOCKET_PUSH_SOURCE_AVAILABLE`, default `false`).
 - **`src/plurality/websocket.rs` handler** — route registered at `GET /api/user/platform/pluralsync/events`. Handler body is `todo!()` pending implementation.
 - **`enable_from_websocket: bool`** added to `UserConfigForUpdater` and `UserConfigDbEntries` (migration `025_add_websocket_source.sql`).
 - **Source exclusivity validation** — `create_config_with_strong_constraints` enforces that only one source (SP, PK, or WebSocket) can be enabled at a time.

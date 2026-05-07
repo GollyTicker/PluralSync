@@ -52,13 +52,14 @@ The JWT must be valid (not expired, correct signature). The `sub` claim inside t
 {
   "type": "login",
   "result": "success",
-  "server_info": {
-    "version": "<version-string>"
+  "variant_info": {
+    "version": "<version-string>",
+    ...
   }
 }
 ```
 
-Additional fields may be present. The connection is now authenticated. The client may send `fronters` messages.
+Additional fields may be present in variant_info about the connected server instance. The connection is now authenticated. The client may send `fronters` messages.
 
 **On failure:**
 
@@ -78,7 +79,7 @@ Each WebSocket connection may authenticate exactly **one** user. A second `login
 
 ## 3. Keepalive
 
-Keepalive messages may be sent in **either direction**. The client may send `ping` and expect `pong`. The server may also send `ping` and expect a `pong` response.
+Keepalive messages may be sent in **either direction**. The client may send `ping` and expect `pong`. The server may also send `ping` and expect a `pong` response. These can only be sent after the initial login has completed successfully.
 
 ### 3.1 Ping
 
@@ -178,7 +179,7 @@ Server → Client: 400 Bad Request
 
 ```
 Client → Server: {"type":"login","user":"user@example.com","auth":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."}
-Server → Client: {"type":"login","result":"success","server_info":{"version":"2.10.0"}}
+Server → Client: {"type":"login","result":"success","variant_info":{"version":"2.10.0"}}
 ```
 
 ### 6.3 Sending Fronters

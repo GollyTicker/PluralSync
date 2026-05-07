@@ -5,7 +5,7 @@ use serde_json::{self};
 use std::env;
 use tokio_tungstenite::tungstenite;
 
-/** The Message as sent by Simply Plural on the Websocket.
+/** The Message as sent by Simply Plural on the WebSocket.
  *
  * We use &str to make the code for parsing look better and simpler by being able to match against &str literals.
 */

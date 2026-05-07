@@ -1,8 +1,11 @@
 use anyhow::Result;
 use derive_more::Debug;
 use serde::Deserialize;
-use serde::Deserializer;
 use tokio_tungstenite::tungstenite;
+
+use crate::deserialisation::{
+    deserialize_non_empty_string_as_option, parse_epoch_millis_to_datetime_utc,
+};
 
 use super::model::Fronter;
 
@@ -26,28 +29,6 @@ pub struct FrontEntryContent {
     #[serde(rename = "startTime")]
     #[serde(deserialize_with = "parse_epoch_millis_to_datetime_utc")]
     pub start_time: chrono::DateTime<chrono::Utc>,
-}
-
-fn parse_epoch_millis_to_datetime_utc<'de, D>(
-    d: D,
-) -> Result<chrono::DateTime<chrono::Utc>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let epoch_millis = i64::deserialize(d)?;
-    chrono::DateTime::from_timestamp_millis(epoch_millis)
-        .ok_or_else(|| serde::de::Error::custom("Datime<Utc> from timestamp failed"))
-}
-
-fn deserialize_non_empty_string_as_option<'de, D>(
-    deserializer: D,
-) -> Result<Option<String>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let s: String = String::deserialize(deserializer)?;
-    let non_empty_str_option = if s.is_empty() { None } else { Some(s) };
-    Ok(non_empty_str_option)
 }
 
 #[derive(Deserialize, Clone)]
@@ -214,7 +195,7 @@ pub fn relevantly_changed_based_on_simply_plural_websocket_event(
     Ok(!irrelevant_change)
 }
 
-/** The Message as sent by Simply Plural on the Websocket.
+/** The Message as sent by Simply Plural on the WebSocket.
  *
  * We use &str to make the code for parsing look better and simpler by being able to match against &str literals.
 */
