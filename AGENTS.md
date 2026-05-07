@@ -7,8 +7,10 @@ A cloud service that syncs plural systems' fronting status across platforms (Sim
 Public alpha: [public-test.pluralsync.ayake.net](https://public-test.pluralsync.ayake.net)
 
 Supported sync directions:
-* **From SimplyPlural** → VRChat, Discord (Rich Presence + Status), PluralKit, Website
-* **From PluralKit** → VRChat, Discord, Website
+* **From SimplyPlural** → any target
+* **From PluralKit** → any target except PluralKit
+* **From Websocket Source** -> any target
+* **Any target** = VRChat, Discord (Rich Presence + Status), Website, PluralKit
 
 ---
 

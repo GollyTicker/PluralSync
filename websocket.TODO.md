@@ -138,19 +138,20 @@ Same exclusivity as SP/PK: a user has exactly one active source. A websocket con
 
 The frontend needs to know whether the websocket push source feature is available in the current deployment.
 
-### Metadata response
+### Availability detection (changed from spec)
 
-The server's user info / startup metadata endpoint (e.g. `/api/user/info`) includes deployment metadata. Add:
+**Original plan:** The server's user info / startup metadata endpoint (e.g. `/api/user/info`) would include `websocket_push_source_available`.
 
-```json
-{
-  "websocket_push_source_available": true
-}
+**Current implementation:** The frontend uses hardcoded URL detection instead of a metadata endpoint. The `WebSocketConfigPanel` component checks `location.href` for known private/dev instance domains:
+
+```ts
+const websocketAvailable = ref(
+  location.href.includes('https://private.pluralsync') ||
+    location.href.includes('https://dev-online.pluralsync'),
+)
 ```
 
-The frontend reads this field and:
-- **When `true`**: shows the websocket push source config section (checkbox + optional settings)
-- **When `false`**: hides the websocket config section entirely. The `enable_from_websocket` checkbox is not displayed.
+When `websocketAvailable` is `false`, the entire config section is hidden — the `enable_from_websocket` checkbox is not displayed. No metadata endpoint field (`websocket_push_source_available`) was added.
 
 ### Config enforcement (UI)
 
@@ -196,12 +197,15 @@ External Client (custom fronting tracker)
 
 ### What's new
 
-- **`src/plurality/websocket.rs`** — new module for the WebSocket handler, message parser, JWT validation, and Fronter builder.
+- **`src/plurality/websocket.rs`** — new module, route registered in `main.rs`. **Handler is a stub (`todo!()`)** — full implementation (message parser, JWT validation, Fronter builder, FronterChannel integration) is pending.
 - **`ApplicationConfig.enable_websocket_push_source: bool`** — deployment-level feature flag (env: `WEBSOCKET_PUSH_SOURCE_AVAILABLE`, default `false`).
-- **`src/plurality/websocket.rs` handler** — checks the flag first; returns 400 Bad Request with `{"type":"error","result":"feature_disabled","data":"..."}` and closes the connection if `false`.
-- **`start_updater()`** in `UpdaterManager` spawns the websocket listener task when `enable_from_websocket` is true.
-- **`enable_from_websocket: bool`** added to `UserConfigForUpdater` and `UserConfigDbEntries`.
-- **Metadata endpoint** — adds `websocket_push_source_available` field for the frontend.
+- **`src/plurality/websocket.rs` handler** — route registered at `GET /api/user/platform/pluralsync/events`. Handler body is `todo!()` pending implementation.
+- **`enable_from_websocket: bool`** added to `UserConfigForUpdater` and `UserConfigDbEntries` (migration `025_add_websocket_source.sql`).
+- **Source exclusivity validation** — `create_config_with_strong_constraints` enforces that only one source (SP, PK, or WebSocket) can be enabled at a time.
+- **`WebSocketConfigPanel.vue`** — frontend config component, integrated into `ConfigSettings.vue`. Uses hardcoded URL detection for availability.
+- **Integration tests** — `test/updater.ws.integration-tests.sh` with 9 test cases.
+- **`metrics_config_values`** — `enable_from_websocket` metric added.
+- **`AGENTS.md`** — updated with coding guidelines (not WebSocket-specific).
 
 ### What stays the same
 
@@ -210,3 +214,4 @@ External Client (custom fronting tracker)
 - `FronterChannel` with rate limiting (shared across all sources)
 - `ChangeProcessor` and all updaters (no changes needed)
 - `fetch_fronters()` — websocket data arrives push-style, never polled
+- `websocket.spec.md` — client specification unchanged

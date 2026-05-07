@@ -512,14 +512,13 @@ where
         ));
     }
 
-    // Only one source allowed: SP, PluralKit, or WebSocket
     let source_count = [enable_from_sp, enable_from_pluralkit, enable_from_websocket]
         .iter()
         .filter(|&&x| x)
         .count();
     if source_count > 1 {
         return Err(anyhow!(
-            "Only one source can be enabled at a time (SimplyPlural, PluralKit, or WebSocket)"
+            "Only one source can be enabled at a time: SimplyPlural or PluralKit"
         ));
     }
 
