@@ -26,6 +26,7 @@ cargo install cargo-audit@^0
 cargo install sqlx-cli@^0
 cargo install cargo-xwin@^0
 cargo install tauri-cli@^2
+cargo install websocat
 
 # Tauri e2e tests
 cargo install tauri-driver@^2

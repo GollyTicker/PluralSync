@@ -54,6 +54,9 @@ User config enables/disables sources and targets (stored encrypted in PostgreSQL
 * **Derive traits:** Prefer `fmt::Display` over `Debug`. Only derive if printing to logs is useful.
 * **⛔ Security — Sensitive fields:** Never `#[derive(Debug)]` or `#[derive(Display)]` on structs with sensitive fields (passwords, tokens, API keys, cookies, secrets). If debug output is needed, implement manually and redact all sensitive values.
 * **Error handling:** Updaters track `last_operation_error`. Status enum: `Running`, `Disabled`, `Error(msg)`, `Starting`.
+* **Avoid comments:** Almost all comments can and should be avoided, since the code should be written in a way that doesn't require comments which simply repeat what's written directly as code. Only comments which explain something non-trivial and non-obvious should be added - after asking for confirmation.
+* **KEEP IT SIMPLE AND STUPID:** Use simpler way to implement stuff. Keep it simple. Only add complexity, if it's really necessary. Avoid generic code and extra variables, unless we'll actually use them or they're part of the spec.
+* **Bash styles:** Look at existing bash scripts and take the same style. Avoid `local` bash variables. Bash will always run single-threaded in our cases so use simple global UPPERCASE variables.
 
 ---
 
