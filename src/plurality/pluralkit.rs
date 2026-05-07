@@ -370,6 +370,7 @@ mod tests {
             enable_vrchat: false,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
+            enable_from_websocket: false,
             enable_from_sp: false,
             website_url_name: "".to_string(),
             website_system_name: "".to_string(),

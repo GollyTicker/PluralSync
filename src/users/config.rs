@@ -78,6 +78,7 @@ where
     pub enable_to_pluralkit: bool,
     pub enable_from_pluralkit: bool,
     pub enable_from_sp: bool,
+    pub enable_from_websocket: bool,
 
     pub website_system_name: Option<String>,
     pub website_url_name: Option<String>,
@@ -134,6 +135,7 @@ impl<S: SecretType> UserConfigDbEntries<S> {
             enable_to_pluralkit: self.enable_to_pluralkit,
             enable_from_pluralkit: self.enable_from_pluralkit,
             enable_from_sp: self.enable_from_sp,
+            enable_from_websocket: self.enable_from_websocket,
             simply_plural_token: self
                 .simply_plural_token
                 .clone()
@@ -186,6 +188,7 @@ impl<S: SecretType> Default for UserConfigDbEntries<S> {
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
             enable_from_sp: false,
+            enable_from_websocket: false,
             valid_constraints: None,
             website_system_name: None,
             website_url_name: None,
@@ -228,6 +231,10 @@ pub fn metrics_config_values(user_config: &UserConfigDbEntries<Encrypted>) -> Ve
             user_config.enable_from_pluralkit,
         ),
         ("enable_from_sp".to_owned(), user_config.enable_from_sp),
+        (
+            "enable_from_websocket".to_owned(),
+            user_config.enable_from_websocket,
+        ),
         (
             "show_members_non_archived".to_owned(),
             user_config.show_members_non_archived,
@@ -327,6 +334,7 @@ pub struct UserConfigForUpdater {
     pub enable_to_pluralkit: bool,
     pub enable_from_pluralkit: bool,
     pub enable_from_sp: bool,
+    pub enable_from_websocket: bool,
 
     pub website_url_name: String,
     pub website_system_name: String,
@@ -398,6 +406,7 @@ where
     let enable_to_pluralkit = local_config_with_defaults.enable_to_pluralkit;
     let enable_from_pluralkit = local_config_with_defaults.enable_from_pluralkit;
     let enable_from_sp = local_config_with_defaults.enable_from_sp;
+    let enable_from_websocket = local_config_with_defaults.enable_from_websocket;
 
     let config = UserConfigForUpdater {
         user_id: user_id.clone(),
@@ -427,6 +436,7 @@ where
         enable_to_pluralkit,
         enable_from_pluralkit,
         enable_from_sp,
+        enable_from_websocket,
         website_url_name: config_value_if!(
             enable_website,
             local_config_with_defaults,
@@ -499,6 +509,17 @@ where
     if enable_to_pluralkit && enable_from_pluralkit {
         return Err(anyhow!(
             "PluralKit cannot be used as a source and target at the same time"
+        ));
+    }
+
+    // Only one source allowed: SP, PluralKit, or WebSocket
+    let source_count = [enable_from_sp, enable_from_pluralkit, enable_from_websocket]
+        .iter()
+        .filter(|&&x| x)
+        .count();
+    if source_count > 1 {
+        return Err(anyhow!(
+            "Only one source can be enabled at a time (SimplyPlural, PluralKit, or WebSocket)"
         ));
     }
 
@@ -581,6 +602,7 @@ mod tests {
             enable_from_sp: true,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
+            enable_from_websocket: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),
@@ -635,6 +657,7 @@ mod tests {
             enable_vrchat: false,
             enable_to_pluralkit: true,
             enable_from_pluralkit: false,
+            enable_from_websocket: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),
@@ -683,6 +706,7 @@ mod tests {
   "enable_to_pluralkit": true,
   "enable_from_pluralkit": false,
   "enable_from_sp": true,
+  "enable_from_websocket": false,
   "website_system_name": "Our System",
   "website_url_name": "our-system",
   "history_limit": 100,
@@ -773,6 +797,7 @@ mod tests {
             enable_from_sp: true,
             enable_to_pluralkit: false,
             enable_from_pluralkit: false,
+            enable_from_websocket: false,
             simply_plural_token: Some(Decrypted {
                 secret: "sp_token_123".to_string(),
             }),

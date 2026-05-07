@@ -37,6 +37,7 @@ pub async fn get_user(
             enable_to_pluralkit,
             enable_from_pluralkit,
             enable_from_sp,
+            enable_from_websocket,
             privacy_fine_grained AS \"privacy_fine_grained: users::PrivacyFineGrained\",
             privacy_fine_grained_buckets,
             history_limit,
@@ -110,6 +111,7 @@ pub async fn get_user_secrets(
             enable_to_pluralkit,
             enable_from_pluralkit,
             enable_from_sp,
+            enable_from_websocket,
             privacy_fine_grained AS \"privacy_fine_grained: crate::users::PrivacyFineGrained\",
             privacy_fine_grained_buckets,
             history_limit,
@@ -185,7 +187,8 @@ pub async fn set_user_config_secrets(
             discord_rich_presence_url_custom = $32,
             from_pluralkit_prefer_displayname = $33,
             from_pluralkit_respect_member_visibility = $34,
-            from_pluralkit_respect_field_visibility = $35
+            from_pluralkit_respect_field_visibility = $35,
+            enable_from_websocket = $36
         WHERE id = $1",
     )
     .bind(user_id.inner)
@@ -227,6 +230,7 @@ pub async fn set_user_config_secrets(
     .bind(config.from_pluralkit_prefer_displayname)
     .bind(config.from_pluralkit_respect_member_visibility)
     .bind(config.from_pluralkit_respect_field_visibility)
+    .bind(config.enable_from_websocket)
     .fetch_optional(db_pool)
     .await
     .map_err(|e| anyhow::anyhow!(e))?;

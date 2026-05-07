@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "SELECT\n            website_system_name,\n            website_url_name,\n            status_prefix,\n            status_no_fronts,\n            status_truncate_names_to,\n            show_members_non_archived,\n            show_members_archived,\n            show_custom_fronts,\n            respect_front_notifications_disabled,\n            enable_website,\n            enable_discord,\n            enable_discord_status_message,\n            enable_vrchat,\n            enable_to_pluralkit,\n            enable_from_pluralkit,\n            enable_from_sp,\n            privacy_fine_grained AS \"privacy_fine_grained: crate::users::PrivacyFineGrained\",\n            privacy_fine_grained_buckets,\n            history_limit,\n            history_truncate_after_days,\n            fronter_channel_wait_increment,\n            discord_rich_presence_url AS \"discord_rich_presence_url: crate::users::DiscordRichPresenceUrl\",\n            discord_rich_presence_url_custom,\n            pgp_sym_decrypt(enc__simply_plural_token, $2) AS \"simply_plural_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS \"discord_status_message_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_username, $2) AS \"vrchat_username: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_password, $2) AS \"vrchat_password: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS \"vrchat_cookie: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__pluralkit_token, $2) AS \"pluralkit_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS \"from_pluralkit_webhook_signing_token: secrets::Decrypted\",\n            from_pluralkit_prefer_displayname,\n            from_pluralkit_respect_member_visibility,\n            from_pluralkit_respect_field_visibility,\n            true AS \"valid_constraints: constraints::ValidConstraints\"\n            FROM users WHERE id = $1",
+  "query": "SELECT\n            website_system_name,\n            website_url_name,\n            status_prefix,\n            status_no_fronts,\n            status_truncate_names_to,\n            show_members_non_archived,\n            show_members_archived,\n            show_custom_fronts,\n            respect_front_notifications_disabled,\n            enable_website,\n            enable_discord,\n            enable_discord_status_message,\n            enable_vrchat,\n            enable_to_pluralkit,\n            enable_from_pluralkit,\n            enable_from_sp,\n            enable_from_websocket,\n            privacy_fine_grained AS \"privacy_fine_grained: crate::users::PrivacyFineGrained\",\n            privacy_fine_grained_buckets,\n            history_limit,\n            history_truncate_after_days,\n            fronter_channel_wait_increment,\n            discord_rich_presence_url AS \"discord_rich_presence_url: crate::users::DiscordRichPresenceUrl\",\n            discord_rich_presence_url_custom,\n            pgp_sym_decrypt(enc__simply_plural_token, $2) AS \"simply_plural_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__discord_status_message_token, $2) AS \"discord_status_message_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_username, $2) AS \"vrchat_username: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_password, $2) AS \"vrchat_password: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__vrchat_cookie, $2) AS \"vrchat_cookie: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__pluralkit_token, $2) AS \"pluralkit_token: secrets::Decrypted\",\n            pgp_sym_decrypt(enc__from_pluralkit_webhook_signing_token, $2) AS \"from_pluralkit_webhook_signing_token: secrets::Decrypted\",\n            from_pluralkit_prefer_displayname,\n            from_pluralkit_respect_member_visibility,\n            from_pluralkit_respect_field_visibility,\n            true AS \"valid_constraints: constraints::ValidConstraints\"\n            FROM users WHERE id = $1",
   "describe": {
     "columns": [
       {
@@ -85,6 +85,11 @@
       },
       {
         "ordinal": 16,
+        "name": "enable_from_websocket",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 17,
         "name": "privacy_fine_grained: crate::users::PrivacyFineGrained",
         "type_info": {
           "Custom": {
@@ -100,27 +105,27 @@
         }
       },
       {
-        "ordinal": 17,
+        "ordinal": 18,
         "name": "privacy_fine_grained_buckets",
         "type_info": "TextArray"
       },
       {
-        "ordinal": 18,
+        "ordinal": 19,
         "name": "history_limit",
         "type_info": "Int4"
       },
       {
-        "ordinal": 19,
+        "ordinal": 20,
         "name": "history_truncate_after_days",
         "type_info": "Int4"
       },
       {
-        "ordinal": 20,
+        "ordinal": 21,
         "name": "fronter_channel_wait_increment",
         "type_info": "Int4"
       },
       {
-        "ordinal": 21,
+        "ordinal": 22,
         "name": "discord_rich_presence_url: crate::users::DiscordRichPresenceUrl",
         "type_info": {
           "Custom": {
@@ -137,62 +142,62 @@
         }
       },
       {
-        "ordinal": 22,
+        "ordinal": 23,
         "name": "discord_rich_presence_url_custom",
         "type_info": "Text"
       },
       {
-        "ordinal": 23,
+        "ordinal": 24,
         "name": "simply_plural_token: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 24,
+        "ordinal": 25,
         "name": "discord_status_message_token: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 25,
+        "ordinal": 26,
         "name": "vrchat_username: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 26,
+        "ordinal": 27,
         "name": "vrchat_password: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 27,
+        "ordinal": 28,
         "name": "vrchat_cookie: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 28,
+        "ordinal": 29,
         "name": "pluralkit_token: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 29,
+        "ordinal": 30,
         "name": "from_pluralkit_webhook_signing_token: secrets::Decrypted",
         "type_info": "Text"
       },
       {
-        "ordinal": 30,
+        "ordinal": 31,
         "name": "from_pluralkit_prefer_displayname",
         "type_info": "Bool"
       },
       {
-        "ordinal": 31,
+        "ordinal": 32,
         "name": "from_pluralkit_respect_member_visibility",
         "type_info": "Bool"
       },
       {
-        "ordinal": 32,
+        "ordinal": 33,
         "name": "from_pluralkit_respect_field_visibility",
         "type_info": "Bool"
       },
       {
-        "ordinal": 33,
+        "ordinal": 34,
         "name": "valid_constraints: constraints::ValidConstraints",
         "type_info": "Bool"
       }
@@ -209,6 +214,7 @@
       true,
       true,
       true,
+      false,
       false,
       false,
       false,
@@ -240,5 +246,5 @@
       null
     ]
   },
-  "hash": "88b8ac0203da1e1632b467e334940193f12e58d4b204057b0fa7048d94071748"
+  "hash": "967bf2e5b4d2e11a7dbce65a2845a4f72579a2e75b30ede7f60a0a0be9d48048"
 }

@@ -28,6 +28,7 @@
       <SyncConfigPanel :config="config" :defaults="defaults" />
       <SimplyPluralConfigPanel :config="config" />
       <PluralKitConfigPanel :config="config" :userId="userId" />
+      <WebSocketConfigPanel :config="config" />
       <WebsiteConfigPanel :config="config" :defaults="defaults" />
       <FrontingStatusTextPanel :config="config" :defaults="defaults" />
       <DiscordConfigPanel :config="config" />
@@ -104,6 +105,7 @@ import DiscordConfigPanel from '@/components/DiscordConfigPanel.vue'
 import VRChatConfigPanel from '@/components/VRChatConfigPanel.vue'
 import HistoryConfigPanel from '@/components/HistoryConfigPanel.vue'
 import SyncConfigPanel from '@/components/SyncConfigPanel.vue'
+import WebSocketConfigPanel from '@/components/WebSocketConfigPanel.vue'
 import CopyButton from '@/components/CopyButton.vue'
 
 const config: Ref<UserConfigDbEntries> = ref({} as UserConfigDbEntries)

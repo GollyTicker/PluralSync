@@ -18,6 +18,7 @@ export FRONTER_CHANNEL_WAIT_INCREMENT=100
 export PK_WEBHOOK_SIGNING_TOKEN=some-mock-token
 export ENABLE_FROM_PLURALKIT=${ENABLE_FROM_PLURALKIT-false}
 export ENABLE_FROM_SP=${ENABLE_FROM_SP-true}
+export ENABLE_FROM_WEBSOCKET=${ENABLE_FROM_WEBSOCKET-false}
 
 source docker/source.sh # await
 
@@ -65,6 +66,7 @@ get_user_config_json() {
         \"enable_discord\": ${ENABLE_DISCORD},
         \"enable_website\": ${ENABLE_WEBSITE},
         \"enable_to_pluralkit\": ${ENABLE_TO_PLURALKIT},
+        \"enable_from_websocket\": ${ENABLE_FROM_WEBSOCKET},
         \"enable_from_pluralkit\": ${ENABLE_FROM_PLURALKIT},
         \"website_url_name\": \"${WEBSITE_URL_NAME}\",
         \"discord_user_id\": { \"secret\": \"invalid\" },

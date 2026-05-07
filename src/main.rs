@@ -148,6 +148,7 @@ async fn run_webserver(setup: setup::ApplicationSetup) -> Result<()> {
                 meta_api::get_api_meta_pluralsync_variant,
                 pluralsync::plurality::post_api_webhook_pluralkit_user_id,
                 debug_api::post_api_debug_verify_pluralkit_webhooks,
+                plurality::get_api_user_platform_pluralsync_events,
             ],
         )
         .mount("/metrics", metrics::PROM_METRICS.clone())
