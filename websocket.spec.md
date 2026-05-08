@@ -146,8 +146,8 @@ After authentication, the client may push fronting status updates.
 
 ```json
 {
-  "type": "fronters.response",
-  "result": "error",
+  "type": "error",
+  "result": "<error_type>",
   "data": "<error description>"
 }
 ```
@@ -210,7 +210,7 @@ Server → (closes connection)
 
 ```
 Client → Server: {"type":"fronters","data":{"fronters":[{"id":"m1","privacy":"public"}]}}
-Server → Client: {"type":"fronters.response","result":"error","data":"field 'name' is required"}
+Server → Client: {"type":"error","result":"parse_error","data":"field 'name' is required"}
 Client → Server: {"type":"fronters","data":{"fronters":[{"id":"m1","name":"Alice","privacy":"public"}]}}
 Server → (accepted — no response)
 ```

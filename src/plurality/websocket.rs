@@ -4,6 +4,7 @@
 //! Authentication is application-level via JWT in a `login` message.
 
 use crate::deserialisation::{deserialize_non_empty_string, parse_rfc3339_as_option};
+use crate::platforms::discord_api::is_closed;
 use crate::{database, plurality, updater, users};
 use anyhow::{Result, anyhow};
 use pluralsync_base::clock;
@@ -43,9 +44,11 @@ struct WsFronter {
     id: String,
     #[serde(deserialize_with = "deserialize_non_empty_string")]
     name: String,
+    #[serde(default)]
     pronouns: Option<String>,
+    #[serde(default)]
     avatar_url: Option<String>,
-    #[serde(deserialize_with = "parse_rfc3339_as_option")]
+    #[serde(default, deserialize_with = "parse_rfc3339_as_option")]
     start_time: Option<chrono::DateTime<chrono::Utc>>,
     privacy: WsFronterPrivacy,
 }
@@ -82,22 +85,29 @@ pub fn get_api_user_platform_pluralsync_events(
             // Some(...) means authenticated
             let mut user_id: Option<users::UserId> = None;
 
+            let mut message: Option<Result<rocket_ws::Message, rocket_ws::result::Error>>;
+
             loop {
-                let message = ws.next().await;
+                message = ws.next().await;
 
                 // we expect only text messages
-                let Some(Ok(rocket_ws::Message::Text(message_str))) = message else {
+                let Some(Ok(rocket_ws::Message::Text(ref message_str))) = message else {
+                    log::warn!("# | websocket | received unexpected ws frame: {message:?}");
                     break;
                 };
 
                 log::debug!("# | websocket | received: {message_str}");
 
-                let message = match serde_json::from_str::<WsIncomingMessage>(&message_str) {
+                let message = match serde_json::from_str::<WsIncomingMessage>(message_str) {
                     Ok(msg) => msg,
                     Err(e) => {
                         log::warn!("# | websocket | parse error: {e}");
                         yield json_error_message("parse_error", &e.to_string());
-                        continue;
+                        if user_id.is_some() {
+                            continue;
+                        } else {
+                            break;
+                        }
                     }
                 };
 
@@ -182,10 +192,15 @@ pub fn get_api_user_platform_pluralsync_events(
 
                     }
                 }
-            }
+            } // loop end
 
             log::debug!("# | websocket | closing for {:?}", user_id);
-            yield rocket_ws::Message::Close(None);
+
+            match message {
+                None => { yield rocket_ws::Message::Close(None) },
+                Some(closed) if is_closed(&closed) => (),
+                _ => yield rocket_ws::Message::Close(None)
+            }
         }
     })
 }

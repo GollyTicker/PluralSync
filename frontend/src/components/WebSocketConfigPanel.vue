@@ -31,8 +31,9 @@ defineProps<Props>()
 
 // NOTE: hidden feature. only enabled on my private instances currently. will be made public with an unstable API in future
 const websocketAvailable: Ref<boolean> = ref(
-  location.href.includes('https://private.pluralsync') ||
-    location.href.includes('https://dev-online.pluralsync'),
+  location.href.startsWith('https://private.pluralsync') ||
+    location.href.startsWith('https://dev-online.pluralsync') ||
+    location.href.startsWith('http://localhost'),
 )
 </script>
 

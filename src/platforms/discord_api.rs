@@ -291,7 +291,7 @@ fn process_message_from_bridge(
     }
 }
 
-const fn is_closed(x: &Result<rocket_ws::Message, rocket_ws::result::Error>) -> bool {
+pub const fn is_closed(x: &Result<rocket_ws::Message, rocket_ws::result::Error>) -> bool {
     matches!(
         x,
         Ok(rocket_ws::Message::Close(_))

@@ -100,6 +100,8 @@ Use `docker/local.env` or `docker/local-release.env` for environment variables. 
 
 Run all relevant integration tests after making changes to sync logic, API endpoints, or configuration.
 
+Don't use `docker logs` to access the (now stopped) containers after a test. Read the logs in `docker/logs/*` instead to debug system behavior.
+
 ---
 
 ## Script Numbering Conventions

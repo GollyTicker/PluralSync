@@ -128,7 +128,7 @@ setup_test_user() {
 
     set_user_config_and_restart
     
-    # echo "User config JSON: $(get_user_config)"
+    # echo "User config JSON: $(get_user_config | jq .)"
 
     echo "Getting user info ..."
     USER_INFO="$(
