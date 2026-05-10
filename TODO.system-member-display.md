@@ -1,116 +1,88 @@
-# TODO
+# Member Display Names
 
-This document outlines the steps to add the feature for system member specific display names.
+Per-member custom display names that flow through all output channels (fronting status, history, bridge, website).
 
-## Architecture Overview
+## Key Design Decisions
 
-*   **Backend:** Rust, using the Rocket web framework and SQLx for database access.
-*   **Frontend:** Vue.js 3 with Vite and axios for API calls.
-*   **Database:** PostgreSQL, with migrations in `docker/migrations`.
-*   **Member Data:** Member information is fetched from the Simply Plural API, not stored in the local database. Custom display names will be stored in a new `member_display_names` table.
+- **Source-agnostic:** Works for SimplyPlural, PluralKit, and WebSocket sources. The `member_id` in the DB is the raw ID from whichever source the user has enabled (SP member ID, PK member ID, or websocket member ID).
+- **Per-member config extensible:** The `member_display_names` table is the foundation for future per-member settings (e.g., per-member privacy overrides). The API uses `/api/fronting/members/{member_id}/name` not `/_display_name`.
+- **Display name injected into `Fronter`:** The `Fronter` struct gets a `display_name: String` field. Custom names are injected at the conversion layer (when creating `Fronter` from source members), so all downstream code — status formatting, history, bridge, website — automatically uses the right name.
+- **Privacy respected:** Display names are only returned for members the user is allowed to see (same privacy bucket / visibility rules).
 
-## Detailed Implementation Steps
+## 1. Database
 
-### 1. Database Modification
+New table `member_display_names`:
 
-*   **File:** `docker/migrations/012_create_member_display_names.sql` (Create this file)
-*   **Action:** Create a new table `member_display_names` to store custom names for members.
-*   **SQL:**
-    ```sql
-    CREATE TABLE member_display_names (
-        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-        member_sp_id TEXT NOT NULL,
-        display_name TEXT NOT NULL,
-        PRIMARY KEY (user_id, member_sp_id)
-    );
-    ```
+```sql
+CREATE TYPE member_source_enum AS ENUM ('simply_plural', 'pluralkit', 'websocket');
 
-### 2. Backend Changes (Rust)
+CREATE TABLE member_display_names (
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    member_id TEXT NOT NULL,
+    source member_source_enum NOT NULL,
+    display_name TEXT NOT NULL,
+    PRIMARY KEY (user_id, member_id)
+);
+```
 
-*   **File:** `src/database/queries.rs` (or a new file `src/database/members.rs`)
-*   **Action:** Create functions to interact with the new `member_display_names` table.
-    *   `get_member_display_names(db_pool: &PgPool, user_id: &UserId) -> Result<HashMap<String, String>>`:
-        *   Fetches all custom display names for a given user and returns them as a map of `member_sp_id` to `display_name`.
-    *   `set_member_display_name(db_pool: &PgPool, user_id: &UserId, member_sp_id: &str, display_name: &str) -> Result<()>`:
-        *   Inserts or updates a custom display name for a member. This will use an `ON CONFLICT` clause to handle both cases.
+- `ON CONFLICT (user_id, member_id) DO UPDATE` for upserts
+- `ON CONFLICT (user_id, member_id) DO DELETE` for clearing a display name back to default
 
-*   **File:** `src/users/members_api.rs` (Create this file)
-*   **Action:** Create two new API endpoints.
-    *   **`get_api_members`:**
-        *   Route: `#[get("/api/members")]`
-        *   Logic:
-            1. Get the authenticated user's ID.
-            2. Fetch the user's config to get the Simply Plural token.
-            3. Call `get_member_display_names` to get the custom display names from the database.
-            4. Call the Simply Plural API (`/v1/me` then `/v1/members/:systemId`) to get the list of members.
-            5. Merge the member list with the custom display names.
-            6. Return the combined list as JSON.
-    *   **`put_api_member_display_name`:**
-        *   Route: `#[put("/api/members/<member_sp_id>/display_name", data = "<data>")]`
-        *   Logic:
-            1. Get the authenticated user's ID, the `member_sp_id`, and the new `display_name` from the request body.
-            2. Call `set_member_display_name` to save the new display name in the database.
+## 2. Backend
 
-*   **File:** `src/users/mod.rs`
-*   **Action:** Make the new API module public. (`pub mod members_api;`)
+### 2a. Database queries
 
-*   **File:** `src/main.rs`
-*   **Action:** Mount the new routes in the `routes!` macro.
+New file: `src/database/member_display_names.rs`
 
-### 3. Frontend Changes (Vue.js)
+- `get_member_display_names(db_pool, user_id) -> Result<HashMap<(MemberSource, String), String>>` — returns `((source, member_id), display_name)`
+- Define `MemberSource` Rust enum matching the SQL enum: `SimplyPlural`, `PluralKit`, `Websocket`
+- `set_member_display_name(db_pool, user_id, source, member_id, display_name) -> Result<()>` — upsert
+- `delete_member_display_name(db_pool, user_id, source, member_id) -> Result<()>` — clear to default
 
-*The frontend changes remain largely the same as the API contract has not changed from the frontend's perspective.*
+### 2b. Inject display names into Fronter
 
-*   **File:** `frontend/src/pluralsync.bindings.ts`
-*   **Action:** Define the `Member` type.
-    ```typescript
-    export interface Member {
-      id: string; // This will be the member_sp_id
-      name: string;
-      display_name: string;
-      // other fields from the Simply Plural member object
-    }
-    ```
+Modify the conversion from source members to `Fronter`:
 
-*   **File:** `frontend/src/pluralsync_api.ts`
-*   **Action:** Add functions to interact with the new backend endpoints.
-    ```typescript
-    // In pluralsync_api object
-    get_members: async function (): Promise<Member[]> { /* ... */ },
-    set_member_display_name: async function (member_id: string, display_name: string): Promise<void> { /* ... */ },
-    ```
+- **SimplyPlural** (`src/plurality/simply_plural.rs`): When converting `Member` → `Fronter`, look up the custom display name from the fetched map. Use it if present, otherwise use the member's canonical `name`.
+- **PluralKit** (`src/plurality/pluralkit.rs`): Already has `m.display_name` from the API. Extend to also check the custom display name map (custom name overrides PK's own display_name).
+- Add `display_name: String` field to the `Fronter` struct in `src/plurality/model.rs`.
 
-*   **File:** `frontend/src/router.ts`
-*   **Action:** Add a new route for the Members page: `{ path: '/members', component: Members }`.
+The `name` field stays as the canonical name (useful for debugging). The `display_name` field is what gets shown everywhere.
 
-*   **File:** `frontend/src/App.vue`
-*   **Action:** Add a navigation link to the Members page in the nav bar.
+### 2c. API endpoints
 
-*   **File:** `frontend/src/components/Members.vue` (Create this file)
-*   **Action:** Create the UI for managing member display names. This UI must handle large member lists efficiently, especially on mobile.
-    *   **UI:**
-        *   Add a quick search bar at the top to filter members by name or display name.
-        *   Display members in a list.
-        *   Implement pagination to show at most 50 members per page.
-    *   **Functionality:**
-        *   Fetch the full list of members on component mount.
-        *   The search bar should filter the complete list of members in real-time on the frontend.
-        *   The paginated view should be based on the (potentially filtered) list.
-        *   For each member, show their name and an input field for their `display_name`.
-        *   When a `display_name` is changed, debounce the input and call `set_member_display_name` to save it automatically. This avoids excessive API calls.
+New file: `src/plurality/member_display_api.rs`
 
-### 4. Using Display Names and Triggering Updates
+- `GET /api/fronting/members` — return the list of members (from the active source) merged with custom display names. Respects privacy rules (hidden members are excluded).
+- `PUT /api/fronting/members/{member_id}/name` — update a member's display name. Triggers `fetch_and_update_fronters` on the user's updater to refresh status immediately.
+- `DELETE /api/fronting/members/{member_id}/name` — clear a member's display name back to default. Also triggers `fetch_and_update_fronters`.
 
-This section describes how to integrate the new display names into the fronting status and how to ensure the updater processes refresh when a name is changed.
+The `source` is determined from the user's config (which source is enabled).
 
-*   **A. Using Display Names in Fronting Status**
-    *   **File:** `src/updater/sp_updater.rs` (or equivalent file responsible for Simply Plural updates)
-    *   **Action:** Modify the fronting status formatting logic to use custom display names.
-    *   **Details:**
-        1.  At the start of the update cycle for a user, call the existing `get_member_display_names` function to fetch the map of custom names.
-        2.  When formatting the status string (e.g., "A, B are fronting"), for each member, check if their `member_sp_id` exists in the fetched map.
-        3.  If a custom `display_name` exists, use it in the string. Otherwise, fall back to the member's default `name` from the Simply Plural API.
+### 2d. Register routes
 
-*   **B. Triggering Updater Refresh on Change**
-    * Whenever the frontend sends a request to the backend to update a member display name, then we need to call a `fetch_and_update_fronters` on manager.rs.
+Mount in `src/main.rs` routes. Add module to `src/plurality/mod.rs`.
 
+## 3. Frontend
+
+New page: `frontend/src/components/MemberDisplayNameConfig.vue`
+
+- **Virtual scrolling** for the member list (not pagination) — handles large member lists efficiently on all devices
+- **Search bar** at top — filters by canonical name or display name in real-time
+- Each member shows their name and an editable display name input
+- **Debounce** (e.g., 500ms) before saving to avoid excessive API calls
+- Empty display name = cleared (sends DELETE)
+- Route: `/config/members` (under config section)
+- Navigation link added in `App.vue`
+
+API functions in `pluralsync_api.ts`:
+- `get_fronting_members()` → `MemberDisplayInfo[]`
+- `set_member_name(member_id: string, name: string)` → `void`
+- `delete_member_name(member_id: string)` → `void`
+
+## 4. Testing
+
+- DB queries: upsert, delete, empty results
+- API: auth required, privacy filtering, input validation, conflict handling
+- Fronter injection: custom name used when set, fallback to canonical when not
+- End-to-end: update display name → `fetch_and_update_fronters` called → status text reflects change
