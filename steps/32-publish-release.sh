@@ -23,6 +23,9 @@ fi
 
 git push
 git push --tags
+# Push to github as well, since we host releases there.
+git push github
+git push --tags github
 
 ADDITIONAL_ARGS=()
 if [[ "$TAG" == *"-"* ]]; then

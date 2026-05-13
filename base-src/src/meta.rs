@@ -4,8 +4,6 @@ pub const CANONICAL_PLURALSYNC_BASE_URL: &str = "https://public-test.pluralsync.
 
 pub const CANONICAL_PLURALSYNC_ABOUT: &str = "https://public-test.pluralsync.ayake.net/about";
 
-pub const PLURALSYNC_GITHUB_REPOSITORY_URL: &str = "https://github.com/GollyTicker/PluralSync";
-
 pub const PLURALSYNC_VERSION: &str = env!("PLURALSYNC_VERSION");
 
 pub const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: &str =

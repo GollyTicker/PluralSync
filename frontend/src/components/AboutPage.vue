@@ -35,7 +35,7 @@ export interface Screenshot {
           </a>
         </li>
         <li><router-link to="/announcements">Announcements</router-link></li>
-        <li><a href="https://github.com/GollyTicker/PluralSync" target="_blank">Source Code</a></li>
+        <li><a href="https://radicle.network/nodes/iris.radicle.xyz/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J" target="_blank">Source Code on Radicle (rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J)</a></li>
         <li><a href="https://ko-fi.com/ayake_ayake#" target="_blank">Support Us 💖</a></li>
       </ul>
 
@@ -64,7 +64,7 @@ export interface Screenshot {
       <h2>Open Source, Free & Libre Software</h2>
       <p>
         The source code is <strong>libre/free</strong> software. You can find it on
-        <a href="https://github.com/GollyTicker/PluralSync" target="_blank">GitHub</a>
+        <a href="https://radicle.network/nodes/iris.radicle.xyz/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J" target="_blank">Radicle (rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J)</a>
         <br />
         You have the freedom to run, copy, distribute, study, change and improve the software under
         the Copyleft
