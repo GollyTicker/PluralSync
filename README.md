@@ -1,5 +1,7 @@
 # PluralSync - Sync your plural system across platforms
 
+Radicle Cod RID: `rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J`
+
 A cloud service where users can automatically sync their plural systems' fronting status
 between various system managers and social platforms such as [SimplyPlural](https://apparyllis.com/), [PluralKit](https://pluralkit.me/), [VRChat](https://hello.vrchat.com/), [Discord](https://discord.com) or their own website. Users of system managers (plural systems, DID/OSDD systems, etc.) benefit from this as it makes it easier for them to communicate who's fronting while only
 needing to update their fronting on Simply Plural.
