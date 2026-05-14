@@ -225,3 +225,121 @@ async function refreshPrivacyBuckets() {
   // ... rest unchanged
 }
 ```
+
+---
+
+### Task 6: Pre-deprecation announcement email
+
+**Files:** `src/users/announcement_email.rs`
+
+Add a new email function before `get_all_announcement_emails()`:
+
+```rust
+#[must_use]
+pub fn simply_plural_deprecation_warning() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-05-simply_plural_deprecation_warning",
+        date: "2026-05-20",
+        subject_fn: |_| "PluralSync 🔄 - SimplyPlural Source Shut Down on June 29".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            This is a reminder that SimplyPlural (api.apparyllis.com), the source service that many PluralSync users sync from, will be shut down on July 1, 2026.\n\
+            \n\
+            As a precaution, PluralSync will disable all SimplyPlural-based configurations on June 29, 2026 at 00:00 UTC. After this date:\n\
+            \n\
+            - Your SimplyPlural token will be removed from our servers\n\
+            - SimplyPlural will no longer work as a sync source in PluralSync\n\
+            - Your existing configuration will be preserved but non-functional\n\
+            \n\
+            If you currently use SimplyPlural as your source, you will need to switch to another supported source (PluralKit or WebSocket Source) before June 29.\n\
+            Check your PluralSync settings to configure an alternative source.\n\
+            \n\
+            If you don't use SimplyPlural as a source, this change does not affect you.\n\
+            \n\
+            Thank you for your attention.\n\
+            \n\
+            Kinds, PluralSync"
+                .to_owned()
+        },
+    }
+}
+```
+
+Register it in `get_all_announcement_emails()`:
+
+```rust
+pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
+    vec![
+        email_announcements_activated(),
+        smiply_plural_discontinuation_1(),
+        pluralkit_as_source(),
+        developer_absence_in_june(),
+        simply_plural_deprecation_warning(),
+        // todo. add announcement about asking for donations
+    ]
+}
+```
+
+---
+
+### Task 7: Post-deactivation confirmation email
+
+**Files:** `src/users/announcement_email.rs`
+
+Add a new email function after `simply_plural_deprecation_warning()`:
+
+```rust
+#[must_use]
+pub fn simply_plural_deactivated() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-06-simply_plural_deactivated",
+        date: "2026-06-30",
+        subject_fn: |_| "PluralSync 🔄 - SimplyPlural Source Has Been Disabled".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            As announced previously, SimplyPlural (api.apparyllis.com) has been shut down. On June 29, 2026, PluralSync automatically disabled all SimplyPlural-based configurations in preparation for this event.\n\
+            \n\
+            If you used SimplyPlural as a sync source:\n\
+            \n\
+            - Your SimplyPlural token has been removed from our servers\n\
+            - Your configuration is preserved but no longer functional\n\
+            - You will see a notice in your SimplyPlural settings panel\n\
+            \n\
+            To continue syncing, please configure an alternative source (PluralKit or WebSocket Source) in your PluralSync settings.\n\
+            \n\
+            If you don't use SimplyPlural as a source, no action is needed — this change does not affect you.\n\
+            \n\
+            Thank you for your understanding.\n\
+            \n\
+            Kinds, PluralSync"
+                .to_owned()
+        },
+    }
+}
+```
+
+Register it in `get_all_announcement_emails()`:
+
+```rust
+pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
+    vec![
+        email_announcements_activated(),
+        smiply_plural_discontinuation_1(),
+        pluralkit_as_source(),
+        developer_absence_in_june(),
+        simply_plural_deprecation_warning(),
+        simply_plural_deactivated(),
+        // todo. add announcement about asking for donations
+    ]
+}
+```
+
+**How these work with existing infrastructure:**
+
+The announcement email system (already in `announcement_email.rs` + `main.rs` cron job) handles delivery automatically:
+- When deployed, `ensure_announcement_email_definitions` creates entries in the DB
+- Any user registered **before** the email's `date` becomes eligible to receive it
+- The existing cron job in `main.rs:68` sends pending emails with rate limiting
+- No new cron job or DB migration is needed — the existing `send_pending_announcement_emails` handles everything
