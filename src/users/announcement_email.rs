@@ -111,6 +111,30 @@ pub fn pluralkit_as_source() -> AnnouncementEmail {
     }
 }
 
+#[must_use]
+pub fn developer_absence_in_june() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-05-14-dev-aabsence",
+        date: "2026-03-29",
+        subject_fn: |_| "Developer Hiatus in June and Possibly Longer".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            The developer(s) are taking a break from almost all activities due to personal reasons starting June 2026. The break was planned a long time ago already and is not
+            related to the current situation regarding plural system apps. The devs will return from anywhere between 2 weeks to 1.5 months.\n\
+            \n\
+            The Pluralsync servers will be continously running during this duration. There won't be any new features during this break. In the community spaces, non-developers are still
+            there and they can help with certain issues if you have any. The servers run stable by themselves without the developers' active hand.
+            \n\
+            Thank you for your attenion.\n\
+            \n\
+            Kinds, PluralSync
+            "
+            .to_owned()
+        },
+    }
+}
+
 /// Registry of all announcement emails
 /// Add new emails here when deploying
 #[must_use]
@@ -119,6 +143,9 @@ pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
         email_announcements_activated(),
         smiply_plural_discontinuation_1(),
         pluralkit_as_source(),
+        developer_absence_in_june()
+        // todo. add announcement about asking for donations
+        // todo. add announcement about SP shutdown
     ]
 }
 
