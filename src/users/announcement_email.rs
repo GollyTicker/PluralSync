@@ -123,10 +123,10 @@ pub fn developer_absence_in_june() -> AnnouncementEmail {
             The developer(s) are taking a break from almost all activities due to personal reasons starting June 2026. The break was planned a long time ago already and is not
             related to the current situation regarding plural system apps. The devs will return from anywhere between 2 weeks to 1.5 months.\n\
             \n\
-            The Pluralsync servers will be continously running during this duration. There won't be any new features during this break. In the community spaces, non-developers are still
+            The Pluralsync servers will be continuously running during this duration. There won't be any new features during this break. In the community spaces, non-developers are still
             there and they can help with certain issues if you have any. The servers run stable by themselves without the developers' active hand.
             \n\
-            Thank you for your attenion.\n\
+            Thank you for your attention.\n\
             \n\
             Kinds, PluralSync
             "
