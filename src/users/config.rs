@@ -827,21 +827,21 @@ mod tests {
 
     #[test]
     fn test_is_simply_plural_deprecated() {
-        assert!(!is_simply_plural_deprecated(
+        assert!(!meta::is_simply_plural_deprecated(
             chrono::NaiveDate::from_ymd_opt(2026, 6, 28)
                 .unwrap()
                 .and_hms_opt(0, 0, 0)
                 .unwrap()
                 .and_utc()
         ));
-        assert!(is_simply_plural_deprecated(
+        assert!(meta::is_simply_plural_deprecated(
             chrono::NaiveDate::from_ymd_opt(2026, 6, 29)
                 .unwrap()
                 .and_hms_opt(0, 0, 0)
                 .unwrap()
                 .and_utc()
         ));
-        assert!(is_simply_plural_deprecated(
+        assert!(meta::is_simply_plural_deprecated(
             chrono::NaiveDate::from_ymd_opt(2026, 7, 1)
                 .unwrap()
                 .and_hms_opt(0, 0, 0)
