@@ -38,17 +38,12 @@ Remove 3 module declarations and 3 `pub use` lines for `simply_plural`, `simply_
 Simplify `fetch_fronters()` to check only PluralKit and WebSocket sources. Remove `fetch_fronts_from_simply_plural` import.
 
 #### `src/plurality/model.rs`
-Remove 5 `ExclusionReason` variants used only by SimplyPlural:
+Remove 3 `ExclusionReason` variants used only by SimplyPlural:
 - `FrontNotificationsDisabled`
 - `CustomFrontsDisabled`
 - `NotInDisplayedPrivacyBuckets`
-- `ArchivedMemberHidden`
-- `NonArchivedMemberHidden`
 
-Keep only `MemberPrivacyPrivate` (PluralKit-specific).
-
-#### `src/plurality/pluralkit.rs`
-Remove `show_members_archived` and `show_members_non_archived` exclusion checks (lines 156-158). Remove these fields from test config in `create_test_config()`.
+Keep `ArchivedMemberHidden`, `NonArchivedMemberHidden` (used by PluralKit), and `MemberPrivacyPrivate` (PluralKit-specific).
 
 #### `src/users/config.rs`
 Remove from `UserConfigDbEntries`:
@@ -148,4 +143,4 @@ The following SimplyPlural-related code is preserved as historical records:
 
 - **Breaking API change:** The `ExclusionReason` enum changes. Any external consumers parsing this enum will need to handle the removal of 5 variants. Since this is an internal API consumed by the frontend (regenerated bindings), the ts-bindings regeneration handles this automatically.
 - **Database migration:** Dropping columns is irreversible. The migration should be run before deploying the code change.
-- **PluralKit unaffected:** The only PluralKit-specific `ExclusionReason` variant (`MemberPrivacyPrivate`) is preserved. Shared variants (`ArchivedMemberHidden`, `NonArchivedMemberHidden`) are removed because they were only produced by the SimplyPlural code path, and PluralKit uses different exclusion logic.
+- **PluralKit unaffected:** `ArchivedMemberHidden` and `NonArchivedMemberHidden` are preserved because PluralKit uses them. Only SP-only exclusion variants are removed.
