@@ -37,7 +37,7 @@ export interface Screenshot {
         <li><router-link to="/announcements">Announcements</router-link></li>
         <li>
           <a
-            href="https://radicle.network/nodes/iris.radicle.xyz/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J"
+            href="https://radicle.network/nodes/radicle.ayake.net/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J"
             target="_blank"
             >Source Code on Radicle (rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J)</a
           >
@@ -71,7 +71,7 @@ export interface Screenshot {
       <p>
         The source code is <strong>libre/free</strong> software. You can find it on
         <a
-          href="https://radicle.network/nodes/iris.radicle.xyz/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J"
+          href="https://radicle.network/nodes/radicle.ayake.net/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J"
           target="_blank"
           >Radicle (rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J)</a
         >

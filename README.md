@@ -17,4 +17,4 @@ Developed with ❤️ by [Ayake](https://github.com/GollyTicker).
 
 ---
 
-This code repository is on **radicle**, the P2P git collaboration network, with ID `rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J`. [Open this repository on the web](https://radicle.network/nodes/iris.radicle.xyz/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J)
+This code repository is on **radicle**, the P2P git collaboration network, with ID `rad:zxqCqSgaUsXM5a5Jd2fVBktEJi2J`. [Open this repository on the web](https://radicle.network/nodes/radicle.ayake.net/rad%3AzxqCqSgaUsXM5a5Jd2fVBktEJi2J)
