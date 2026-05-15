@@ -165,6 +165,39 @@ pub fn simply_plural_deprecation_warning() -> AnnouncementEmail {
 }
 
 #[must_use]
+pub fn simply_plural_deprecation_warning_typo() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-05-simply_plural_deprecation_warning_typo",
+        date: "2026-05-15",
+        subject_fn: |_| "⚠️ SimplyPlural Source Shutdown on June 29 (fixed typo)".to_string(),
+        body_fn: |_| {
+            "EDIT: SORRY, THERE WAS A TYPO IN THE PREVIOUS EMAIL.\n\
+            THE CORRECT DATE IS \"29th June 2026 at 00:00 UTC\" - NAMELY JUNE, THE MONTH AFTER MAY, AND NOT JULY.\n\
+            The fixed email is below:\n\
+            ------------------------------------------------\n\
+            \n\
+            Dear PluralSync Users,\n\
+            \n\
+            This is a reminder that SimplyPlural, a source system for PluralSync users from, will be shut down on July 1, 2026.\n\
+            \n\
+            PluralSync will disable all running SimplyPlural-based synchronizations on 29th June 2026 at 00:00 UTC for all users.\n\
+            All simply plural API tokens saved in PluralSync will also be removed. After this point in time\n\
+            SimplyPlural cannot be activated again or used in any way with PluralSync. All other synchronizations will remain unchanged.\n\
+            \n\
+            If you use SimplyPlural as your source, you will need to switch to another supported source (currently only PluralKit) before 29th June 2026.\n\
+            Check your PluralSync settings to configure an alternative source. If you don't use SimplyPlural as a source, this change does not affect you.\n\
+            \n\
+            We wish everysystem good luck with the current situation. We're deeply grateful and in respect for Amaryllis providing the SimplyPlural service for half-a-decade.\n\
+            \n\
+            Thank you for your attention. Take care everysystem.\n\
+            \n\
+            Kinds, PluralSync"
+                .to_owned()
+        },
+    }
+}
+
+#[must_use]
 pub fn simply_plural_deactivated() -> AnnouncementEmail {
     AnnouncementEmail {
         email_id: "2026-06-simply_plural_deactivated",
@@ -197,6 +230,7 @@ pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
         pluralkit_as_source(),
         developer_absence_in_june(),
         simply_plural_deprecation_warning(),
+        simply_plural_deprecation_warning_typo(),
         // todo. add announcement about asking for donations
     ];
 
