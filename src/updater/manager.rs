@@ -585,7 +585,7 @@ pub async fn disable_all_simply_plural_configs(
     application_user_secrets: database::ApplicationUserSecrets,
     _: setup::SmtpConfig,
 ) -> Result<()> {
-    if meta::is_simply_plural_deprecated(chrono::Utc::now()) {
+    if !meta::is_simply_plural_deprecated(chrono::Utc::now()) {
         log::debug!("disable_all_simply_plural_configs. not yet.");
         return Ok(());
     }

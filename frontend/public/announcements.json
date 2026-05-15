@@ -1,5 +1,11 @@
 [
   {
+    "email_id": "2026-05-simply_plural_deprecation_warning",
+    "date": "2026-05-15",
+    "subject": "⚠️ SimplyPlural Source Shutdown on June 29",
+    "body": "Dear PluralSync Users,\n\nThis is a reminder that SimplyPlural, a source system for PluralSync users from, will be shut down on July 1, 2026.\n\nPluralSync will disable all running SimplyPlural-based synchronizations on 29th July 2026 at 00:00 UTC for all users.\nAll simply plural API tokens saved in PluralSync will also be removed. After this point in time\nSimplyPlural cannot be activated again or used in any way with PluralSync. All other synchronizations will bremain unchanged.\n\nIf you use SimplyPlural as your source, you will need to switch to another supported source (currently only PluralKit) before 29th June 2026.\nCheck your PluralSync settings to configure an alternative source. If you don't use SimplyPlural as a source, this change does not affect you.\n\nWe wish everysystem good luck with the current situation. We're deeply grateful and in respect for Amaryllis providing the SimplyPlural service for half-a-decade.\n\nThank you for your attention. Take care everysystem.\n\nKinds, PluralSync"
+  },
+  {
     "email_id": "2026-03-29-pluralkit-added",
     "date": "2026-03-29",
     "subject": "PluralSync 🔄 - Added PluralKit as Syncing Source 💖",
