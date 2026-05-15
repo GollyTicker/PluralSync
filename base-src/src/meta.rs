@@ -9,6 +9,18 @@ pub const PLURALSYNC_VERSION: &str = env!("PLURALSYNC_VERSION");
 pub const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: &str =
     "https://github.com/GollyTicker/PluralSync/releases";
 
+pub const SIMPLY_PLURAL_DEPRECATION_DATE: chrono::DateTime<chrono::Utc> =
+    chrono::NaiveDate::from_ymd_opt(2026, 6, 29)
+        .unwrap()
+        .and_hms_opt(0, 0, 0)
+        .unwrap()
+        .and_utc();
+
+#[must_use]
+pub fn is_simply_plural_deprecated(now: chrono::DateTime<chrono::Utc>) -> bool {
+    now >= SIMPLY_PLURAL_DEPRECATION_DATE
+}
+
 #[derive(Clone, Serialize, Deserialize, specta::Type)]
 pub struct PluralSyncVariantInfo {
     pub version: String,

@@ -3,11 +3,13 @@ use crate::updater;
 use crate::users;
 use anyhow::Result;
 
+use anyhow::anyhow;
 use pluralsync_base::meta;
 use pluralsync_base::meta::PLURALSYNC_VERSION;
 use rocket::http::Method;
 use sqlx::postgres;
 use std::env;
+use std::sync::OnceLock;
 use std::time::Duration;
 
 pub const EVERY_MINUTE: &str = "0 * * * * *";
@@ -29,7 +31,7 @@ pub fn logging_init() {
 pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<ApplicationSetup> {
     log::info!("# | application_setup");
 
-    let client = make_client()?;
+    let client = global_shared_client()?;
 
     log::info!("# | application_setup | client_created");
 
@@ -116,13 +118,21 @@ pub async fn application_setup(cli_args: &ApplicationConfig) -> Result<Applicati
     })
 }
 
-pub fn make_client() -> Result<reqwest::Client> {
-    let client = reqwest::Client::builder()
-        .cookie_store(true)
-        .timeout(Duration::from_secs(REQUEST_TIMEOUT))
-        .build()?;
+static GLOBAL_SHARED_CLIENT: OnceLock<Result<reqwest::Client, anyhow::Error>> = OnceLock::new();
 
-    Ok(client)
+pub fn global_shared_client() -> Result<reqwest::Client> {
+    let result = GLOBAL_SHARED_CLIENT
+        .get_or_init(|| {
+            reqwest::Client::builder()
+                .cookie_store(true)
+                .timeout(Duration::from_secs(REQUEST_TIMEOUT))
+                .build()
+                .map_err(|e| anyhow!("Failed to build global shared client: {e}"))
+        });
+    match result {
+        Ok(c) => Ok(c.clone()),
+        Err(e) => Err(anyhow!("{}", e)),
+    }
 }
 
 #[derive(Clone)]

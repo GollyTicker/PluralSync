@@ -105,9 +105,8 @@ pub fn get_api_user_platform_pluralsync_events(
                         yield json_error_message("parse_error", &e.to_string());
                         if user_id.is_some() {
                             continue;
-                        } else {
-                            break;
                         }
+                        break;
                     }
                 };
 

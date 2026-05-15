@@ -20,7 +20,7 @@ use pluralsync::{
 use pluralsync_base::{
     meta::{
         CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL,
-        PluralSyncVariantInfo,
+        PluralSyncVariantInfo, SIMPLY_PLURAL_DEPRECATION_DATE,
     },
     users::{
         Email, EmailVerificationToken, JwtString, PasswordResetToken, Secret, UserLoginCredentials,
@@ -45,7 +45,8 @@ fn main() -> Result<()> {
         export::<PluralSyncVariantInfo>(conf)?,
         format!("export const CANONICAL_PLURALSYNC_BASE_URL: string = \"{CANONICAL_PLURALSYNC_BASE_URL}\""),
         format!("export const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: string = \"{PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL}\""),
-"export type UserConfigDbEntries = {
+        format!("export const SIMPLY_PLURAL_DEPRECATION_DATE: string = \"{}\"", SIMPLY_PLURAL_DEPRECATION_DATE.format("%Y-%m-%dT00:00:00Z")),
+        "export type UserConfigDbEntries = {
     website_system_name?: string;
     website_url_name?: string;
     status_prefix?: string;

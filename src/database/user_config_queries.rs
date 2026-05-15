@@ -64,6 +64,20 @@ pub async fn get_user(
     .map_err(|e| anyhow::anyhow!(e))
 }
 
+pub async fn get_user_ids_with_enabled_sp(db_pool: &PgPool) -> Result<Vec<uuid::Uuid>> {
+    log::debug!("# | db::get_user_ids_with_enabled_sp");
+    let ids: Vec<uuid::Uuid> =
+        sqlx::query_scalar!("SELECT id FROM users WHERE enable_from_sp = true")
+            .fetch_all(db_pool)
+            .await
+            .map_err(|e| anyhow::anyhow!(e))?;
+    log::debug!(
+        "# | db::get_user_ids_with_enabled_sp | found {} users",
+        ids.len()
+    );
+    Ok(ids)
+}
+
 // ============================================================================
 // User Config with Secrets
 // ============================================================================
@@ -251,7 +265,7 @@ pub async fn modify_user_secrets(
 
     modify(&mut user_with_secrets);
 
-    let unused_client = setup::make_client()?;
+    let unused_client = setup::global_shared_client()?;
 
     let (_, new_config) =
         users::create_config_with_strong_constraints(user_id, &unused_client, &user_with_secrets)?;

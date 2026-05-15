@@ -5,6 +5,7 @@ use crate::users::UserId;
 use crate::{database, users};
 use crate::{int_counter_metric, metric, setup};
 use anyhow::{Result, anyhow};
+use pluralsync_base::meta::{self};
 use pluralsync_base::updater::UpdaterStatus;
 use pluralsync_base::{clock, communication};
 use sqlx;
@@ -549,7 +550,7 @@ pub async fn restart_first_long_living_updater(
                 let config = database::get_user_config_with_secrets(
                     &db_pool,
                     &user_id,
-                    &setup::make_client()?,
+                    &setup::global_shared_client()?,
                     &application_user_secrets,
                 )
                 .await?;
@@ -575,6 +576,81 @@ fn is_long_lived(active_since: chrono::DateTime<chrono::Utc>) -> bool {
         .signed_duration_since(active_since)
         .to_std()
         .is_ok_and(|duration| duration > long_lived_duration)
+}
+
+pub async fn disable_all_simply_plural_configs(
+    db_pool: sqlx::PgPool,
+    _: reqwest::Client,
+    shared_updaters: UpdaterManager,
+    application_user_secrets: database::ApplicationUserSecrets,
+    _: setup::SmtpConfig,
+) -> Result<()> {
+    if meta::is_simply_plural_deprecated(chrono::Utc::now()) {
+        log::debug!("disable_all_simply_plural_configs. not yet.");
+        return Ok(());
+    }
+
+    log::info!("disable_all_simply_plural_configs. NOW!");
+
+    let sp_user_ids = database::get_user_ids_with_enabled_sp(&db_pool).await?;
+    log::info!(
+        "disable_all_simply_plural_configs | found {} users with SP enabled",
+        sp_user_ids.len()
+    );
+
+    for user_id_inner in sp_user_ids {
+        let user_id = UserId {
+            inner: user_id_inner,
+        };
+        match disable_sp_for_user(
+            &user_id,
+            &db_pool,
+            &application_user_secrets,
+            &shared_updaters,
+        )
+        .await
+        {
+            Ok(()) => (),
+            Err(e) => {
+                log::warn!("disable_all_simply_plural_configs | {user_id} failed: {e}");
+            }
+        }
+    }
+
+    log::info!("disable_all_simply_plural_configs | DONE ❤️");
+    Ok(())
+}
+
+async fn disable_sp_for_user(
+    user_id: &UserId,
+    db_pool: &sqlx::PgPool,
+    application_user_secrets: &database::ApplicationUserSecrets,
+    shared_updaters: &UpdaterManager,
+) -> Result<()> {
+    database::modify_user_secrets(db_pool, user_id, application_user_secrets, |config| {
+        config.enable_from_sp = false;
+        config.simply_plural_token = None;
+    })
+    .await?;
+
+    log::info!("disable_sp_for_user | {user_id} | db changed");
+
+    let client = setup::global_shared_client()?;
+    let _ = updater::api::restart_updater_for_user(
+        user_id,
+        db_pool,
+        application_user_secrets,
+        &client,
+        shared_updaters,
+    )
+    .await
+    .inspect_err(|e| {
+        log::warn!("disable_sp_for_user | {user_id} | db changed | restart failed (token removed, expected): {e}");
+    });
+
+    log::info!("disable_sp_for_user | {user_id} | db changed | updater restarted | done");
+
+    Ok(())
 }
 
 const ONE_DAY_AS_SECONDS: u64 = 60 * 60 * 24;

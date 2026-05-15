@@ -5,6 +5,7 @@ use crate::users::UserId;
 use anyhow::Result;
 use futures::never::Never;
 use pluralsync_base::controlflow::LoopStreamControl;
+use pluralsync_base::meta;
 use sqlx::PgPool;
 
 /// Represents an announcement email definition
@@ -135,18 +136,75 @@ pub fn developer_absence_in_june() -> AnnouncementEmail {
     }
 }
 
+#[must_use]
+pub fn simply_plural_deprecation_warning() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-05-simply_plural_deprecation_warning",
+        date: "2026-05-15",
+        subject_fn: |_| "⚠️ SimplyPlural Source Shutdown on June 29".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            This is a reminder that SimplyPlural, a source system for PluralSync users from, will be shut down on July 1, 2026.\n\
+            \n\
+            PluralSync will disable all running SimplyPlural-based synchronizations on 29th July 2026 at 00:00 UTC for all users.\n\
+            All simply plural API tokens saved in PluralSync will also be removed. After this point in time\n\
+            SimplyPlural cannot be activated again or used in any way with PluralSync. All other synchronizations will bremain unchanged.\n\
+            \n\
+            If you use SimplyPlural as your source, you will need to switch to another supported source (currently only PluralKit) before 29th June 2026.\n\
+            Check your PluralSync settings to configure an alternative source. If you don't use SimplyPlural as a source, this change does not affect you.\n\
+            \n\
+            We wish everysystem good luck with the current situation. We're deeply grateful and in respect for Amaryllis providing the SimplyPlural service for half-a-decade.\n\
+            \n\
+            Thank you for your attention. Take care everysystem.\n\
+            \n\
+            Kinds, PluralSync"
+                .to_owned()
+        },
+    }
+}
+
+#[must_use]
+pub fn simply_plural_deactivated() -> AnnouncementEmail {
+    AnnouncementEmail {
+        email_id: "2026-06-simply_plural_deactivated",
+        date: "2026-06-29",
+        subject_fn: |_| "SimplyPlural Source Disabled".to_string(),
+        body_fn: |_| {
+            "Dear PluralSync Users,\n\
+            \n\
+            As announced previously, SimplyPlural as a source was disabled for all users today on 2026-06-29 on PluralSync.\n\
+            If you were using SimplyPlural as a source before and you want to keep on using PluralSync,\n\
+            you need to configure an alternative source (e.g. PluralKit) in your PluralSync settings.\n\
+            \n\
+            Thank you for your attention.\n\
+            \n\
+            Thank you, Amaryllis, for everything. ❤️\n\
+            \n\
+            Kinds, PluralSync"
+                .to_owned()
+        },
+    }
+}
+
 /// Registry of all announcement emails
 /// Add new emails here when deploying
 #[must_use]
 pub fn get_all_announcement_emails() -> Vec<AnnouncementEmail> {
-    vec![
+    let mut emails = vec![
         email_announcements_activated(),
         smiply_plural_discontinuation_1(),
         pluralkit_as_source(),
-        developer_absence_in_june()
+        developer_absence_in_june(),
+        simply_plural_deprecation_warning(),
         // todo. add announcement about asking for donations
-        // todo. add announcement about SP shutdown
-    ]
+    ];
+
+    if meta::is_simply_plural_deprecated(chrono::Utc::now()) {
+        emails.push(simply_plural_deactivated());
+    }
+
+    emails
 }
 
 /// Main entry point: send pending announcement emails

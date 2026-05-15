@@ -96,6 +96,18 @@ async fn main() -> Result<()> {
     )
     .await?;
 
+    let () = setup::start_cron_job(
+        &app_setup.db_pool,
+        &app_setup.client,
+        &app_setup.shared_updaters,
+        &app_setup.application_user_secrets,
+        &app_setup.smtp_config,
+        "disable-simply-plural-configs",
+        setup::EVERY_5_MINUTES,
+        updater::disable_all_simply_plural_configs,
+    )
+    .await?;
+
     log::debug!(
         "# | app_setup | configured | updaters_restarted | cron_jobs_started | webserver_starting"
     );

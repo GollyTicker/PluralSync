@@ -1,5 +1,6 @@
 use anyhow::{Result, anyhow};
 use derive_more::Display;
+use pluralsync_base::meta;
 use sqlx::FromRow;
 use std::time::Duration;
 
@@ -512,6 +513,12 @@ where
         ));
     }
 
+    if enable_from_sp && meta::is_simply_plural_deprecated(chrono::Utc::now()) {
+        return Err(anyhow!(
+            "SimplyPlural source is no longer available as of June 29, 2026"
+        ));
+    }
+
     let source_count = [enable_from_sp, enable_from_pluralkit, enable_from_websocket]
         .iter()
         .filter(|&&x| x)
@@ -816,5 +823,30 @@ mod tests {
             from_pluralkit_respect_member_visibility: false,
             from_pluralkit_respect_field_visibility: false,
         }
+    }
+
+    #[test]
+    fn test_is_simply_plural_deprecated() {
+        assert!(!is_simply_plural_deprecated(
+            chrono::NaiveDate::from_ymd_opt(2026, 6, 28)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .and_utc()
+        ));
+        assert!(is_simply_plural_deprecated(
+            chrono::NaiveDate::from_ymd_opt(2026, 6, 29)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .and_utc()
+        ));
+        assert!(is_simply_plural_deprecated(
+            chrono::NaiveDate::from_ymd_opt(2026, 7, 1)
+                .unwrap()
+                .and_hms_opt(0, 0, 0)
+                .unwrap()
+                .and_utc()
+        ));
     }
 }

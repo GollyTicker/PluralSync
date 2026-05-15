@@ -1,6 +1,9 @@
 <template>
   <div class="config-section">
     <h2>Simply Plural</h2>
+    <div v-if="isSimplyPluralDeprecated" class="config-description warning">
+      SimplyPlural has been shut down. Your configuration is preserved but no longer functional.
+    </div>
     <div class="config-grid">
       <div class="config-item">
         <label for="enable_from_pluralkit">Enable Sync from SimplyPlural</label>
@@ -11,7 +14,12 @@
           Note, that only one system manager for fronting is supported at a time (either PluralKit
           or SimplyPlural as source).
         </p>
-        <input id="enable_from_sp" type="checkbox" v-model="config.enable_from_sp" />
+        <input
+          id="enable_from_sp"
+          type="checkbox"
+          v-model="config.enable_from_sp"
+          :disabled="isSimplyPluralDeprecated"
+        />
       </div>
       <div class="config-item">
         <label for="simply_plural_token">Simply Plural Token</label>
@@ -29,6 +37,7 @@
           type="password"
           :value="config.simply_plural_token?.secret"
           @input="setSecret('simply_plural_token', $event)"
+          :disabled="isSimplyPluralDeprecated"
         />
       </div>
       <div class="config-item">
@@ -61,6 +70,7 @@
           id="show_members_non_archived"
           type="checkbox"
           v-model="config.show_members_non_archived"
+          :disabled="isSimplyPluralDeprecated"
         />
       </div>
       <div class="config-item">
@@ -69,7 +79,12 @@
           Show <span style="font-weight: bold">archived</span> members. They might still be hidden,
           if the other conditions make them hidden.
         </p>
-        <input id="show_members_archived" type="checkbox" v-model="config.show_members_archived" />
+        <input
+          id="show_members_archived"
+          type="checkbox"
+          v-model="config.show_members_archived"
+          :disabled="isSimplyPluralDeprecated"
+        />
       </div>
       <div class="config-item">
         <label for="respect_front_notifications_disabled">
@@ -83,11 +98,17 @@
           id="respect_front_notifications_disabled"
           type="checkbox"
           v-model="config.respect_front_notifications_disabled"
+          :disabled="isSimplyPluralDeprecated"
         />
       </div>
       <div class="config-item">
         <label for="show_custom_fronts">Show Custom Fronts</label>
-        <input id="show_custom_fronts" type="checkbox" v-model="config.show_custom_fronts" />
+        <input
+          id="show_custom_fronts"
+          type="checkbox"
+          v-model="config.show_custom_fronts"
+          :disabled="isSimplyPluralDeprecated"
+        />
       </div>
       <div class="config-item">
         <label for="privacy_fine_grained"> Fine-Grained Control using Privacy Buckets </label>
@@ -116,7 +137,7 @@
           </li>
         </ol>
         <p></p>
-        <select v-model="config.privacy_fine_grained">
+        <select v-model="config.privacy_fine_grained" :disabled="isSimplyPluralDeprecated">
           <option value="NoFineGrained">no fine grained control (default)</option>
           <option value="ViaFriend">via PluralSync-friend on SimplyPlural</option>
           <option value="ViaPrivacyBuckets">via privacy buckets configured below</option>
@@ -133,7 +154,9 @@
         <select
           v-model="config.privacy_fine_grained_buckets"
           multiple
-          :disabled="config.privacy_fine_grained !== 'ViaPrivacyBuckets'"
+          :disabled="
+            config.privacy_fine_grained !== 'ViaPrivacyBuckets' || isSimplyPluralDeprecated
+          "
         >
           <option
             v-for="bucket in simply_plural_privacy_buckets"
@@ -149,7 +172,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, type Ref } from 'vue'
+import { ref, watch, computed, type Ref } from 'vue'
+import { SIMPLY_PLURAL_DEPRECATION_DATE } from '@/pluralsync.bindings'
 import type { UserConfigDbEntries, Decrypted } from '@/pluralsync.bindings'
 import { detailed_error_string } from '@/pluralsync_api'
 import { get_privacy_buckets, type PrivacyBucket } from '@/simply_plural_api'
@@ -164,6 +188,14 @@ const props = defineProps<Props>()
 const simply_plural_privacy_buckets: Ref<PrivacyBucket[]> = ref([])
 const privacyBucketsStatus = ref('')
 
+const isSimplyPluralDeprecated = computed(() => {
+  const depDate = new Date(SIMPLY_PLURAL_DEPRECATION_DATE)
+  const now = new Date()
+  const nowUTC = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()))
+  const depUTC = new Date(Date.UTC(depDate.getFullYear(), depDate.getMonth(), depDate.getDate()))
+  return nowUTC >= depUTC
+})
+
 type SecretKeys = 'simply_plural_token'
 
 function setSecret(key: SecretKeys, event: Event) {
@@ -176,6 +208,7 @@ function setSecret(key: SecretKeys, event: Event) {
 }
 
 async function refreshPrivacyBuckets() {
+  if (isSimplyPluralDeprecated.value) return
   const token = props.config.simply_plural_token?.secret
   if (!token) {
     return

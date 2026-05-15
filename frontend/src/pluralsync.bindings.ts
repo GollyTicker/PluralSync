@@ -7,6 +7,7 @@ export type Decrypted = { secret: string };
 export type PluralSyncVariantInfo = { version: string; variant: string; description: string | null; show_in_ui: boolean };
 export const CANONICAL_PLURALSYNC_BASE_URL: string = "https://public-test.pluralsync.ayake.net";
 export const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: string = "https://github.com/GollyTicker/PluralSync/releases";
+export const SIMPLY_PLURAL_DEPRECATION_DATE: string = "2026-06-29T00:00:00Z";
 export type UserConfigDbEntries = {
     website_system_name?: string;
     website_url_name?: string;

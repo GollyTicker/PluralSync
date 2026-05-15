@@ -70,7 +70,7 @@ where
                 RETRY_WAIT_SECONDS
             }
         } else {
-            log::warn!("WS {log_prefix} client exited cleanly, which should not happen.",);
+            log::warn!("WS {log_prefix} client exited cleanly, which should not happen.");
             SHOULDNT_HAPPEN_BUT_IT_DID
                 .with_label_values(&["simply_plural_websocket_connection_ended_clean"])
                 .inc();
