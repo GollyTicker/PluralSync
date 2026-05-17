@@ -6,8 +6,7 @@ pub const CANONICAL_PLURALSYNC_ABOUT: &str = "https://public-test.pluralsync.aya
 
 pub const PLURALSYNC_VERSION: &str = env!("PLURALSYNC_VERSION");
 
-pub const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: &str =
-    "https://github.com/GollyTicker/PluralSync/releases";
+pub const PLURALSYNC_RELEASES_URL: &str = "https://content.radicle.ayake.net/PluralSync/releases";
 
 pub const SIMPLY_PLURAL_DEPRECATION_DATE: chrono::DateTime<chrono::Utc> =
     chrono::NaiveDate::from_ymd_opt(2026, 6, 29)

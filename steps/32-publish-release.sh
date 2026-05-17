@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Publishes the tag at the current revision (assuming the current git revision is tagged like v2.13 or so).
+# Uploads artifacts to content.radicle.ayake.net via SSH.
 
 set -euo pipefail
 
@@ -13,24 +14,40 @@ fi
 
 echo "Found tag: $TAG"
 
-if ! gh auth status; then
-    echo "You are not logged into GitHub."
-    echo "Please login to publish the release."
-    gh auth login --web
-fi
-
 ./steps/30-build-release.sh
 
 git push
 git push --tags
-# Push to github as well, since we host releases there.
 git push github
 git push --tags github
 
-ADDITIONAL_ARGS=()
+IS_PRERELEASE=false
 if [[ "$TAG" == *"-"* ]]; then
-  ADDITIONAL_ARGS+=(--prerelease)
+  IS_PRERELEASE=true
 fi
-gh release create "$TAG" target/release_builds/* --title "$TAG" --notes "" "${ADDITIONAL_ARGS[@]}"
 
-echo "Release $TAG created successfully."
+COMMIT_HASH=$(git rev-parse HEAD)
+
+# Upload artifacts to the webserver via SSH
+SSH_HOST="content.ayake.radicle.net"
+REMOTE_BASE="~/web5/www/PluralSync/releases"
+REMOTE_DIR="${REMOTE_BASE}/${TAG}"
+
+echo "Uploading artifacts to ${SSH_HOST}:${REMOTE_DIR}..."
+
+ssh "$SSH_HOST" "mkdir -p '$REMOTE_DIR'"
+scp -v target/release_builds/* "${SSH_HOST}:${REMOTE_DIR}/"
+
+ssh "$SSH_HOST" "cd '$REMOTE_DIR' && touch '$TAG'.txt"
+
+echo "{\"commit\":\"${COMMIT_HASH}\"}" | ssh "$SSH_HOST" "cat > '${REMOTE_DIR}/info.json'"
+
+echo "Uploaded artifacts for $TAG."
+
+# For non-prerelease tags, update the 'latest' symlink
+if [ "$IS_PRERELEASE" = false ]; then
+    echo "Setting 'latest' symlink to $TAG..."
+    ssh "$SSH_HOST" "cd '$REMOTE_BASE' && rm -f latest ; ln -s '$TAG' latest"
+fi
+
+echo "Release $TAG published successfully."

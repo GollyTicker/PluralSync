@@ -39,8 +39,7 @@
             <br />
             This option only works via the PluralSync-Bridge, which you need to run on the same
             computer as your discord. For that, open
-            <a target="_blank" :href="PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL">this</a>, then open
-            the first "Assets" section to see and download the "PluralSync.Bridge" for your
+            <a target="_blank" :href="PLURALSYNC_RELEASES_URL + '/latest'">this</a>, then download the "PluralSync.Bridge" for your
             platform.
             <br />
             Then start it on the computer where Discord Desktop is running. You might get a warning,
@@ -112,7 +111,7 @@
 
 <script setup lang="ts">
 import type { UserConfigDbEntries, Decrypted } from '@/pluralsync.bindings'
-import { PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL } from '@/pluralsync.bindings'
+import { PLURALSYNC_RELEASES_URL } from '@/pluralsync.bindings'
 
 interface Props {
   config: UserConfigDbEntries

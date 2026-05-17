@@ -19,7 +19,7 @@ use pluralsync::{
 };
 use pluralsync_base::{
     meta::{
-        CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL,
+        CANONICAL_PLURALSYNC_BASE_URL, PLURALSYNC_RELEASES_URL,
         PluralSyncVariantInfo, SIMPLY_PLURAL_DEPRECATION_DATE,
     },
     users::{
@@ -44,7 +44,7 @@ fn main() -> Result<()> {
         export::<Decrypted>(conf)?,
         export::<PluralSyncVariantInfo>(conf)?,
         format!("export const CANONICAL_PLURALSYNC_BASE_URL: string = \"{CANONICAL_PLURALSYNC_BASE_URL}\""),
-        format!("export const PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL: string = \"{PLURALSYNC_GITHUB_REPOSITORY_RELEASES_URL}\""),
+        format!("export const PLURALSYNC_RELEASES_URL: string = \"{PLURALSYNC_RELEASES_URL}\""),
         format!("export const SIMPLY_PLURAL_DEPRECATION_DATE: string = \"{}\"", SIMPLY_PLURAL_DEPRECATION_DATE.format("%Y-%m-%dT00:00:00Z")),
         "export type UserConfigDbEntries = {
     website_system_name?: string;
