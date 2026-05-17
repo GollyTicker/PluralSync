@@ -1,9 +1,0 @@
-target/*
-!target/debug/pluralsync
-!target/debug/pluralsync-global-manager
-!target/release_builds
-bridge-src-tauri/target/*
-!bridge-src-tauri/target/debug/pluralsync-bridge
-!base-src/target/*
-frontend/node_modules
-bridge-frontend/node_modules

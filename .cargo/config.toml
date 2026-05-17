@@ -1,7 +1,0 @@
-# Cargo configuration for static linking on end-user targets.
-# This file is used by steps/build-release.sh to configure Cargo.
-
-[target.x86_64-pc-windows-gnu]
-linker = "x86_64-w64-mingw32-gcc"
-rustflags = ["-C", "target-feature=+crt-static"]
-
