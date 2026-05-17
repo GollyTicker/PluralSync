@@ -30,7 +30,7 @@ COMMIT_HASH=$(git rev-parse HEAD)
 
 # Upload artifacts to the webserver via SSH
 SSH_HOST="content.radicle.ayake.net"
-REMOTE_BASE="~/web5/www/PluralSync/releases"
+REMOTE_BASE="/home/ubuntu/web5/www/PluralSync/releases"
 REMOTE_DIR="${REMOTE_BASE}/${TAG}"
 
 echo "Uploading artifacts to ${SSH_HOST}:${REMOTE_DIR}..."
