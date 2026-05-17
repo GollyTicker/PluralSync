@@ -36,11 +36,11 @@ REMOTE_DIR="${REMOTE_BASE}/${TAG}"
 echo "Uploading artifacts to ${SSH_HOST}:${REMOTE_DIR}..."
 
 ssh "$SSH_HOST" "mkdir -p '$REMOTE_DIR'"
-scp -v target/release_builds/* "${SSH_HOST}:${REMOTE_DIR}/"
+scp target/release_builds/* "${SSH_HOST}:${REMOTE_DIR}/"
 
 ssh "$SSH_HOST" "cd '$REMOTE_DIR' && touch '$TAG'.txt"
 
-echo "{\"commit\":\"${COMMIT_HASH}\"}" | ssh "$SSH_HOST" "cat > '${REMOTE_DIR}/info.json'"
+echo "{\"commit\":\"${COMMIT_HASH}\",\"tag\":\"$TAG\"}" | ssh "$SSH_HOST" "cat > '${REMOTE_DIR}/info.json'"
 
 echo "Uploaded artifacts for $TAG."
 
