@@ -35,7 +35,7 @@ REMOTE_DIR="${REMOTE_BASE}/${TAG}"
 
 echo "Uploading artifacts to ${SSH_HOST}:${REMOTE_DIR}..."
 
-ssh "$SSH_HOST" "mkdir -p '$REMOTE_DIR'"
+ssh "$SSH_HOST" "mkdir -p '$REMOTE_DIR'" || true
 scp target/release_builds/* "${SSH_HOST}:${REMOTE_DIR}/"
 
 ssh "$SSH_HOST" "cd '$REMOTE_DIR' && touch '$TAG'.txt"
@@ -45,9 +45,10 @@ echo "{\"commit\":\"${COMMIT_HASH}\",\"tag\":\"$TAG\"}" | ssh "$SSH_HOST" "cat >
 echo "Uploaded artifacts for $TAG."
 
 # For non-prerelease tags, update the 'latest' symlink
-if [ "$IS_PRERELEASE" = false ]; then
+if [[ "$IS_PRERELEASE" == false ]]; then
     echo "Setting 'latest' symlink to $TAG..."
     ssh "$SSH_HOST" "cd '$REMOTE_BASE' && rm -f latest ; ln -s '$TAG' latest"
 fi
+ssh "$SSH_HOST" "cd '$REMOTE_BASE' && rm -f dev-latest ; ln -s '$TAG' dev-latest"
 
 echo "Release $TAG published successfully."
